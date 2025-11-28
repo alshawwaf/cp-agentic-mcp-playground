@@ -17,7 +17,7 @@
 > ```
 ---
 
-## 🔎 Quick Overview
+## Quick Overview
 
 A **production-ready, multi-service Docker Compose stack** that brings up a full local AI + Check Point MCP (Model Context Protocol) environment:
 
@@ -134,7 +134,7 @@ docker compose up -d
 
 ---
 
-## 📦 Tech Stack & Layout
+## Tech Stack & Layout
 
 ### Stack Summary
 
@@ -172,7 +172,7 @@ docker compose up -d
 
 ---
 
-## ⚙️ Environment (`.env`)
+## Environment (`.env`)
 
 Create a `.env` next to `docker-compose.yml`:
 
