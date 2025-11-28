@@ -553,7 +553,7 @@ This re-creates the entire environment from zero, re-runs the provisioner, and r
 
 ---
 
-## 🔒 Security Best Practices
+## Security Best Practices
 
 1.  **Use the Setup Script**: Always use `./setup.sh` to generate strong, random passwords for your environment.
 2.  **Protect `.env`**: Your `.env` file contains sensitive credentials. Never commit it to version control.
