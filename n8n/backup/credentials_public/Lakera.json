@@ -1,0 +1,11 @@
+{
+    "createdAt": "2025-11-15T06:06:47.891Z",
+    "updatedAt": "2025-11-15T06:06:47.886Z",
+    "id": "wgkC8cfxORfo2dU0",
+    "name": "Lakera",
+    "data": {
+        "token": "CHANGE_ME"
+    },
+    "type": "httpBearerAuth",
+    "isManaged": false
+}
