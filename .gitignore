@@ -1,0 +1,19 @@
+# Environment variables
+.env
+
+# Docker volumes / local storage
+n8n_storage/
+postgres_storage/
+ollama_storage/
+qdrant_storage/
+open-webui/
+flowise/
+langflow/
+
+# n8n backups (if you don't want to commit them)
+# n8n/backup/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+n8n/shared/
