@@ -90,6 +90,26 @@ if [ ! -f "$ENV_FILE" ]; then
     fi
 fi
 
+# 2.5 Setup Credentials
+echo -e "\n${YELLOW}[2.5/4] Setting up credentials...${NC}"
+
+CREDENTIALS_DIR="n8n/backup/credentials"
+PUBLIC_CREDENTIALS_DIR="n8n/backup/credentials_public"
+
+if [ ! -d "$CREDENTIALS_DIR" ]; then
+    if [ -d "$PUBLIC_CREDENTIALS_DIR" ]; then
+        echo "Creating credentials directory from public template..."
+        mkdir -p "$CREDENTIALS_DIR"
+        cp "$PUBLIC_CREDENTIALS_DIR"/* "$CREDENTIALS_DIR/"
+        echo -e "${GREEN}Credentials initialized from public templates.${NC}"
+        echo -e "${YELLOW}IMPORTANT: Please edit the JSON files in '$CREDENTIALS_DIR' and replace 'CHANGE_ME' with your actual API keys.${NC}"
+    else
+        echo -e "${YELLOW}Warning: Public credentials directory not found. Skipping credential initialization.${NC}"
+    fi
+else
+    echo "Credentials directory already exists. Skipping initialization."
+fi
+
 # 3. Optional API Keys
 echo -e "\n${YELLOW}[3/4] Optional Configuration${NC}"
 echo "You can edit the .env file manually to add your Check Point API keys."
