@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,             // ✅ Skip type checking of declaration files
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "composite": true,
+    "declaration": true,          // ✅ Generate .d.ts files
+    "declarationMap": true,       // ✅ Generate .d.ts.map files
+    "sourceMap": true,            // ✅ Generate .js.map files
+    "outDir": "./dist",
+    "rootDir": "."
+  },
+  "references": [
+    { "path": "./packages/mcp-utils" },
+    { "path": "./packages/infra" },
+    { "path": "./packages/harmony-infra" },
+    { "path": "./packages/management" },
+    { "path": "./packages/management-logs" },
+    { "path": "./packages/https-inspection" },
+    { "path": "./packages/threat-prevention" },
+    { "path": "./packages/threat-emulation" },
+    { "path": "./packages/harmony-sase" },
+    { "path": "./packages/reputation-service" },
+    { "path": "./packages/gw-cli-base" },
+    { "path": "./packages/gw-cli" },
+    { "path": "./packages/gw-cli-connection-analysis" },
+    { "path": "./packages/gaia" },
+    { "path": "./packages/spark-management" },
+    { "path": "./packages/documentation-tool" },
+    { "path": "./packages/cpinfo-analysis" }
+  ],
+  "files": []
+}

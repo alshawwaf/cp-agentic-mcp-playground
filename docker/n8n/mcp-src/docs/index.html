@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=11,IE=10,IE=9,IE=8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="description" content="Official Check Point MCP Servers - AI-powered security management tools for Claude Desktop and VS Code. Download MCPB files, configure servers, and enhance your security workflows with intelligent analysis.">
+    <meta name="keywords" content="Check Point, MCP, Model Context Protocol, AI Security, Claude Desktop, VS Code, Security Management, Threat Prevention, SASE, Network Security">
+    <meta name="author" content="Check Point Software Technologies">
+    <meta class="swiftype" name="popularity" data-type="integer" content="4">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="theme-color" content="#da1572">
+    <meta name="msapplication-TileColor" content="#da1572">
+    <meta name="msapplication-config" content="assets/browserconfig.xml">
+    <meta property="twitter:site" content="@checkpointsw">
+    <meta property="og:site_name" content="Check Point MCP Servers">
+    <meta property="og:locale" content="en_US">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://checkpointsw.github.io/mcp-servers/">
+    <meta property="og:title" content="Check Point MCP Servers - AI-Powered Security Management">
+    <meta property="og:description" content="Enhance your AI workflows with Check Point's comprehensive MCP server collection. Features policy analysis, threat prevention, log analysis, and more.">
+    <meta property="og:image" content="https://checkpointsw.github.io/mcp-servers/assets/apple-touch-icon.png">
+    
+    <!-- X (formerly Twitter) -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://checkpointsw.github.io/mcp-servers/">
+    <meta property="twitter:title" content="Check Point MCP Servers - AI-Powered Security Management">
+    <meta property="twitter:description" content="Enhance your AI workflows with Check Point's comprehensive MCP server collection. Features policy analysis, threat prevention, log analysis, and more.">
+    <meta property="twitter:image" content="https://checkpointsw.github.io/mcp-servers/assets/apple-touch-icon.png">
+    
+    <!-- Additional SEO Meta Tags -->
+    <meta name="application-name" content="Check Point MCP Servers">
+    <meta name="apple-mobile-web-app-title" content="CP MCP Servers">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <title>Check Point MCP Servers - AI-Powered Security Management</title>
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+    <!-- <link rel="manifest" href="assets/site.webmanifest"> -->
+    <link rel="canonical" href="https://checkpointsw.github.io/mcp-servers/">
+    <link rel="alternate" href="https://www.checkpoint.com/" hreflang="x-default">
+    
+    <!-- DNS Prefetch for Performance -->
+    <link rel="dns-prefetch" href="https://googletagmanager.com">
+    <link rel="dns-prefetch" href="https://google-analytics.com">
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://img.youtube.com">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/responsive.css">
+    
+    <!-- Font Awesome for icons (TODO: Replace with Check Point brand icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Check Point MCP Servers",
+        "description": "Official Check Point MCP Servers - AI-powered security management tools for Claude Desktop and VS Code. Download MCPB files, configure servers, and enhance your security workflows with intelligent analysis.",
+        "url": "https://checkpointsw.github.io/mcp-servers/",
+        "applicationCategory": "SecurityApplication",
+        "operatingSystem": "Cross-platform",
+        "author": {
+            "@type": "Organization",
+            "name": "Check Point Software Technologies",
+            "url": "https://www.checkpoint.com"
+        },
+        "provider": {
+            "@type": "Organization",
+            "name": "Check Point Software Technologies",
+            "url": "https://www.checkpoint.com"
+        },
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock"
+        }
+    }
+    </script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav-container">
+            <div class="nav-brand">
+                <img src="assets/checkpoint-logo.svg" alt="Check Point" class="brand-logo">
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#overview" class="nav-link">Overview</a></li>
+                <li><a href="#demo" class="nav-link">Demo</a></li>
+                <li><a href="#servers" class="nav-link">MCP Servers</a></li>
+                <li><a href="https://github.com/CheckPointSW/mcp-servers" target="_blank" class="nav-link external-link">
+                    <i class="fab fa-github"></i> GitHub
+                </a></li>
+                <li><a href="https://pages.checkpoint.com/mcp-preview-program.html" target="_blank" class="nav-link external-link">
+                    <i class="fas fa-users"></i> Preview Program
+                </a></li>
+            </ul>
+            <button class="mobile-menu-toggle" aria-label="Toggle mobile menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    Check Point <span class="highlight">MCP Servers</span>
+                </h1>
+                <p class="hero-subtitle">
+                    Model Context Protocol servers for Check Point security platforms, designed for AI-powered automation, copilots, and decision engines.
+                </p>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-number" id="server-count">10</span>
+                        <span class="stat-label">MCP Servers</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">100%</span>
+                        <span class="stat-label">Open Source</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">AI</span>
+                        <span class="stat-label">Ready</span>
+                    </div>
+                </div>
+                <div class="hero-actions">
+                    <a href="#servers" class="btn btn-primary">
+                        <i class="fas fa-rocket"></i>
+                        Explore Servers
+                    </a>
+                    <a href="#demo" class="btn btn-secondary">
+                        <i class="fas fa-play"></i>
+                        Watch Demo
+                    </a>
+                    <button class="btn btn-outline" id="useCasesBtn">
+                        <i class="fas fa-video"></i>
+                        See Use Cases
+                    </button>
+                </div>
+            </div>
+            <div class="hero-visual">
+                <div class="hero-graphic">
+                    <div class="network-node main-node">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div class="network-node node-1">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="network-node node-2">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                    <div class="network-node node-3">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    <div class="network-node node-4">
+                        <i class="fas fa-database"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Overview Section -->
+    <section id="overview" class="overview">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">What is MCP?</h2>
+                <p class="section-subtitle">
+                    Unlock the power of AI-driven security management
+                </p>
+            </div>
+            
+            <div class="overview-grid">
+                <div class="overview-card">
+                    <div class="card-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <h3>Structured API</h3>
+                    <p>Model Context Protocol (MCP) servers expose a structured, machine-readable API for your enterprise data—designed for AI-powered automation, copilots, and decision engines.</p>
+                </div>
+                
+                <div class="overview-card">
+                    <div class="card-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3>Instant Insights</h3>
+                    <p>By delivering a clear, contextual slice of your security environment, MCP lets you query, analyze, and optimize complex systems without building custom SDKs or parsing raw exports.</p>
+                </div>
+                
+                <div class="overview-card">
+                    <div class="card-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3>AI-Ready Data</h3>
+                    <p>Security policies often span hundreds of rules across diverse enforcement points. MCP exposes this data in a modular, context-rich format, ready for AI systems to consume.</p>
+                </div>
+            </div>
+
+            <div class="value-proposition">
+                <div class="value-content">
+                    <h3>Why MCP for Check Point Security?</h3>
+                    <p>
+                        Security policies often span hundreds of rules and thousands of objects across diverse enforcement points. 
+                        Understanding, auditing, or optimizing these environments is slow and error-prone.
+                    </p>
+                    <p>
+                        <strong>MCP changes this:</strong> exposing security management data in a modular, context-rich format, 
+                        ready for AI systems to consume. Enabling the AI to use your data with precision. Ask real-world questions, 
+                        and get structured, actionable answers—instantly.
+                    </p>
+                </div>
+                <div class="value-visual">
+                    <div class="before-after">
+                        <div class="before">
+                            <h4>Before MCP</h4>
+                            <ul>
+                                <li>Manual policy analysis</li>
+                                <li>Complex SDK integration</li>
+                                <li>Time-consuming audits</li>
+                                <li>Error-prone processes</li>
+                            </ul>
+                        </div>
+                        <div class="arrow">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                        <div class="after">
+                            <h4>With MCP</h4>
+                            <ul>
+                                <li>AI-powered automation</li>
+                                <li>Instant structured data</li>
+                                <li>Real-time insights</li>
+                                <li>Actionable answers</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section id="demo" class="demo">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">See MCP in Action</h2>
+                <p class="section-subtitle">
+                    Watch our Management MCP Server demonstrate AI-powered security policy analysis
+                </p>
+            </div>
+            
+            <div class="demo-container">
+                <div class="video-wrapper">
+                    <div class="video-placeholder" data-video-id="-DuLzDJK9Yo">
+                        <div class="video-thumbnail">
+                            <img src="https://img.youtube.com/vi/-DuLzDJK9Yo/maxresdefault.jpg" alt="Check Point MCP Management Demo">
+                            <div class="play-button">
+                                <i class="fas fa-play"></i>
+                            </div>
+                        </div>
+                        <div class="video-info">
+                            <h3>Management MCP Server Demo</h3>
+                            <p>See how AI can analyze security policies, discover risks, and provide actionable insights using natural language queries.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="demo-features">
+                    <h3>Demo Highlights</h3>
+                    <ul class="feature-list">
+                        <li>
+                            <i class="fas fa-check"></i>
+                            <span>Natural language policy queries</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-check"></i>
+                            <span>Real-time security risk analysis</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-check"></i>
+                            <span>Automated compliance checking</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-check"></i>
+                            <span>Interactive policy visualization</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-check"></i>
+                            <span>AI-powered recommendations</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- MCP Servers Section -->
+    <section id="servers" class="servers">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Our MCP Server Collection</h2>
+                <p class="section-subtitle">
+                    Choose from our comprehensive suite of specialized MCP servers for different Check Point platforms
+                </p>
+            </div>
+            
+            <div class="servers-grid">
+                <!-- Server cards will be populated by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-brand">
+                        <img src="assets/checkpoint-logo.svg" alt="Check Point" class="brand-logo">
+                    </div>
+                    <p class="footer-description">
+                        Empowering AI-driven security management through structured, machine-readable APIs.
+                    </p>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/CheckPointSW/mcp-servers" target="_blank">GitHub Repository</a></li>
+                        <li><a href="#servers">Download Servers</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Community</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/CheckPointSW/mcp-servers/issues" target="_blank">Issues</a></li>
+                        <li><a href="https://pages.checkpoint.com/mcp-preview-program.html" target="_blank">Preview Program</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Check Point</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://www.checkpoint.com" target="_blank">Official Website</a></li>
+                        <li><a href="https://www.checkpoint.com/support/" target="_blank">Support</a></li>
+                        <li><a href="https://www.checkpoint.com/about-us/" target="_blank">About</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <div class="footer-bottom-content">
+                    <p>&copy; 2025 Check Point Software Technologies Ltd. All rights reserved.</p>
+                    <div class="footer-social">
+                        <a href="https://github.com/CheckPointSW" target="_blank" aria-label="Check Point GitHub">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        <a href="https://x.com/checkpointsw" target="_blank" aria-label="Check Point X">
+                            <i class="fab fa-x-twitter"></i>
+                        </a>
+                        <a href="https://www.linkedin.com/company/check-point-software-technologies" target="_blank" aria-label="Check Point LinkedIn">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="scripts/main.js"></script>
+    <script src="scripts/configuration.js"></script>
+
+    <!-- Configuration Modal -->
+    <div id="configModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Configure MCP Server</h2>
+                <button class="modal-close" aria-label="Close modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="server-info-summary">
+                    <div class="server-icon-large">
+                        <i id="modalServerIcon" class="fas fa-cogs"></i>
+                    </div>
+                    <div>
+                        <h3 id="modalServerName">Server Name</h3>
+                        <p id="modalServerPackage">@chkp/package-name</p>
+                        <p id="modalServerDescription">Server description</p>
+                    </div>
+                </div>
+
+                <div class="config-form">
+                    <div class="config-section">
+                        <h4>Configuration Options</h4>
+                        <div class="config-fields" id="configFields">
+                            <!-- Dynamic fields will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-preview">
+                    <h4>Configuration Preview</h4>
+                    <div class="preview-tabs">
+                        <button class="preview-tab active" data-preview="claude">Claude Desktop</button>
+                        <button class="preview-tab" data-preview="vscode">VS Code</button>
+                    </div>
+                    <pre id="configPreview" class="config-code"></pre>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="modal-actions">
+                    <button id="saveToClaudeBtn" class="btn btn-primary">
+                        <i class="fab fa-affiliates"></i>
+                        Configure Claude Desktop
+                    </button>
+                    <button id="saveToVSCodeBtn" class="btn btn-primary">
+                        <i class="fab fa-microsoft"></i>
+                        Configure VS Code
+                    </button>
+                    <button id="closeModalBtn" class="btn btn-outline">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+        <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Use Cases Modal -->
+    <div id="useCasesModal" class="modal">
+        <div class="modal-content use-cases-modal">
+            <div class="modal-header">
+                <h2>Use Case Examples</h2>
+                <button class="modal-close" id="closeUseCasesBtn">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="videos-grid" id="videosGrid">
+                    <!-- Video cards will be populated here -->
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button id="closeUseCasesFooterBtn" class="btn btn-outline">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Player Modal -->
+    <div id="videoPlayerModal" class="modal">
+        <div class="modal-content video-player-modal">
+            <div class="modal-header">
+                <h2 id="videoPlayerTitle">Video Title</h2>
+                <button class="modal-close" id="closeVideoPlayerBtn">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <video id="videoPlayer" controls controlsList="nodownload">
+                    <source id="videoSource" src="" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                
+                <div class="video-info">
+                    <p id="videoDescription" class="video-description"></p>
+                    <div class="video-prompt">
+                        <h4>Sample Prompt:</h4>
+                        <div class="prompt-container">
+                            <pre id="videoPrompt" class="prompt-text"></pre>
+                            <button id="copyPromptBtn" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-copy"></i>
+                                Copy Prompt
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button id="closeVideoPlayerFooterBtn" class="btn btn-outline">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <a href="https://pages.checkpoint.com/mcp-marketplace-feedback.html" 
+       target="_blank" 
+       class="contact-fab" 
+       id="contactFab" 
+       data-tooltip="We'd love your Feedback!"
+       aria-label="We'd love your Feedback!">
+        <i class="fas fa-comment"></i>
+    </a>
+</body>
+</html>

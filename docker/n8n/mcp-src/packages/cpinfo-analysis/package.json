@@ -1,0 +1,43 @@
+{
+  "name": "@chkp/cpinfo-analysis-mcp",
+  "version": "1.0.1",
+  "description": "CPInfo analysis MCP server",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "cpinfo-analysis-mcp": "./dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CheckPointSW/mcp-servers.git",
+    "directory": "packages/cpinfo-analysis"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "npm run build:bundle && npx shx chmod +x ./dist/index.js && npx shx cp src/server-config.json dist/",
+    "build:bundle": "node ../../bundle-mcp.js",
+    "build:tsc": "npx tsc && npx shx chmod +x ./dist/index.js && npx shx cp src/server-config.json dist/",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "commander": "^13.1.0",
+    "zod": "^3.24.4"
+  },
+  "devDependencies": {
+    "@chkp/mcp-utils": "*",
+    "@types/node": "^20.0.0",
+    "@vitest/coverage-v8": "^3.1.0",
+    "typescript": "^5.0.4",
+    "vitest": "^3.1.0"
+  }
+}
