@@ -1,14 +1,16 @@
 # Check Point Agentic MCP Playground
 
 <p align="left">
+  <img src="https://img.shields.io/badge/License-MIT-blue.svg" />
   <img src="https://img.shields.io/badge/Docker-Compose-blue?logo=docker" />
   <img src="https://img.shields.io/badge/n8n-Automation-orange?logo=n8n" />
   <img src="https://img.shields.io/badge/langflow-Workflow-green?logo=langflow" />
   <img src="https://img.shields.io/badge/Ollama-LLM-grey" />
   <img src="https://img.shields.io/badge/Check%20Point-MCP-magenta?" />
+  <img src="https://img.shields.io/badge/Status-Production%20Ready-success" />
 </p>
 
-> **A Local Playground for Agentic AI with Check Point MCP Servers**
+> **A Production-Ready Local Playground for Agentic AI with Check Point MCP Servers**
 >
 > Bring up n8n + Ollama + Flow UIs + Qdrant + a full fleet of Check Point MCP servers with:
 >
@@ -41,16 +43,18 @@ The goal is a **single lab stack** for building, testing, and demoing AI + Check
 
 ## Navigation
 
-- [ Quick Start](#-quick-start)
-- [ Tech Stack & Layout](#-tech-stack--layout)
-- [ Environment--env](#%EF%B8%8F-environment-env)
-- [ Build & Profiles](#%EF%B8%8F-build--profiles)
-- [ n8n Provision & Auto-Import](#-n8n-provision--auto-import)
-- [ URLs & MCP Endpoints](#-urls--mcp-endpoints)
-- [ Ollama Models](#-ollama-models)
-- [ Data & Persistence](#-data--persistence)
-- [ Troubleshooting](#-troubleshooting)
-- [ Updating & Resetting](#%EF%B8%8F-updating--resetting)
+- [📦 Quick Start](#-quick-start)
+- [🔧 Tech Stack & Layout](#-tech-stack--layout)
+- [⚙️ Environment--env](#%EF%B8%8F-environment-env)
+- [🏗️ Build & Profiles](#%EF%B8%8F-build--profiles)
+- [🎯 n8n Provision & Auto-Import](#-n8n-provision--auto-import)
+- [🌐 URLs & MCP Endpoints](#-urls--mcp-endpoints)
+- [🤖 Ollama Models](#-ollama-models)
+- [💾 Data & Persistence](#-data--persistence)
+- [🚀 Production Deployment](docs/PRODUCTION_DEPLOYMENT.md)
+- [💿 Backup & Recovery](docs/BACKUP_RECOVERY.md)
+- [🔍 Troubleshooting](#-troubleshooting)
+- [🔄 Updating & Resetting](#%EF%B8%8F-updating--resetting)
 
 ---
 
@@ -550,6 +554,66 @@ docker compose --profile cpu up -d
 ```
 
 This re-creates the entire environment from zero, re-runs the provisioner, and re-imports any assets in `./n8n/backup`.
+
+---
+
+---
+
+## 🚀 Production Deployment
+
+This playground is now **production-ready** with enterprise-grade features:
+
+### Quick Production Checklist
+
+1. **Generate Secure Configuration**
+   ```bash
+   ./setup.sh
+   ./scripts/validate-env.sh
+   ```
+
+2. **Run Health Checks**
+   ```bash
+   ./scripts/health-check.sh --profile cpu
+   ```
+
+3. **Set Up Automated Backups**
+   ```bash
+   # Add to crontab for daily backups
+   0 2 * * * /path/to/scripts/backup-volumes.sh --retention-days 30
+   ```
+
+4. **Enable CI/CD**
+   - GitHub Actions workflows are in `.github/workflows/`
+   - Automated testing and security scanning on every push
+
+### Production Documentation
+
+- **[Production Deployment Guide](docs/PRODUCTION_DEPLOYMENT.md)** - Comprehensive guide covering:
+  - Security hardening & SSL/TLS configuration
+  - Secret management (Docker Secrets, Vault, etc.)
+  - Scaling & high availability
+  - Monitoring & observability
+  - Compliance (SOC2, GDPR, etc.)
+
+- **[Backup & Recovery Guide](docs/BACKUP_RECOVERY.md)** - Complete backup strategy:
+  - Automated volume backups
+  - Disaster recovery procedures
+  - RTO/RPO definitions
+  - Point-in-time recovery
+
+### Automated Testing
+
+Run integration tests locally:
+
+```bash
+# Run full test suite
+./tests/integration-test.sh
+
+# Test specific profile
+PROFILE=cpu ./tests/integration-test.sh
+```
+
+CI/CD automatically runs tests on every push and pull request.
 
 ---
 
