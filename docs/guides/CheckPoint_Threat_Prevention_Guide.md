@@ -15,35 +15,78 @@ The **Threat Prevention Agent** is an intelligent automation workflow that inter
 
 ## Workflow Deep Dive
 
-This section breaks down the workflow into its core components, explaining the purpose and configuration of each node.
+This section breaks down the workflow into its core components, explaining the purpose, configuration, and data flow of each node.
 
-### 1. The Brain: AI Agent
-*   **Node Name**: `Threat Prevention Agent`
-*   **Type**: `@n8n/n8n-nodes-langchain.agent`
-*   **Purpose**: This is the central intelligence of the workflow. It receives the user's natural language request (e.g., "Show me all active IPS protections") and decides which tools to call to fulfill that request.
-*   **Configuration**:
-    *   **System Message**: configured to act as a security expert.
-    *   **Model**: Connected to a powerful LLM (e.g., Gemini or OpenAI) to understand context and intent.
+### 1. Input Trigger: Chat Interface
 
-### 2. The Tools: MCP Client
-*   **Node Name**: `MCP Client`
-*   **Type**: `@n8n/n8n-nodes-langchain.mcpClientTool`
-*   **Purpose**: Connects the AI Agent to the **Model Context Protocol (MCP)** server for Threat Prevention. This server exposes specific security functions as "tools" the AI can use.
-*   **Capabilities**:
-    *   `show-protections`: List available IPS protections.
-    *   `show-profiles`: Retrieve threat prevention profiles.
-    *   `install-policy`: Deploy changes to the gateway.
-    *   `run-command`: Execute generic management API commands.
+**Node Name**: `When chat message received`
 
-### 3. Memory Management
-*   **Node Name**: `Window Buffer Memory`
-*   **Type**: `@n8n/n8n-nodes-langchain.memoryBufferWindow`
-*   **Purpose**: Maintains the context of the conversation. This allows the agent to remember previous questions and answers, enabling multi-turn conversations (e.g., "List the profiles" -> "Now show me details for the first one").
+![Chat Trigger Config](../assets/threat-prevention/nodes/chat_trigger_config.png)
 
-### 4. Input Trigger
-*   **Node Name**: `When chat message received`
 *   **Type**: `@n8n/n8n-nodes-langchain.chatTrigger`
-*   **Purpose**: Listens for incoming chat messages from the user interface and starts the workflow execution.
+*   **Purpose**: Initiates the workflow when a user sends a message via the chat interface.
+*   **Configuration**:
+    *   **Mode**: `Webhook` (for external chat UIs) or `n8n Chat` (for testing).
+    *   **Public**: Enabled to allow external access.
+
+---
+
+### 2. The Brain: AI Agent
+
+**Node Name**: `Threat Prevention Agent`
+
+![AI Agent Config](../assets/threat-prevention/nodes/ai_agent_config.png)
+
+*   **Type**: `@n8n/n8n-nodes-langchain.agent`
+*   **Purpose**: The central intelligence that parses user intent and orchestrates tool usage.
+*   **Configuration**:
+    *   **System Message**: "You are a Check Point security expert. Your goal is to assist users with Threat Prevention policy management..."
+    *   **Tools**: Connected to `MCP Client`.
+    *   **Memory**: Connected to `Window Buffer Memory`.
+*   **Input**:
+    ```json
+    {
+      "chatInput": "Show me all active IPS protections for Log4j"
+    }
+    ```
+*   **Output**:
+    ```json
+    {
+      "output": "I found 3 active protections related to Log4j..."
+    }
+    ```
+
+---
+
+### 3. The Tools: MCP Client
+
+**Node Name**: `MCP Client`
+
+![MCP Client Config](../assets/threat-prevention/nodes/mcp_client_config.png)
+
+*   **Type**: `@n8n/n8n-nodes-langchain.mcpClientTool`
+*   **Purpose**: Bridges the AI agent with the Check Point Management API via the Model Context Protocol.
+*   **Configuration**:
+    *   **Tool Name**: `threat-prevention-mcp` (or similar).
+    *   **Connection**: HTTP connection to the MCP sidecar (e.g., `http://threat-prevention-mcp:3005`).
+*   **Available Tools**:
+    *   `show-protections`: Filters and lists IPS protections.
+    *   `show-profiles`: Lists threat profiles.
+    *   `install-policy`: Triggers policy installation on gateways.
+
+---
+
+### 4. Memory Management
+
+**Node Name**: `Window Buffer Memory`
+
+![Memory Config](../assets/threat-prevention/nodes/memory_config.png)
+
+*   **Type**: `@n8n/n8n-nodes-langchain.memoryBufferWindow`
+*   **Purpose**: Stores the conversation history to allow for context-aware follow-up questions.
+*   **Configuration**:
+    *   **Session ID**: Dynamic (from chat trigger).
+    *   **Window Size**: `5` (remembers the last 5 interactions).
 
 ## How It Works
 
