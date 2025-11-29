@@ -1,0 +1,68 @@
+name: CI - Integration Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Integration Tests (CPU Profile)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Generate .env file
+        run: |
+          ./setup.sh --non-interactive
+        shell: bash
+
+      - name: Validate docker-compose.yml
+        run: |
+          docker compose config --quiet
+
+      - name: Build custom n8n image
+        run: |
+          docker compose build n8n
+
+      - name: Start Docker Compose stack (CPU profile)
+        run: |
+          docker compose --profile cpu up -d
+        env:
+          COMPOSE_HTTP_TIMEOUT: 200
+
+      - name: Wait for services to be ready
+        run: |
+          echo "Waiting for services to initialize..."
+          sleep 60
+
+      - name: Run health checks
+        run: |
+          chmod +x ./scripts/health-check.sh
+          ./scripts/health-check.sh --profile cpu --verbose
+
+      - name: Run integration tests
+        run: |
+          chmod +x ./tests/integration-test.sh
+          chmod +x ./tests/test-helpers.sh
+          SKIP_CLEANUP=1 ./tests/integration-test.sh
+        env:
+          PROFILE: cpu
+
+      - name: Show docker compose logs on failure
+        if: failure()
+        run: |
+          docker compose --profile cpu logs --tail=100
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose --profile cpu down -v
