@@ -71,117 +71,114 @@ This section provides a technical breakdown of the workflow's internal logic. Ea
 
 ![Full Workflow Canvas](assets/lakera-guide/full_workflow_canvas.png)
 
-### 1. Entry Point: Chat Trigger
-*   **Node Name**: `Message to Inspect`
-*   **Type**: `@n8n/n8n-nodes-langchain.chatTrigger`
-*   **Purpose**: The entry point for the workflow. It listens for messages sent via the n8n chat interface.
-*   **Configuration**:
-    *   **Response Mode**: `responseNodes` (Allows the workflow to process data before sending a reply).
-*   **Input**: User types a message (e.g., "Hello").
-*   **Output**:
-    ```json
-    {
-      "chatInput": "Hello",
-      "sessionId": "..."
-    }
-    ```
+### 1. Message to Inspect (Chat Trigger)
+**Type**: `@n8n/n8n-nodes-langchain.chatTrigger`
 
-### 2. Pre-LLM Security Check
-*   **Node Name**: `Lakera Guard Pre-LLM`
-*   **Type**: `n8n-nodes-base.httpRequest`
-*   **Purpose**: Performs a security scan on the user's input *before* it reaches the LLM. This is the first line of defense against prompt injections and toxic content.
-*   **Configuration**:
-    *   **Method**: `POST`
-    *   **URL**: `https://api.lakera.ai/v2/guard`
-    *   **Body Parameters**:
-        ```json
-        {
-          "messages": [
-            {"role": "user", "content": "{{ $json.chatInput }}"}
-          ],
-          "project_id": "project-2503364587",
-          "breakdown": true
-        }
-        ```
-*   **Input**: `chatInput` from the Trigger node.
-*   **Output**:
-    ```json
-    {
-      "flagged": true/false,
-      "breakdown": { ... } // Detailed analysis of detected threats
-    }
-    ```
+This node initiates the workflow when a user sends a message in the chat interface. It captures the user's input.
 
-### 3. Security Routing (Input)
-*   **Node Name**: `Input Screening Flag`
-*   **Type**: `n8n-nodes-base.if`
-*   **Purpose**: Acts as a logic gate to route the workflow based on the security scan results.
-*   **Configuration**:
-    *   **Condition**: `{{ $json.flagged }}` Equal to `false`.
-*   **Logic Flow**:
-    *   **True (Safe)**: Proceed to **Chat Assistant**.
-    *   **False (Unsafe)**: Divert to **Merge Security Flags** (Blocking path).
+**Configuration:**
+*   **Response Mode**: Set to `responseNodes` to allow the workflow to process the message before replying.
 
-### 4. The AI Agent (Safe Path)
-*   **Node Name**: `Chat Assistant`
-*   **Type**: `@n8n/n8n-nodes-langchain.agent`
-*   **Purpose**: The core conversational agent that generates the response if the input is safe.
-*   **Configuration**:
-    *   **Model**: `Gemini 2.5 Flash Lite`
-    *   **System Message**:
-        > "You are the healthcare assistant in the 'Healthy Habits' app, focused on providing preventive wellness advice."
-*   **Input**: `chatInput` from the Trigger node.
-*   **Output**:
-    ```json
-    {
-      "output": "I'm doing great, thank you for asking! ..."
-    }
-    ```
+![Node View](assets/lakera-guide/nodes/node_1_collab.png)
 
-### 5. Post-LLM Security Check
-*   **Node Name**: `Lakera Guard Post-LLM`
-*   **Type**: `n8n-nodes-base.httpRequest`
-*   **Purpose**: Scans the *AI's generated response* to ensure it hasn't produced harmful content (e.g., if the model was tricked or hallucinated).
-*   **Configuration**:
-    *   **Method**: `POST`
-    *   **URL**: `https://api.lakera.ai/v2/guard`
-    *   **Body Parameters**:
-        ```json
-        {
-          "messages": [
-            {"role": "user", "content": "..."},
-            {"role": "assistant", "content": "{{ $('Chat Assistant').item.json.output }}"}
-          ],
-          "breakdown": true
-        }
-        ```
-*   **Input**: `output` from the Chat Assistant.
-*   **Output**: JSON with `flagged` status for the response.
+---
 
-### 6. Security Routing (Output)
-*   **Node Name**: `Output Screening Flag`
-*   **Type**: `n8n-nodes-base.if`
-*   **Purpose**: Final safety gate before showing the response to the user.
-*   **Configuration**:
-    *   **Condition**: `{{ $json.flagged }}` Equal to `false`.
-*   **Logic Flow**:
-    *   **True (Safe)**: Proceed to **Respond to Chat**.
-    *   **False (Unsafe)**: Divert to **Merge Security Flags**.
+### 2. Lakera Guard Pre-LLM (Security Scan)
+**Type**: `n8n-nodes-base.httpRequest`
 
-### 7. Response Generation
-*   **Safe Response**:
-    *   **Node**: `Respond to Chat`
-    *   **Input**: `{{ $('Chat Assistant').item.json.output }}`
-    *   **Action**: Delivers the safe AI response to the user.
+This is the first line of defense. It sends the raw user input to the Lakera Guard API to check for prompt injections, toxicity, and other threats *before* the LLM sees it.
 
-*   **Blocked Response**:
-    *   **Node**: `Understanding The Threat`
-    *   **Type**: `@n8n/n8n-nodes-langchain.chainLlm`
-    *   **Purpose**: Analyzes the `breakdown` data from Lakera to generate a user-friendly explanation for the block.
-    *   **Input**: `{{ $json.breakdown }}`
-    *   **Output**: "This request was blocked because..."
-    *   **Node**: `Explain Block`
-    *   **Action**: Delivers the explanation to the user.
+**Configuration:**
+*   **Method**: `POST`
+*   **URL**: `https://api.lakera.ai/v2/guard`
+*   **Body**: Sends the `chatInput` in the `messages` array.
+
+![Node View](assets/lakera-guide/nodes/node_2_collab.png)
+
+---
+
+### 3. Input Screening Flag (Routing Logic)
+**Type**: `n8n-nodes-base.if`
+
+Acts as a gatekeeper. It checks the `flagged` status from the previous node to decide the path.
+
+**Configuration:**
+*   **Condition**: Checks if `flagged` is equal to `false`.
+
+![Node View](assets/lakera-guide/nodes/node_3_collab.png)
+
+---
+
+### 4. Chat Assistant (AI Agent)
+**Type**: `@n8n/n8n-nodes-langchain.agent`
+
+The core intelligence of the workflow. If the input is safe, this node processes the request using Google Gemini.
+
+**Configuration:**
+*   **Model**: Connected to `Gemini 2.5 Flash Lite`.
+*   **System Message**: Defines the persona ("Healthcare Assistant").
+
+![Node View](assets/lakera-guide/nodes/node_4_collab.png)
+
+---
+
+### 5. Lakera Guard Post-LLM (Output Scan)
+**Type**: `n8n-nodes-base.httpRequest`
+
+Ensures the AI's response is safe. Even if the input was safe, the model might hallucinate or be tricked into generating harmful content. This node scans the *output*.
+
+**Configuration:**
+*   **Body**: Sends both the user input and the `assistant`'s response to Lakera.
+
+![Node View](assets/lakera-guide/nodes/node_5_collab.png)
+
+---
+
+### 6. Output Screening Flag (Final Gate)
+**Type**: `n8n-nodes-base.if`
+
+Similar to the input flag, this checks if the *response* was flagged.
+
+**Configuration:**
+*   **Condition**: Checks if `flagged` is `false`.
+
+![Node View](assets/lakera-guide/nodes/node_6_collab.png)
+
+---
+
+### 7. Respond to Chat (Safe Path)
+**Type**: `@n8n/n8n-nodes-langchain.chat`
+
+Delivers the final, safe response to the user.
+
+**Configuration:**
+*   **Message**: Mapped to the AI's `output`.
+
+![Node View](assets/lakera-guide/nodes/node_7_collab.png)
+
+---
+
+### 8. Understanding The Threat (Blocked Path)
+**Type**: `@n8n/n8n-nodes-langchain.chainLlm`
+
+If the input was blocked, this node analyzes *why*. It uses a separate LLM call to interpret the Lakera `breakdown` and generate a user-friendly explanation.
+
+**Configuration:**
+*   **Prompt**: Instructions to explain the block based on the provided JSON breakdown.
+
+![Node View](assets/lakera-guide/nodes/node_8_collab.png)
+
+---
+
+### 9. Explain Block (Blocked Response)
+**Type**: `@n8n/n8n-nodes-langchain.chat`
+
+Delivers the explanation message to the user instead of the original requested content.
+
+**Configuration:**
+*   **Message**: Mapped to the explanation text.
+
+![Node View](assets/lakera-guide/nodes/node_9_collab.png)
 ## Best Practices
 
 1.  **Dual-Layer Protection**: Always implement checks both *before* (Pre-LLM) and *after* (Post-LLM) the model generation to ensure end-to-end safety.
