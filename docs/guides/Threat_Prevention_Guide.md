@@ -2,7 +2,7 @@
 
 This guide details the **Threat Prevention Agent** workflow, designed to autonomously manage and monitor threat prevention policies using Check Point's Management API.
 
-![Full Workflow Canvas](assets/threat-prevention/full_workflow_canvas.png)
+![Full Workflow Canvas](../assets/threat-prevention/full_workflow_canvas.png)
 
 ## Overview
 

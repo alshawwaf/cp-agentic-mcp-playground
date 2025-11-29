@@ -17,14 +17,14 @@ Ensure you have the following credentials ready:
 2.  Enter your email and password.
 3.  Click **Sign in**.
 
-![Login Screen](assets/lakera-guide/login.png)
+![Login Screen](../assets/lakera-guide/login.png)
 
 ### 2. Open the Workflow
 
 1.  Once logged in, you will see the list of workflows.
 2.  Locate and click on the **Lakera-Playground** workflow.
 
-![Workflow View](assets/lakera-guide/workflow_view.png)
+![Workflow View](../assets/lakera-guide/workflow_view.png)
 
 ### 3. Using the Chat Interface
 
@@ -33,7 +33,7 @@ The workflow is designed to be interacted with via a chat interface.
 1.  Click the **Test Workflow** button at the bottom of the screen (if not already active).
 2.  Click the **Chat** button (usually located at the bottom right or within the Test interface).
 
-![Chat Interface](assets/lakera-guide/chat_interface.png)
+![Chat Interface](../assets/lakera-guide/chat_interface.png)
 
 ### 4. Scenario A: Safe Query
 
@@ -44,7 +44,7 @@ Let's test a normal, safe interaction.
 2.  Press **Send**.
 3.  The AI should respond normally, acting as a healthcare assistant.
 
-![Safe Response](assets/lakera-guide/safe_response.png)
+![Safe Response](../assets/lakera-guide/safe_response.png)
 
 ### 5. Scenario B: Unsafe Query (Prompt Injection/Toxicity)
 
@@ -56,7 +56,7 @@ Now, let's test Lakera Guard's protection capabilities.
 3.  **Lakera Guard** will detect the threat (e.g., "Illegal Acts" or "Violence").
 4.  The workflow will **block** the request and return a message explaining why it was blocked, instead of providing the harmful information.
 
-![Blocked Response](assets/lakera-guide/blocked_response.png)
+![Blocked Response](../assets/lakera-guide/blocked_response.png)
 
 ## How It Works
 
@@ -69,7 +69,7 @@ Now, let's test Lakera Guard's protection capabilities.
 
 This section provides a technical breakdown of the workflow's internal logic. Each node is analyzed to show its specific purpose, configuration, and data flow.
 
-![Full Workflow Canvas](assets/lakera-guide/full_workflow_canvas.png)
+![Full Workflow Canvas](../assets/lakera-guide/full_workflow_canvas.png)
 
 ### 1. Message to Inspect (Chat Trigger)
 **Type**: `@n8n/n8n-nodes-langchain.chatTrigger`
@@ -79,7 +79,7 @@ This node initiates the workflow when a user sends a message in the chat interfa
 **Configuration:**
 *   **Response Mode**: Set to `responseNodes` to allow the workflow to process the message before replying.
 
-![Node View](assets/lakera-guide/nodes/node_1_collab.png)
+![Node View](../assets/lakera-guide/nodes/node_1_collab.png)
 
 ---
 
@@ -93,7 +93,7 @@ This is the first line of defense. It sends the raw user input to the Lakera Gua
 *   **URL**: `https://api.lakera.ai/v2/guard`
 *   **Body**: Sends the `chatInput` in the `messages` array.
 
-![Node View](assets/lakera-guide/nodes/node_2_collab.png)
+![Node View](../assets/lakera-guide/nodes/node_2_collab.png)
 
 ---
 
@@ -105,7 +105,7 @@ Acts as a gatekeeper. It checks the `flagged` status from the previous node to d
 **Configuration:**
 *   **Condition**: Checks if `flagged` is equal to `false`.
 
-![Node View](assets/lakera-guide/nodes/node_3_collab.png)
+![Node View](../assets/lakera-guide/nodes/node_3_collab.png)
 
 ---
 
@@ -118,7 +118,7 @@ The core intelligence of the workflow. If the input is safe, this node processes
 *   **Model**: Connected to `Gemini 2.5 Flash Lite`.
 *   **System Message**: Defines the persona ("Healthcare Assistant").
 
-![Node View](assets/lakera-guide/nodes/node_4_collab.png)
+![Node View](../assets/lakera-guide/nodes/node_4_collab.png)
 
 ---
 
@@ -130,7 +130,7 @@ Ensures the AI's response is safe. Even if the input was safe, the model might h
 **Configuration:**
 *   **Body**: Sends both the user input and the `assistant`'s response to Lakera.
 
-![Node View](assets/lakera-guide/nodes/node_5_collab.png)
+![Node View](../assets/lakera-guide/nodes/node_5_collab.png)
 
 ---
 
@@ -142,7 +142,7 @@ Similar to the input flag, this checks if the *response* was flagged.
 **Configuration:**
 *   **Condition**: Checks if `flagged` is `false`.
 
-![Node View](assets/lakera-guide/nodes/node_6_collab.png)
+![Node View](../assets/lakera-guide/nodes/node_6_collab.png)
 
 ---
 
@@ -154,7 +154,7 @@ Delivers the final, safe response to the user.
 **Configuration:**
 *   **Message**: Mapped to the AI's `output`.
 
-![Node View](assets/lakera-guide/nodes/node_7_collab.png)
+![Node View](../assets/lakera-guide/nodes/node_7_collab.png)
 
 ---
 
@@ -166,7 +166,7 @@ If the input was blocked, this node analyzes *why*. It uses a separate LLM call 
 **Configuration:**
 *   **Prompt**: Instructions to explain the block based on the provided JSON breakdown.
 
-![Node View](assets/lakera-guide/nodes/node_8_collab.png)
+![Node View](../assets/lakera-guide/nodes/node_8_collab.png)
 
 ---
 
@@ -178,7 +178,7 @@ Delivers the explanation message to the user instead of the original requested c
 **Configuration:**
 *   **Message**: Mapped to the explanation text.
 
-![Node View](assets/lakera-guide/nodes/node_9_collab.png)
+![Node View](../assets/lakera-guide/nodes/node_9_collab.png)
 ## Best Practices
 
 1.  **Dual-Layer Protection**: Always implement checks both *before* (Pre-LLM) and *after* (Post-LLM) the model generation to ensure end-to-end safety.

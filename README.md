@@ -51,6 +51,7 @@ The goal is a **single lab stack** for building, testing, and demoing AI + Check
 - [🌐 URLs & MCP Endpoints](#-urls--mcp-endpoints)
 - [🤖 Ollama Models](#-ollama-models)
 - [💾 Data & Persistence](#-data--persistence)
+- [📚 Guides](#-guides)
 - [🚀 Production Deployment](docs/PRODUCTION_DEPLOYMENT.md)
 - [💿 Backup & Recovery](docs/BACKUP_RECOVERY.md)
 - [🔍 Troubleshooting](#-troubleshooting)
@@ -556,6 +557,17 @@ docker compose --profile cpu up -d
 This re-creates the entire environment from zero, re-runs the provisioner, and re-imports any assets in `./n8n/backup`.
 
 ---
+
+---
+
+---
+
+## 📚 Guides
+
+Detailed documentation for specific workflows and agents:
+
+- **[Lakera Playground Guide](docs/guides/Lakera_Playground_Guide.md)**: A complete guide to the Lakera Guard workflow, including a technical deep dive into each node and security logic.
+- **[Threat Prevention Agent Guide](docs/guides/Threat_Prevention_Guide.md)**: Documentation for the Check Point Threat Prevention agent, covering the AI agent, MCP client, and policy management.
 
 ---
 
