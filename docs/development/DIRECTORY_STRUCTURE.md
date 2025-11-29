@@ -13,13 +13,16 @@ cp-agentic-mcp-playground/
 │
 ├── docs/                 # Documentation
 │   ├── guides/                  # User guides
-│   │   ├── Lakera_Playground_Guide.md
-│   │   └── Threat_Prevention_Guide.md
+│   │   ├── n8n_Lakera_Playground_Guide.md
+│   │   └── CheckPoint_Threat_Prevention_Guide.md
 │   │
-│   ├── BACKUP_RECOVERY.md           # Backup and disaster recovery guide
-│   ├── PRODUCTION_DEPLOYMENT.md     # Production deployment guide
-│   ├── DEVELOPER_GUIDE.md           # Developer setup guide
-│   └── DIRECTORY_STRUCTURE.md       # This file
+│   ├── operations/              # Operational guides
+│   │   ├── BACKUP_RECOVERY.md
+│   │   └── PRODUCTION_DEPLOYMENT.md
+│   │
+│   └── development/             # Development guides
+│       ├── DEVELOPER_GUIDE.md
+│       └── DIRECTORY_STRUCTURE.md   # This file
 │
 ├── scripts/              # Operational scripts
 │   ├── README.md                    # Scripts documentation
@@ -80,7 +83,8 @@ cp-agentic-mcp-playground/
 
 - **docs/**: Comprehensive guides for production deployment, backup/recovery, and operations
   - **guides/**: User guides for specific workflows
-  - **DEVELOPER_GUIDE.md**: Setup instructions for developers
+  - **operations/**: Operational guides (Backup, Deployment)
+  - **development/**: Developer resources (Setup, Structure)
 - **README.md**: Main project documentation with quick start and navigation
 
 ### Operations
@@ -124,8 +128,8 @@ cp-agentic-mcp-playground/
 
 ### Documentation
 - `README.md` - Main project documentation
-- `docs/PRODUCTION_DEPLOYMENT.md` - Production deployment guide
-- `docs/BACKUP_RECOVERY.md` - Backup and DR procedures
+- `docs/operations/PRODUCTION_DEPLOYMENT.md` - Production deployment guide
+- `docs/operations/BACKUP_RECOVERY.md` - Backup and DR procedures
 - `scripts/README.md` - Scripts usage guide
 - `tests/README.md` - Testing guide
 

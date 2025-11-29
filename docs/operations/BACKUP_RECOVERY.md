@@ -58,16 +58,16 @@ Use the provided backup script:
 
 ```bash
 # Backup all volumes
-./scripts/backup-volumes.sh
+../scripts/backup-volumes.sh
 
 # Selective backup
-./scripts/backup-volumes.sh --volumes n8n_storage,postgres_storage
+../scripts/backup-volumes.sh --volumes n8n_storage,postgres_storage
 
 # Custom output directory
-./scripts/backup-volumes.sh --output-dir /mnt/backup
+../scripts/backup-volumes.sh --output-dir /mnt/backup
 
 # Set retention period
-./scripts/backup-volumes.sh --retention-days 60
+../scripts/backup-volumes.sh --retention-days 60
 ```
 
 **Output:**
@@ -189,13 +189,13 @@ docker compose --profile cpu down
 docker volume rm n8n_storage postgres_storage ollama_storage qdrant_storage open-webui flowise langflow
 
 # 3. Run restore script
-./scripts/restore-volumes.sh backups/mcp-playground-backup-2025-11-28-153045.tar.gz
+../scripts/restore-volumes.sh backups/mcp-playground-backup-2025-11-28-153045.tar.gz
 
 # 4. Start services
 docker compose --profile cpu up -d
 
 # 5. Verify health
-./scripts/health-check.sh --profile cpu
+../scripts/health-check.sh --profile cpu
 ```
 
 ### Selective Restore (Single Volume)
@@ -235,7 +235,7 @@ Restore to a specific backup:
 ls -lh backups/
 
 # Choose a backup
-./scripts/restore-volumes.sh backups/mcp-playground-backup-2025-11-25-020000.tar.gz
+../scripts/restore-volumes.sh backups/mcp-playground-backup-2025-11-25-020000.tar.gz
 ```
 
 ---
@@ -282,7 +282,7 @@ docker compose --profile cpu up -d
 # 4. Copy latest backup
 
 # Restore
-./scripts/restore-volumes.sh /path/to/backup.tar.gz
+../scripts/restore-volumes.sh /path/to/backup.tar.gz
 
 # Start stack
 docker compose --profile cpu up -d
@@ -297,7 +297,7 @@ docker compose --profile cpu up -d
 docker compose stop
 
 # Restore from most recent backup
-./scripts/restore-volumes.sh backups/mcp-playground-backup-latest.tar.gz
+../scripts/restore-volumes.sh backups/mcp-playground-backup-latest.tar.gz
 
 # Resume
 docker compose start
@@ -361,7 +361,7 @@ For large volumes, use incremental backups:
 
 ```bash
 # First backup (full)
-./scripts/backup-volumes.sh
+../scripts/backup-volumes.sh
 
 # Subsequent backups (incremental with rsync)
 rsync -avz --link-dest=/backups/previous \
@@ -375,12 +375,12 @@ Encrypt backups at rest:
 
 ```bash
 # Create encrypted backup
-./scripts/backup-volumes.sh
+../scripts/backup-volumes.sh
 gpg --symmetric --cipher-algo AES256 backups/latest-backup.tar.gz
 
 # Decrypt for restore
 gpg --decrypt backups/latest-backup.tar.gz.gpg > backup.tar.gz
-./scripts/restore-volumes.sh backup.tar.gz
+../scripts/restore-volumes.sh backup.tar.gz
 ```
 
 ### Database-Specific Backups

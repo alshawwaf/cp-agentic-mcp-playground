@@ -50,10 +50,10 @@ This guide covers deploying the Check Point Agentic MCP Playground in a producti
 
 ```bash
 # Generate strong secrets
-./setup.sh
+../setup.sh
 
 # Validate configuration
-./scripts/validate-env.sh
+../scripts/validate-env.sh
 ```
 
 Key requirements:
@@ -485,8 +485,8 @@ Automate backups with cron:
 For production issues:
 
 1. Check logs: `docker compose logs -f`
-2. Run health check: `./scripts/health-check.sh`
-3. Review [Troubleshooting](../README.md#troubleshooting) in main README
+2. Run health check: `../scripts/health-check.sh`
+3. Review [Troubleshooting](../../README.md#troubleshooting) in main README
 4. Open GitHub issue with:
    - Environment details
    - Error logs

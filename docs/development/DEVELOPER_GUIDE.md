@@ -13,7 +13,7 @@ This guide is for developers who want to extend, customize, or debug the Check P
 2.  **Initialize Environment**:
     Run the setup script to generate your `.env` file. For development, you might want to use the default "demo" credentials for ease of use.
     ```bash
-    ../setup.sh
+    ../../setup.sh
     # Choose 'No' for random passwords to use defaults (admin/change_me)
     ```
 

@@ -52,8 +52,8 @@ The goal is a **single lab stack** for building, testing, and demoing AI + Check
 - [🤖 Ollama Models](#-ollama-models)
 - [💾 Data & Persistence](#-data--persistence)
 - [📚 Guides](#-guides)
-- [🚀 Production Deployment](docs/PRODUCTION_DEPLOYMENT.md)
-- [💿 Backup & Recovery](docs/BACKUP_RECOVERY.md)
+- [🚀 Production Deployment](docs/operations/PRODUCTION_DEPLOYMENT.md)
+- [💿 Backup & Recovery](docs/operations/BACKUP_RECOVERY.md)
 - [🔍 Troubleshooting](#-troubleshooting)
 - [🔄 Updating & Resetting](#%EF%B8%8F-updating--resetting)
 
@@ -566,8 +566,8 @@ This re-creates the entire environment from zero, re-runs the provisioner, and r
 
 Detailed documentation for specific workflows and agents:
 
-- **[Lakera Playground Guide](docs/guides/Lakera_Playground_Guide.md)**: A complete guide to the Lakera Guard workflow, including a technical deep dive into each node and security logic.
-- **[Threat Prevention Agent Guide](docs/guides/Threat_Prevention_Guide.md)**: Documentation for the Check Point Threat Prevention agent, covering the AI agent, MCP client, and policy management.
+- **[Lakera Playground Guide](docs/guides/n8n_Lakera_Playground_Guide.md)**: A complete guide to the Lakera Guard workflow, including a technical deep dive into each node and security logic.
+- **[Threat Prevention Agent Guide](docs/guides/CheckPoint_Threat_Prevention_Guide.md)**: Documentation for the Check Point Threat Prevention agent, covering the AI agent, MCP client, and policy management.
 
 ---
 
@@ -600,14 +600,14 @@ This playground is now **production-ready** with enterprise-grade features:
 
 ### Production Documentation
 
-- **[Production Deployment Guide](docs/PRODUCTION_DEPLOYMENT.md)** - Comprehensive guide covering:
+- **[Production Deployment Guide](docs/operations/PRODUCTION_DEPLOYMENT.md)** - Comprehensive guide covering:
   - Security hardening & SSL/TLS configuration
   - Secret management (Docker Secrets, Vault, etc.)
   - Scaling & high availability
   - Monitoring & observability
   - Compliance (SOC2, GDPR, etc.)
 
-- **[Backup & Recovery Guide](docs/BACKUP_RECOVERY.md)** - Complete backup strategy:
+- **[Backup & Recovery Guide](docs/operations/BACKUP_RECOVERY.md)** - Complete backup strategy:
   - Automated volume backups
   - Disaster recovery procedures
   - RTO/RPO definitions
