@@ -93,7 +93,7 @@ This is the first line of defense. It sends the raw user input to the Lakera Gua
 *   **URL**: `https://api.lakera.ai/v2/guard`
 *   **Body**: Sends the `chatInput` in the `messages` array.
 
-![Node View](../assets/lakera-guide/nodes/node_2_collab.png)
+
 
 ---
 
@@ -130,7 +130,7 @@ Ensures the AI's response is safe. Even if the input was safe, the model might h
 **Configuration:**
 *   **Body**: Sends both the user input and the `assistant`'s response to Lakera.
 
-![Node View](../assets/lakera-guide/nodes/node_5_collab.png)
+
 
 ---
 
