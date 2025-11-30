@@ -1,5 +1,4 @@
 # Lakera Playground User Guide
-<!-- Updated images for Node 1, 2, and 3 -->
 
 This guide provides step-by-step instructions on how to use the **Lakera Playground** workflow in n8n. This workflow demonstrates the capabilities of **Lakera Guard** in detecting and blocking malicious or unsafe prompts in a chat environment.
 
