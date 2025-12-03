@@ -208,7 +208,7 @@ services:
   # ──────────────── vLLM (OpenAI Compatible) ────────────────
   vllm:
     profiles: ["cpu"]
-    image: vllm/vllm-openvino:latest
+    image: openvino/vllm-openvino:latest
     container_name: vllm
     networks: ["demo"]
     restart: unless-stopped
