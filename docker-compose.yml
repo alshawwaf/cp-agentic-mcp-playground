@@ -26,6 +26,7 @@ volumes:
   open-webui:
   flowise:
   langflow:
+  vllm_storage:
 
 ###############################################################################
 # Common Service Definitions (Anchors)
@@ -203,6 +204,36 @@ services:
     depends_on:
       ollama-gpu:
         condition: service_healthy
+
+  # ──────────────── vLLM (OpenAI Compatible) ────────────────
+  vllm:
+    profiles: ["cpu"]
+    image: vllm/vllm-openai:latest
+    container_name: vllm
+    networks: ["demo"]
+    restart: unless-stopped
+    ports:
+      - "${VLLM_PORT}:8000"
+    environment:
+      - HUGGING_FACE_HUB_CACHE=/root/.cache/huggingface
+      - HF_TOKEN=${HF_TOKEN}
+      - VLLM_TARGET_DEVICE=cpu
+    volumes:
+      - vllm_storage:/root/.cache/huggingface
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    command: ["--model", "${VLLM_MODEL}", "--device", "cpu", "--dtype", "half"]
+    ipc: host
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   # ──────────────── n8n ────────────────
   n8n:
