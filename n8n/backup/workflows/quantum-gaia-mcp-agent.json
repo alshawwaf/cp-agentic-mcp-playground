@@ -2,23 +2,6 @@
   "name": "quantum-gaia-mcp-agent",
   "nodes": [
     {
-      "parameters": {},
-      "id": "05534c05-08ea-4d6a-9203-f85cb2f01a86",
-      "name": "Postgres Chat Memory",
-      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
-      "typeVersion": 1.1,
-      "position": [
-        1312,
-        160
-      ],
-      "credentials": {
-        "postgres": {
-          "id": "nNfAshAXNQ81bjc7",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
       "parameters": {
         "options": {}
       },
@@ -62,21 +45,6 @@
         976,
         -80
       ]
-    },
-    {
-      "parameters": {
-        "content": "show me all the interfaces on 10.1.1.111",
-        "height": 80,
-        "color": 5
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        464,
-        -80
-      ],
-      "typeVersion": 1,
-      "id": "f3ed736d-ed88-444b-99c9-e6172f11f1f6",
-      "name": "Sticky Note8"
     },
     {
       "parameters": {
@@ -214,7 +182,11 @@
     },
     {
       "parameters": {
-        "connectionType": "http"
+        "connectionType": "http",
+        "uriOverride": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Uri_Override', ``, 'string') }}",
+        "operation": "executeTool",
+        "toolName": "={{ $fromAI('Tool_Name') }}",
+        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
       },
       "type": "n8n-nodes-mcp.mcpClientTool",
       "typeVersion": 1,
@@ -230,21 +202,36 @@
           "name": "CP Gaia MCP Client Docker"
         }
       }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1312,
+        160
+      ],
+      "id": "c956e47f-0004-4e28-a4ba-cbcb9a7ce709",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "content": "show me all the interfaes on 10.1.1.111",
+        "height": 80,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        400,
+        64
+      ],
+      "typeVersion": 1,
+      "id": "903dd6ce-fb6d-4b72-a778-66c31157156a",
+      "name": "Sticky Note"
     }
   ],
   "pinData": {},
   "connections": {
-    "Postgres Chat Memory": {
-      "ai_memory": [
-        [
-          {
-            "node": "CP Gaia AI Agent",
-            "type": "ai_memory",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "When chat message received": {
       "main": [
         [
@@ -299,13 +286,29 @@
           }
         ]
       ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "CP Gaia AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "c8b7eba4-b6af-4bda-83bb-5ab4741cf920",
+  "versionId": "3bc9d96e-5796-4ea8-8afb-8ea813d04c16",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec"

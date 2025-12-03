@@ -2,23 +2,6 @@
   "name": "threat-emulation-mcp-agent",
   "nodes": [
     {
-      "parameters": {},
-      "id": "7b0887a1-d739-4d4b-ac42-25d38a101563",
-      "name": "Postgres Chat Memory",
-      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
-      "typeVersion": 1.1,
-      "position": [
-        1104,
-        416
-      ],
-      "credentials": {
-        "postgres": {
-          "id": "nNfAshAXNQ81bjc7",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
       "parameters": {
         "options": {
           "allowFileUploads": true
@@ -86,6 +69,7 @@
     {
       "parameters": {
         "connectionType": "http",
+        "uriOverride": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Uri_Override', ``, 'string') }}",
         "operation": "executeTool",
         "toolName": "={{ $fromAI('Tool_Name') }}",
         "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
@@ -203,12 +187,12 @@
     {
       "parameters": {
         "content": "MCP",
-        "width": 528,
-        "color": 5
+        "width": 368,
+        "color": 7
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        1024,
+        1184,
         384
       ],
       "typeVersion": 1,
@@ -237,7 +221,7 @@
     },
     {
       "parameters": {
-        "content": "check if this file is malicious:  /data/shared/npp.8.8.7.Installer.x64.exe",
+        "content": "check if this file is malicious:  /data/shared/npp.8.8.8.Installer.x64.exe",
         "height": 80,
         "width": 288,
         "color": 6
@@ -250,21 +234,21 @@
       "typeVersion": 1,
       "id": "6c4b44b4-d3da-4409-a789-62e6a9065f6f",
       "name": "Sticky Note3"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1024,
+        384
+      ],
+      "id": "598e5fa9-de73-4670-996d-bca53599f666",
+      "name": "Simple Memory"
     }
   ],
   "pinData": {},
   "connections": {
-    "Postgres Chat Memory": {
-      "ai_memory": [
-        [
-          {
-            "node": "Threat Emulation AI Agent",
-            "type": "ai_memory",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "When chat message received": {
       "main": [
         [
@@ -335,13 +319,24 @@
       "ai_languageModel": [
         []
       ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Threat Emulation AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "1fa8fb80-4edd-411a-ac98-dc4e145958f8",
+  "versionId": "61d68575-0a10-484a-866b-225757049ba1",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec"
