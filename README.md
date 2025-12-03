@@ -534,13 +534,17 @@ If this fails, fix GPU drivers / toolkit before using the GPU profile.
   docker compose build n8n
   ```
 
-- **Base Images** – pull and rebuild:
+- **Base Images** – To update the underlying `n8n` version (fixes "n8n is not running the latest version"):
 
   ```bash
-  docker compose pull
-  docker compose build n8n
-  docker compose --profile cpu up -d
+  # This pulls the latest base image AND rebuilds your custom image in one step
+  docker compose build --pull n8n
+  
+  # Then restart the service
+  docker compose --profile cpu up -d n8n
   ```
+
+  > **Note**: Do not run `docker compose pull n8n`. This will fail because it tries to pull your *local custom image* from Docker Hub. Always use `build --pull`.
 
 (adjust profiles as needed).
 
