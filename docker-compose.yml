@@ -208,7 +208,7 @@ services:
   # ──────────────── vLLM (OpenAI Compatible) ────────────────
   vllm:
     profiles: ["cpu"]
-    image: vllm/vllm-openai:latest
+    image: vllm/vllm-openvino:latest
     container_name: vllm
     networks: ["demo"]
     restart: unless-stopped
@@ -216,6 +216,7 @@ services:
       - "${VLLM_PORT}:8000"
     environment:
       - HUGGING_FACE_HUB_CACHE=/root/.cache/huggingface
+      
       - HF_TOKEN=${HF_TOKEN}
       - VLLM_TARGET_DEVICE=cpu
     volumes:
