@@ -2,23 +2,6 @@
   "name": "threat-prevention-mcp-agent",
   "nodes": [
     {
-      "parameters": {},
-      "id": "455ff811-e11c-4025-91cd-da876e0989c0",
-      "name": "Postgres Chat Memory",
-      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
-      "typeVersion": 1.1,
-      "position": [
-        -64,
-        48
-      ],
-      "credentials": {
-        "postgres": {
-          "id": "nNfAshAXNQ81bjc7",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
       "parameters": {
         "options": {}
       },
@@ -233,21 +216,21 @@
       "typeVersion": 1,
       "id": "cff2e69f-a724-4d2d-962f-607656cdec51",
       "name": "Sticky Note1"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -64,
+        64
+      ],
+      "id": "0c991f56-af4a-49df-b2e1-41d72747369d",
+      "name": "Simple Memory"
     }
   ],
   "pinData": {},
   "connections": {
-    "Postgres Chat Memory": {
-      "ai_memory": [
-        [
-          {
-            "node": "CP Threat Prevention AI Agent",
-            "type": "ai_memory",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "When chat message received": {
       "main": [
         [
@@ -307,13 +290,24 @@
           }
         ]
       ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "CP Threat Prevention AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "09da47cf-5231-4e81-99c5-49a66e0db238",
+  "versionId": "13dabc06-1f6c-4226-b91a-43415fa49be7",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec"

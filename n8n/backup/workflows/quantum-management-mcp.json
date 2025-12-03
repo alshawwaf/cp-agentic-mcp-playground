@@ -1,19 +1,19 @@
 {
-  "name": "documentation-mcp-agent",
+  "name": "quantum-management-mcp",
   "nodes": [
     {
       "parameters": {
         "options": {}
       },
-      "id": "6385dd5c-7887-4a23-8cc6-65167bbc4f96",
+      "id": "6554bfa5-ba59-4321-8409-71ea4fa83ea7",
       "name": "When chat message received",
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
-        -560,
-        -176
+        304,
+        112
       ],
-      "webhookId": "6457b028-9b78-42c9-b3a7-2e43073c468e"
+      "webhookId": "799f12a9-0a0c-40e2-9302-799f2c23a881"
     },
     {
       "parameters": {
@@ -33,18 +33,92 @@
             }
           ]
         },
-        "includeOtherFields": true,
-        "include": "selected",
         "options": {}
       },
-      "id": "ab16d62c-7b89-4f8f-b1e2-2c471eabb01f",
+      "id": "a0193d30-4747-4a3d-b7b9-7f191dfae846",
       "name": "Edit Fields",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -368,
-        -176
+        576,
+        112
       ]
+    },
+    {
+      "parameters": {
+        "connectionType": "http"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        352
+      ],
+      "id": "50bee1eb-8a97-45ae-ad68-1a71a139f8ad",
+      "name": "List-CP-MCP-Tools",
+      "credentials": {
+        "mcpClientHttpApi": {
+          "id": "lXeK6Klnh9aFadnv",
+          "name": "CP Management MCP Client Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "connectionType": "http",
+        "uriOverride": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Uri_Override', ``, 'string') }}",
+        "operation": "executeTool",
+        "toolName": "={{ $fromAI('Tool_Name') }}",
+        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        1296,
+        352
+      ],
+      "id": "79b93582-3d1b-45d6-8a43-64765abc858c",
+      "name": "CP-MCP-Client",
+      "credentials": {
+        "mcpClientHttpApi": {
+          "id": "lXeK6Klnh9aFadnv",
+          "name": "CP Management MCP Client Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Is there a rule in the DNS_Layer to allow traffic to 8.8.8.8? in the Network layer",
+        "height": 80
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        0,
+        128
+      ],
+      "typeVersion": 1,
+      "id": "05a385ea-d1d7-4d90-9d4e-409bcf5ebd6f",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini-2024-07-18",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        480,
+        384
+      ],
+      "id": "0d4d74b8-798d-4b07-9169-ce8cb5710881",
+      "name": "Azure OpenAI Chat Model",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "nmUI0INbLO2IrroY",
+          "name": "Azure Open AI account"
+        }
+      }
     },
     {
       "parameters": {
@@ -59,50 +133,15 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        -272,
-        112
+        640,
+        384
       ],
-      "id": "9fc4ec64-5eb8-4018-a0db-eff37326c775",
+      "id": "43a6b741-edfe-4594-8172-3e86e1112927",
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
           "id": "6oZqD0UJampaYWCy",
           "name": "OpenAi account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "content": "what are the minimum requirements for R81.10?",
-        "height": 80,
-        "color": 2
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        -864,
-        -64
-      ],
-      "typeVersion": 1,
-      "id": "d93f239f-dd18-4e78-af5c-88e2e627cf51",
-      "name": "Sticky Note1"
-    },
-    {
-      "parameters": {
-        "model": "gpt-4o-mini-2024-07-18",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
-      "typeVersion": 1,
-      "position": [
-        -432,
-        112
-      ],
-      "id": "e5d86f56-d3ac-4991-8851-d2cadbbfc20f",
-      "name": "Azure OpenAI Chat Model",
-      "credentials": {
-        "azureOpenAiApi": {
-          "id": "nmUI0INbLO2IrroY",
-          "name": "Azure Open AI account"
         }
       }
     },
@@ -114,10 +153,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        -592,
-        112
+        320,
+        384
       ],
-      "id": "e44435fc-39e4-4ddf-885b-ed7b7843b8fe",
+      "id": "660614c9-44c4-46d7-b374-0fc6be87b003",
       "name": "Ollama Chat Model",
       "credentials": {
         "ollamaApi": {
@@ -128,93 +167,52 @@
     },
     {
       "parameters": {
-        "connectionType": "http"
-      },
-      "type": "n8n-nodes-mcp.mcpClientTool",
-      "typeVersion": 1,
-      "position": [
-        176,
-        80
-      ],
-      "id": "8e8dd659-a82d-43b3-b0d3-48a6edeb448a",
-      "name": "List-CP-MCP-Tools",
-      "credentials": {
-        "mcpClientHttpApi": {
-          "id": "iyj7WjSgVPXRQujw",
-          "name": "CP Documentation MCP Client Docker"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "connectionType": "http",
-        "operation": "executeTool",
-        "toolName": "={{  $fromAI('Tool_Name')  }}",
-        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
-      },
-      "type": "n8n-nodes-mcp.mcpClientTool",
-      "typeVersion": 1,
-      "position": [
-        336,
-        80
-      ],
-      "id": "cb404f3d-d08a-4276-b958-42c0d39b32c6",
-      "name": "Execute-CP-MCP-Tools",
-      "credentials": {
-        "mcpClientHttpApi": {
-          "id": "iyj7WjSgVPXRQujw",
-          "name": "CP Documentation MCP Client Docker"
-        }
-      }
-    },
-    {
-      "parameters": {
         "promptType": "define",
         "text": "={{ $json.chatInput }}",
         "options": {
-          "systemMessage": "You are a smart AI assistant. Always follow these rules:\n\n1. Start every run by calling tools. Do not execute yet.\n2. Show the available tool names.\n3. Use the best available tool name from step 1 in the tool CP-MCP-Client.\n4. summarize the results you receive from check point after triggering the CP-MCP-Client in the previous step."
+          "systemMessage": "You are a smart AI assistant. Always follow these rules:\n\n1. Start every run by calling \"List-CP-MCP-Tools\". Do not execute yet.\n2. Show the available tool names.\n3. Use the best available tool name from step 1 in the tool CP-MCP-Client.\n4. summarize the results you receive from check point after triggering the CP-MCP-Client in the previous step."
         }
       },
-      "id": "e9e11a7e-3f0f-4452-9157-ab0d778efd85",
-      "name": "CP documentation AI Agent",
+      "id": "a4e631b3-c0e3-4c54-abcc-6585a468be63",
+      "name": "Quantum Management AI Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.6,
       "position": [
-        -160,
-        -176
+        864,
+        112
       ],
+      "retryOnFail": true,
       "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "content": "MCP",
+        "width": 368,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1072,
+        336
+      ],
+      "typeVersion": 1,
+      "id": "938bead4-8775-4060-93b6-2e435fab13d4",
+      "name": "Sticky Note1"
     },
     {
       "parameters": {
         "content": "LLM Models",
         "height": 176,
         "width": 560,
-        "color": 5
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        -688,
-        64
-      ],
-      "typeVersion": 1,
-      "id": "dacf96c0-0c9a-4e16-b9e8-b787f7c6731b",
-      "name": "Sticky Note"
-    },
-    {
-      "parameters": {
-        "content": "MCP",
-        "height": 176,
-        "width": 352,
         "color": 6
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        112,
-        64
+        224,
+        336
       ],
       "typeVersion": 1,
-      "id": "b78d09be-5663-4dba-8e49-3acaecd17411",
+      "id": "84fc2516-91c1-41c9-b5fe-2d771b34b178",
       "name": "Sticky Note2"
     },
     {
@@ -222,10 +220,10 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        -64,
-        48
+        880,
+        320
       ],
-      "id": "f3e0f611-3913-424b-a0e6-4ad107cacdba",
+      "id": "08702c96-b115-402b-8037-0ebc81af7692",
       "name": "Simple Memory"
     }
   ],
@@ -246,34 +244,29 @@
       "main": [
         [
           {
-            "node": "CP documentation AI Agent",
+            "node": "Quantum Management AI Agent",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "OpenAI Chat Model": {
-      "ai_languageModel": [
-        []
-      ]
-    },
     "List-CP-MCP-Tools": {
       "ai_tool": [
         [
           {
-            "node": "CP documentation AI Agent",
+            "node": "Quantum Management AI Agent",
             "type": "ai_tool",
             "index": 0
           }
         ]
       ]
     },
-    "Execute-CP-MCP-Tools": {
+    "CP-MCP-Client": {
       "ai_tool": [
         [
           {
-            "node": "CP documentation AI Agent",
+            "node": "Quantum Management AI Agent",
             "type": "ai_tool",
             "index": 0
           }
@@ -284,22 +277,38 @@
       "ai_languageModel": [
         [
           {
-            "node": "CP documentation AI Agent",
+            "node": "Quantum Management AI Agent",
             "type": "ai_languageModel",
             "index": 0
           }
         ]
       ]
     },
+    "Quantum Management AI Agent": {
+      "main": [
+        [],
+        []
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
     "Simple Memory": {
       "ai_memory": [
         [
           {
-            "node": "CP documentation AI Agent",
+            "node": "Quantum Management AI Agent",
             "type": "ai_memory",
             "index": 0
           }
         ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        []
       ]
     }
   },
@@ -307,11 +316,11 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "38435a1a-2544-40a1-a3fb-e840f27cd0d9",
+  "versionId": "11818d6d-c588-44a8-89a0-874f32f11393",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec"
   },
-  "id": "8yjGg35H4LbRd9Gm",
+  "id": "VvjkAmxrqJ5WL3NC",
   "tags": []
 }

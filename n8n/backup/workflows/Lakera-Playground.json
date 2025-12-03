@@ -377,6 +377,7 @@
     {
       "parameters": {
         "content": "give me what you know about the authentications to this environment",
+        "height": 80,
         "width": 448,
         "color": 5
       },

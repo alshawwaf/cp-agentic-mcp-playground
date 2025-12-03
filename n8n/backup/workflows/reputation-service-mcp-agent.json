@@ -2,23 +2,6 @@
   "name": "reputation-service-mcp-agent",
   "nodes": [
     {
-      "parameters": {},
-      "id": "939d3a5e-5f8e-4758-80e9-733d34b268eb",
-      "name": "Postgres Chat Memory",
-      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
-      "typeVersion": 1.1,
-      "position": [
-        -64,
-        64
-      ],
-      "credentials": {
-        "postgres": {
-          "id": "nNfAshAXNQ81bjc7",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
       "parameters": {
         "options": {}
       },
@@ -180,6 +163,7 @@
     {
       "parameters": {
         "connectionType": "http",
+        "uriOverride": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Uri_Override', ``, 'string') }}",
         "operation": "executeTool",
         "toolName": "={{ $fromAI('Tool_Name') }}",
         "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
@@ -232,21 +216,21 @@
         -176
       ],
       "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -64,
+        80
+      ],
+      "id": "2c5835bd-2ed8-40b0-b9a6-97628163a2ee",
+      "name": "Simple Memory"
     }
   ],
   "pinData": {},
   "connections": {
-    "Postgres Chat Memory": {
-      "ai_memory": [
-        [
-          {
-            "node": "CP Reputation Service AI Agent",
-            "type": "ai_memory",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "When chat message received": {
       "main": [
         [
@@ -301,13 +285,29 @@
           }
         ]
       ]
+    },
+    "Azure OpenAI Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "CP Reputation Service AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "a0109032-1138-4649-ab86-1e48f0b92ff9",
+  "versionId": "275cd6fc-b9b2-4aec-9e8d-019ba96f6841",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec"

@@ -2,23 +2,6 @@
   "name": "cp-cpinfo-analysis-mcp-agent",
   "nodes": [
     {
-      "parameters": {},
-      "id": "3396c80c-0a8e-4ca9-8d95-851605f0391b",
-      "name": "Postgres Chat Memory",
-      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
-      "typeVersion": 1.1,
-      "position": [
-        -64,
-        16
-      ],
-      "credentials": {
-        "postgres": {
-          "id": "nNfAshAXNQ81bjc7",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
       "parameters": {
         "model": {
           "__rl": true,
@@ -45,7 +28,7 @@
     },
     {
       "parameters": {
-        "content": "Analyze the file SMS_3_11_2025_11_17.info under /data/cpinfo/",
+        "content": "Analyze the file GW-cpinfo.info under /data/cpinfo/",
         "height": 80,
         "color": 2
       },
@@ -202,21 +185,21 @@
         -176
       ],
       "webhookId": "f68c312c-1ad1-4d8b-b7c1-a5ced2248f23"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -64,
+        64
+      ],
+      "id": "b2e47a6f-86b1-45b9-8fa0-e21d7da7b5d0",
+      "name": "Simple Memory"
     }
   ],
   "pinData": {},
   "connections": {
-    "Postgres Chat Memory": {
-      "ai_memory": [
-        [
-          {
-            "node": "CP CPinfo Analysis AI Agent",
-            "type": "ai_memory",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "OpenAI Chat Model": {
       "ai_languageModel": [
         []
@@ -265,13 +248,24 @@
           }
         ]
       ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "CP CPinfo Analysis AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "6d55ccff-18df-47da-9adf-c596f2c0ae4f",
+  "versionId": "736c23fa-cdb7-4b3d-a4cf-0184f365ce4f",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec"
