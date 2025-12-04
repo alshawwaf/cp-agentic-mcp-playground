@@ -74,7 +74,11 @@ x-ollama: &service-ollama
     - ollama_storage:/root/.ollama
   # ensure the daemon is actually ready before dependents run
   healthcheck:
-    test: ["CMD-SHELL", "OLLAMA_HOST=http://127.0.0.1:11434 ollama list >/dev/null 2>&1"]
+    test:
+      [
+        "CMD-SHELL",
+        "OLLAMA_HOST=http://127.0.0.1:11434 ollama list >/dev/null 2>&1",
+      ]
     interval: 5s
     timeout: 5s
     retries: 20
@@ -82,7 +86,7 @@ x-ollama: &service-ollama
 # ──────────────── Ollama Model Puller ────────────────
 x-init-ollama: &init-ollama
   image: ollama/ollama:latest
-  networks: ['demo']
+  networks: ["demo"]
   volumes:
     - ollama_storage:/root/.ollama
   entrypoint: /bin/sh
@@ -110,7 +114,6 @@ x-init-ollama: &init-ollama
 # Services
 ###############################################################################
 services:
-
   # ──────────────── PostgreSQL ────────────────
   postgres:
     image: postgres:16-alpine
@@ -126,7 +129,11 @@ services:
     volumes:
       - postgres_storage:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -146,7 +153,11 @@ services:
       - OLLAMA_HOST=http://ollama-cpu:11434
     healthcheck:
       # simple: check that the daemon responds
-      test: ["CMD-SHELL", "OLLAMA_HOST=http://127.0.0.1:11434 ollama list >/dev/null 2>&1"]
+      test:
+        [
+          "CMD-SHELL",
+          "OLLAMA_HOST=http://127.0.0.1:11434 ollama list >/dev/null 2>&1",
+        ]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -204,7 +215,6 @@ services:
     depends_on:
       ollama-gpu:
         condition: service_healthy
-
 
   # ──────────────── n8n ────────────────
   n8n:
@@ -393,7 +403,7 @@ services:
     entrypoint: ["/usr/local/bin/mcp-https-inspection"]
     environment:
       - MANAGEMENT_HOST=${MANAGEMENT_HOST}
-      - API_KEY=${SMS_API_KEY}
+      - API_KEY=${MANAGEMENT_API_KEY}
     command:
       - "--transport"
       - "http"
@@ -412,7 +422,7 @@ services:
     entrypoint: ["/usr/local/bin/mcp-quantum-management"]
     environment:
       - MANAGEMENT_HOST=${MANAGEMENT_HOST}
-      - API_KEY=${SMS_API_KEY}
+      - API_KEY=${MANAGEMENT_API_KEY}
     command:
       - "--transport"
       - "http"
@@ -431,7 +441,7 @@ services:
     entrypoint: ["/usr/local/bin/mcp-management-logs"]
     environment:
       - MANAGEMENT_HOST=${MANAGEMENT_HOST}
-      - API_KEY=${SMS_API_KEY}
+      - API_KEY=${MANAGEMENT_API_KEY}
     command:
       - "--transport"
       - "http"
@@ -470,7 +480,7 @@ services:
     entrypoint: ["/usr/local/bin/threat-prevention-mcp"]
     environment:
       - MANAGEMENT_HOST=${MANAGEMENT_HOST}
-      - API_KEY=${SMS_API_KEY}
+      - API_KEY=${MANAGEMENT_API_KEY}
     command:
       - "--transport"
       - "http"
@@ -548,7 +558,7 @@ services:
     entrypoint: ["/usr/local/bin/quantum-gw-cli-mcp"]
     environment:
       - MANAGEMENT_HOST=${MANAGEMENT_HOST}
-      - API_KEY=${SMS_API_KEY}
+      - API_KEY=${MANAGEMENT_API_KEY}
     command:
       - "--transport"
       - "http"
@@ -567,7 +577,7 @@ services:
     entrypoint: ["/usr/local/bin/quantum-gw-connection-analysis-mcp"]
     environment:
       - MANAGEMENT_HOST=${MANAGEMENT_HOST}
-      - API_KEY=${SMS_API_KEY}
+      - API_KEY=${MANAGEMENT_API_KEY}
     command:
       - "--transport"
       - "http"
@@ -586,7 +596,7 @@ services:
     entrypoint: ["/usr/local/bin/quantum-gaia-mcp"]
     environment:
       - MANAGEMENT_HOST=${MANAGEMENT_HOST}
-      - API_KEY=${SMS_API_KEY}
+      - API_KEY=${MANAGEMENT_API_KEY}
     command:
       - "--transport"
       - "http"
@@ -605,7 +615,7 @@ services:
     entrypoint: ["/usr/local/bin/cpinfo-analysis-mcp"]
     environment:
       - MANAGEMENT_HOST=${MANAGEMENT_HOST}
-      - API_KEY=${SMS_API_KEY}
+      - API_KEY=${MANAGEMENT_API_KEY}
       - LOG_LEVEL=${CPINFO_LOG_LEVEL}
     command:
       - "--transport"

@@ -4,33 +4,20 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "={{ $('Message to Inspect').item.json.chatInput }}",
+        "text": "={{ $('When chat message received').item.json.chatInput }}",
         "options": {
-          "systemMessage": "=You are the healthcare assistant in the 'Healthy Habits' app, focused on providing preventive wellness advice."
+          "systemMessage": "=You are the healthcare assistant in the 'Healthy Habits' app, focused on providing preventive wellness advice.",
+          "returnIntermediateSteps": false
         }
       },
-      "id": "de3eb8d8-2fdd-4c07-a1df-063d63a7bb6b",
+      "id": "8b274a02-c0b7-413f-8d82-8a9b65088714",
       "name": "Chat Assistant",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
-        -128,
-        128
+        1232,
+        -320
       ]
-    },
-    {
-      "parameters": {
-        "sessionIdType": "customKey",
-        "sessionKey": "={{ $('Message to Inspect').item.json.sessionId }}"
-      },
-      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
-      "typeVersion": 1.3,
-      "position": [
-        -32,
-        336
-      ],
-      "id": "6843afa1-d3bb-4a3c-a126-d968d8a20537",
-      "name": "Memory"
     },
     {
       "parameters": {
@@ -41,11 +28,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -576,
-        64
+        784,
+        -384
       ],
       "typeVersion": 1,
-      "id": "a943dc02-2282-419a-a929-6e8fea9e4eda",
+      "id": "78964b5b-2ea4-46c1-bf22-981438410d5a",
       "name": "Sticky Note4"
     },
     {
@@ -56,10 +43,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        -64,
-        624
+        1296,
+        192
       ],
-      "id": "17a219b9-504e-4cde-a1ef-fcc5bd44bc6d",
+      "id": "ed518ef7-4f80-4504-99be-4bf9a1d32632",
       "name": "Gemini 2.5 Flash Lite",
       "credentials": {
         "googlePalmApi": {
@@ -77,11 +64,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -576,
-        544
+        784,
+        112
       ],
       "typeVersion": 1,
-      "id": "62fea9aa-0998-4cc0-9770-4d920d9916e1",
+      "id": "2b7e9ff3-937d-4137-86ab-34c667fac58d",
       "name": "Sticky Note"
     },
     {
@@ -100,10 +87,10 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.7,
       "position": [
-        -320,
-        608
+        1040,
+        176
       ],
-      "id": "546d76d7-d978-4a18-9d7d-95c4001b09d1",
+      "id": "feb10b83-19db-4358-9a06-67e607a9f40c",
       "name": "Understanding The Threat"
     },
     {
@@ -115,11 +102,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        272,
-        64
+        1632,
+        -384
       ],
       "typeVersion": 1,
-      "id": "e8637ca7-fb87-4150-b081-306e3ebc8319",
+      "id": "ba097f2f-a9bc-435d-be38-1f2dda12d390",
       "name": "Sticky Note5"
     },
     {
@@ -131,11 +118,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        272,
-        544
+        1632,
+        112
       ],
       "typeVersion": 1,
-      "id": "02760eec-6d8d-44c8-9ec3-5e55b4a3d988",
+      "id": "ce6b6b36-0415-4c9a-b2c5-0d9ad54d43ad",
       "name": "Sticky Note3"
     },
     {
@@ -166,10 +153,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -480,
-        320
+        880,
+        -128
       ],
-      "id": "f3c70a63-8615-4dfc-a08c-251278f45bee",
+      "id": "28577ba3-66b3-429a-90d3-a8adab7ce0fb",
       "name": "Input Screening Flag",
       "alwaysOutputData": false
     },
@@ -181,16 +168,16 @@
         "nodeCredentialType": "httpBearerAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={ \n  \"messages\": [\n    {\"role\": \"user\", \"content\": \"{{ $('Message to Inspect').item.json.chatInput }}\"},\n    {\"role\": \"system\", \"content\": \"You are the healthcare assistant in the 'Healthy Habits' app, focused on providing preventive wellness advice.\"},\n    {\"role\": \"assistant\", \"content\": {{ JSON.stringify($('Chat Assistant').item.json.output) }}}\n  ],\n  \"project_id\": \"project-2503364587\",\n  \"breakdown\" : true\n} ",
+        "jsonBody": "={ \n  \"messages\": [\n    {\"role\": \"user\", \"content\": \"{{ $json.output }}\"},\n    {\"role\": \"system\", \"content\": \"You are the healthcare assistant in the 'Healthy Habits' app, focused on providing preventive wellness advice.\"},\n    {\"role\": \"assistant\", \"content\": {{ JSON.stringify($('Chat Assistant').item.json.output) }}}\n  ],\n  \"project_id\": \"project-2503364587\",\n  \"breakdown\" : true\n} ",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        368,
-        128
+        1728,
+        -320
       ],
-      "id": "47b49e4c-b2bf-4a0b-8ba0-ae8dc435eb9a",
+      "id": "232c693c-9a4b-4d08-b001-9f79d9a3eba8",
       "name": "Lakera Guard Post-LLM",
       "alwaysOutputData": false,
       "credentials": {
@@ -228,10 +215,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        368,
-        336
+        1728,
+        -112
       ],
-      "id": "a29aad1c-6ae2-45b3-917b-431743103d51",
+      "id": "cdd24d8d-87fc-4c9e-8bda-2278bea20ced",
       "name": "Output Screening Flag",
       "alwaysOutputData": false
     },
@@ -249,10 +236,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -480,
-        112
+        880,
+        -336
       ],
-      "id": "11bd607d-2080-48a2-a25d-ba7815b1000f",
+      "id": "7ca246d9-2823-47cd-b1b0-599e6ca754b3",
       "name": "Lakera Guard Pre-LLM",
       "alwaysOutputData": false,
       "credentials": {
@@ -269,10 +256,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -480,
-        608
+        880,
+        176
       ],
-      "id": "1b994ac9-aedf-4b71-b90b-266b470d95ae",
+      "id": "b25b28e1-8f85-4f1f-a636-26098624eea4",
       "name": "Merge Security Flags"
     },
     {
@@ -284,10 +271,10 @@
       "type": "@n8n/n8n-nodes-langchain.chat",
       "typeVersion": 1,
       "position": [
-        384,
-        608
+        1744,
+        176
       ],
-      "id": "a17c3873-c46a-4b70-9e23-f6ae8b91f3f6",
+      "id": "e699eaf2-35f4-4972-a5d5-9468a32ffcf3",
       "name": "Respond to Chat",
       "executeOnce": false,
       "alwaysOutputData": false
@@ -301,10 +288,10 @@
       "type": "@n8n/n8n-nodes-langchain.chat",
       "typeVersion": 1,
       "position": [
-        80,
-        608
+        1440,
+        176
       ],
-      "id": "075af54b-64d7-4121-af69-b3b0892f8087",
+      "id": "c3888222-1c3f-467f-8897-50185d7f3ef3",
       "name": "Explain Block",
       "alwaysOutputData": false
     },
@@ -316,10 +303,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        -176,
-        336
+        1184,
+        -112
       ],
-      "id": "55c5ebc1-379b-4877-8b42-ad024d0a9127",
+      "id": "55b753ec-6782-4b3a-bf72-9ecfd54aa6ea",
       "name": "Gemini 2.5 Flash",
       "credentials": {
         "googlePalmApi": {
@@ -330,32 +317,16 @@
     },
     {
       "parameters": {
-        "options": {
-          "responseMode": "responseNodes"
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
-      "typeVersion": 1.3,
-      "position": [
-        -832,
-        112
-      ],
-      "id": "44a05e95-0f2e-4967-a961-ed3d0fa2ce77",
-      "name": "Message to Inspect",
-      "webhookId": "b7288efb-0f1f-4257-b763-5bef575a680c"
-    },
-    {
-      "parameters": {
         "endpointUrl": "http://mcp-management-logs:3003",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        112,
-        336
+        1472,
+        -112
       ],
-      "id": "11ba2364-cbff-4b8d-80ac-caa1784b48ca",
+      "id": "b24a671e-8ab6-4a56-aa3b-1783c106269e",
       "name": "MCP Client"
     },
     {
@@ -367,11 +338,11 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -1056,
-        480
+        304,
+        48
       ],
       "typeVersion": 1,
-      "id": "53dc0375-0ccb-4629-9416-d74e3ef56eb0",
+      "id": "d5d0d35b-8a3d-4b4a-b529-d5d3582fa9b7",
       "name": "Sticky Note1"
     },
     {
@@ -383,12 +354,39 @@
       },
       "type": "n8n-nodes-base.stickyNote",
       "position": [
-        -1056,
-        304
+        304,
+        -144
       ],
       "typeVersion": 1,
-      "id": "06553c07-4559-43d6-8b0e-002e101068bc",
+      "id": "02d55928-5a83-4b9e-adc5-66ca640a6d9a",
       "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseMode": "responseNodes"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        480,
+        -336
+      ],
+      "id": "cd539396-a69b-442d-ba6a-762f8729f227",
+      "name": "When chat message received",
+      "webhookId": "c334aaa8-9adc-4cf0-a6f6-c6883f7bd257"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1328,
+        -112
+      ],
+      "id": "733743a1-5fdd-479b-9bc6-076d434a5ec0",
+      "name": "Simple Memory"
     }
   ],
   "pinData": {},
@@ -399,17 +397,6 @@
           {
             "node": "Lakera Guard Post-LLM",
             "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Memory": {
-      "ai_memory": [
-        [
-          {
-            "node": "Chat Assistant",
-            "type": "ai_memory",
             "index": 0
           }
         ]
@@ -517,17 +504,6 @@
         ]
       ]
     },
-    "Message to Inspect": {
-      "main": [
-        [
-          {
-            "node": "Lakera Guard Pre-LLM",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "MCP Client": {
       "ai_tool": [
         [
@@ -538,13 +514,35 @@
           }
         ]
       ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Lakera Guard Pre-LLM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Chat Assistant",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "188e4516-a52a-40ab-ba97-a95e67858961",
+  "versionId": "3a1e1698-5133-450e-9be0-5e180a493eff",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec"
