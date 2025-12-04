@@ -24,6 +24,7 @@ ENV VLLM_TARGET_DEVICE=cpu
 # We install directly from the repo to get the latest CPU support
 # This might take 10-20 minutes to build!
 RUN pip install vllm
+RUN pip install --upgrade transformers
 
 # Expose port
 EXPOSE 8000
