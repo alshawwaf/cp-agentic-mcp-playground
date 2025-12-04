@@ -1,6 +1,0 @@
-services:
-  vllm:
-    build:
-      context: ./docker/vllm
-      dockerfile: Dockerfile
-    image: custom-vllm-cpu:latest

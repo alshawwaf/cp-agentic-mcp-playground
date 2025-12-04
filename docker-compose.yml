@@ -205,36 +205,6 @@ services:
       ollama-gpu:
         condition: service_healthy
 
-  # ──────────────── vLLM (OpenAI Compatible) ────────────────
-  vllm:
-    profiles: ["${DEPLOY_VLLM:-true}"]
-    image: ${VLLM_IMAGE:-public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:v0.7.2}
-    container_name: vllm
-    networks: ["demo"]
-    restart: unless-stopped
-    ports:
-      - "${VLLM_PORT}:8000"
-    environment:
-      - HUGGING_FACE_HUB_CACHE=/root/.cache/huggingface
-      
-      - HF_TOKEN=${HF_TOKEN}
-      - VLLM_TARGET_DEVICE=cpu
-    volumes:
-      - vllm_storage:/root/.cache/huggingface
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
-    command: ["--model", "${VLLM_MODEL}", "--device", "cpu", "--dtype", "half"]
-    ipc: host
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
 
   # ──────────────── n8n ────────────────
   n8n:
