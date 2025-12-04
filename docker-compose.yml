@@ -207,7 +207,7 @@ services:
 
   # ──────────────── vLLM (OpenAI Compatible) ────────────────
   vllm:
-    profiles: ["cpu"]
+    profiles: ["${DEPLOY_VLLM:-true}"]
     image: ${VLLM_IMAGE:-public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:v0.7.2}
     container_name: vllm
     networks: ["demo"]
@@ -333,6 +333,7 @@ services:
 
   # ──────────────── Flowise ────────────────
   flowise:
+    profiles: ["${DEPLOY_FLOWISE:-false}"]
     image: flowiseai/flowise
     container_name: flowise
     networks: ["demo"]
@@ -379,7 +380,7 @@ services:
 
   # ──────────────── Langflow ────────────────
   langflow:
-    profiles: ["cpu"]
+    profiles: ["${DEPLOY_LANGFLOW:-false}"]
     image: langflowai/langflow:latest
     container_name: langflow
     networks: ["demo"]
