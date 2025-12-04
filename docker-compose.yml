@@ -208,7 +208,7 @@ services:
   # ──────────────── vLLM (OpenAI Compatible) ────────────────
   vllm:
     profiles: ["cpu"]
-    image: ${VLLM_IMAGE:-public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:v0.6.3.post1}
+    image: ${VLLM_IMAGE:-public.ecr.aws/q9t5s3a7/vllm-cpu-release-repo:v0.7.2}
     container_name: vllm
     networks: ["demo"]
     restart: unless-stopped
