@@ -24,7 +24,7 @@ ENV VLLM_TARGET_DEVICE=cpu
 # We install directly from the repo to get the latest CPU support
 # This might take 10-20 minutes to build!
 RUN pip install vllm --no-binary vllm
-RUN pip install --upgrade transformers
+RUN pip install git+https://github.com/huggingface/transformers.git
 
 # Expose port
 EXPOSE 8000
