@@ -276,7 +276,6 @@
       ],
       "id": "e699eaf2-35f4-4972-a5d5-9468a32ffcf3",
       "name": "Respond to Chat",
-      "executeOnce": false,
       "alwaysOutputData": false
     },
     {
