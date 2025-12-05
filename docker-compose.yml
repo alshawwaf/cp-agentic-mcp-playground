@@ -101,13 +101,14 @@ x-init-ollama: &init-ollama
         sleep 3
       done
       echo "Ollama is ready. Pulling models…"
-      # OLLAMA_HOST="$OLLAMA_HOST" ollama pull mistral-nemo:latest
-      # NOTE: change this to a real model in the Ollama library if needed
+      OLLAMA_HOST="$OLLAMA_HOST" ollama pull huihui_ai/qwen3-abliterated
+      OLLAMA_HOST="$OLLAMA_HOST" ollama pull mannix/llama3.1-8b-abliterated
+      # OLLAMA_HOST="$OLLAMA_HOST" ollama pull huihui_ai/gpt-oss-abliterated
       OLLAMA_HOST="$OLLAMA_HOST" ollama pull gpt-oss:20b-cloud
       OLLAMA_HOST="$OLLAMA_HOST" ollama pull kimi-k2-thinking:cloud
       OLLAMA_HOST="$OLLAMA_HOST" ollama pull minimax-m2:cloud
       echo "LLM Models pulled successfully!!!"
-      echo "Cloud LLMs require Ollama signin to link this environment o your account for billing (free @Nov20209)"
+      echo "Cloud LLMs require Ollama signin to link this environment o your account for billing (free @Nov2025)"
       ollama signin
 
 ###############################################################################
@@ -151,6 +152,7 @@ services:
       - ollama_storage:/root/.ollama
     environment:
       - OLLAMA_HOST=http://ollama-cpu:11434
+      - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE}
     healthcheck:
       # simple: check that the daemon responds
       test:
@@ -168,6 +170,7 @@ services:
     container_name: ollama-gpu
     environment:
       - OLLAMA_HOST=http://ollama-gpu:11434
+      - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE}
     deploy:
       resources:
         reservations:

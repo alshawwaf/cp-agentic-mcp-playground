@@ -168,7 +168,7 @@
         "nodeCredentialType": "httpBearerAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={ \n  \"messages\": [\n    {\"role\": \"user\", \"content\": \"{{ $json.output }}\"},\n    {\"role\": \"system\", \"content\": \"You are the healthcare assistant in the 'Healthy Habits' app, focused on providing preventive wellness advice.\"},\n    {\"role\": \"assistant\", \"content\": {{ JSON.stringify($('Chat Assistant').item.json.output) }}}\n  ],\n  \"project_id\": \"project-2503364587\",\n  \"breakdown\" : true\n} ",
+        "jsonBody": "={ \n  \"messages\": [\n    {\"role\": \"user\", \"content\": {{ JSON.stringify($json.output) }}},\n    {\"role\": \"system\", \"content\": \"You are the healthcare assistant in the 'Healthy Habits' app, focused on providing preventive wellness advice.\"},\n    {\"role\": \"assistant\", \"content\": {{ JSON.stringify($('Chat Assistant').item.json.output) }}}\n  ],\n  \"project_id\": \"project-2503364587\",\n  \"breakdown\" : true\n} ",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -230,7 +230,7 @@
         "nodeCredentialType": "httpBearerAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={ \n  \"messages\": [\n    {\"role\": \"user\", \"content\": \"{{ $json.chatInput }}\"}\n  ],\n  \"project_id\": \"project-2503364587\",\n  \"breakdown\" : true\n} ",
+        "jsonBody": "={ \n  \"messages\": [\n    {\"role\": \"user\", \"content\": {{ JSON.stringify($json.chatInput) }}}\n  ],\n  \"project_id\": \"project-2503364587\",\n  \"breakdown\" : true\n} ",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
