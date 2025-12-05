@@ -362,9 +362,8 @@
     },
     {
       "parameters": {
-        "options": {
-          "responseMode": "responseNodes"
-        }
+        "options": {},
+        "responseMode": "responseNodes"
       },
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.4,
