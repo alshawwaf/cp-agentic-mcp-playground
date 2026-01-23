@@ -1,16 +1,14 @@
-FROM n8nio/n8n:latest
+## ============== BUILD STAGE ==============
+FROM node:20-alpine AS builder
 
-# ---------- Base tools ----------
-USER root
+# Install build tools
 RUN apk add --no-cache git ca-certificates bash
 
-# ---------- Build all MCP servers from local source ----------
+# Copy MCP source and build
 COPY mcp-src /opt/mcp-servers
+WORKDIR /opt/mcp-servers
 
 RUN set -eux; \
-  chown -R node:node /opt/mcp-servers; \
-  cd /opt/mcp-servers; \
-  # Install dependencies and build
   export NODE_ENV=development npm_config_production=false; \
   npm install; \
   npx nx run-many --target=build --all --parallel=1; \
@@ -23,24 +21,23 @@ RUN set -eux; \
   mv *.tgz /opt/artifacts/; \
   cd ../..; \
   fi; \
-  done; \
-  chown -R node:node /opt/artifacts
+  done
 
-# ---------- make target dir as root, then hand it to node ----------
-RUN mkdir -p /opt/mcp-doc && chown -R node:node /opt/mcp-doc
+# Install MCP CLIs
+WORKDIR /opt/mcp-doc
+RUN npm init -y >/dev/null 2>&1 && \
+  npm install --omit=dev /opt/artifacts/*.tgz
 
-# ---------- Install all MCP CLIs as node ----------
-USER node
-RUN set -eux; \
-  cd /opt/mcp-doc; \
-  npm init -y >/dev/null 2>&1; \
-  # Install all packed tarballs
-  npm install --omit=dev /opt/artifacts/*.tgz; \
-  # quick sanity check
-  /opt/mcp-doc/node_modules/.bin/documentation-mcp --help >/dev/null
+# ============== FINAL STAGE ==============
+FROM n8nio/n8n:latest
 
-# ---------- Create /usr/local/bin wrappers for ALL of them ----------
 USER root
+
+# Copy built MCP packages from builder
+COPY --from=builder /opt/mcp-doc /opt/mcp-doc
+COPY --from=builder /opt/artifacts /opt/artifacts
+
+# Create wrapper scripts for all MCP CLIs
 RUN set -eux; \
   wrap() { \
   name="$1"; bin="$2"; \
@@ -66,5 +63,8 @@ RUN set -eux; \
   wrap quantum-gaia-mcp quantum-gaia-mcp; \
   wrap cpinfo-analysis-mcp cpinfo-analysis-mcp
 
-# ---------- back to node like the base image ----------
+# Fix ownership
+RUN chown -R node:node /opt/mcp-doc /opt/artifacts
+
+# Back to node user
 USER node
