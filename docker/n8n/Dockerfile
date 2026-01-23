@@ -2,7 +2,7 @@ FROM n8nio/n8n:latest
 
 # ---------- Base tools ----------
 USER root
-RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache git ca-certificates bash
 
 # ---------- Build all MCP servers from local source ----------
 COPY mcp-src /opt/mcp-servers
