@@ -14,7 +14,8 @@
 ###############################################################################
 networks:
   demo:
-
+  dokploy-network:
+    external: true
     ###############################################################################
     # Volumes
     ###############################################################################
@@ -330,7 +331,7 @@ services:
     profiles: [ "cpu" ]
     image: ghcr.io/open-webui/open-webui:main
     container_name: open-webui
-    networks: [ "demo" ]
+    networks: [ "demo", "dokploy-network" ]
     restart: unless-stopped
     ports:
       - "${OPEN_WEBUI_PORT}:8080"
