@@ -340,6 +340,14 @@ services:
       - open-webui:/app/backend/data
       - ./open-webui/pipes/n8n_pipe.py:/app/backend/data/pipes/n8n_pipe.py:ro
 
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.open-webui.rule=Host(`chat.alshawwaf.ca`)"
+      - "traefik.http.routers.open-webui.entrypoints=websecure"
+      - "traefik.http.routers.open-webui.tls.certresolver=letsencrypt"
+      - "traefik.http.services.open-webui.loadbalancer.server.port=8080"
+      - "traefik.docker.network=dokploy-network"
+
     depends_on:
       - ollama-pull-models-cpu
 
