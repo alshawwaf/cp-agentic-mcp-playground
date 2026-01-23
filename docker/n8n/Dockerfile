@@ -2,12 +2,7 @@ FROM n8nio/n8n:latest
 
 # ---------- Base tools ----------
 USER root
-RUN set -eux; \
-  if command -v apt-get >/dev/null 2>&1; then \
-  apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*; \
-  else \
-  apk add --no-cache git ca-certificates bash; \
-  fi
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # ---------- Build all MCP servers from local source ----------
 COPY mcp-src /opt/mcp-servers
