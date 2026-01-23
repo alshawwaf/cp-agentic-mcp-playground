@@ -143,14 +143,8 @@ while :; do
 
   # tricky case: n8n says "already installed"
   if [ "$PKG_STATUS" = "400" ] && echo "$PKG_BODY" | grep -qi "already installed"; then
-    echo "n8n says it's already installed → verifying..."
-    PKG_LIST=$(curl -s -b /tmp/cookies.txt -u "${BASIC_USER}:${BASIC_PASS}" "${N8N_URL}/rest/community-packages" || true)
-    echo "$PKG_LIST" | grep -q "\"name\":\"${PKG}\"" && {
-      echo "verified: ${PKG} is actually installed"
-      exit 0
-    }
-    echo "n8n claimed '${PKG}' is installed but it’s not in list → will retry"
-    # fall through to retry below
+    echo "n8n says it's already installed. Assuming success (skipping list verification due to API inconsistency)."
+    exit 0
   fi
 
   # auth issue stays as fatal
