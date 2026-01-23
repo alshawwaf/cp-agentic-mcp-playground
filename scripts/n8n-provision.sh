@@ -100,6 +100,11 @@ while :; do
 
   [ "$LOGIN_STATUS" = "200" ] && { echo "login OK!!!!"; break; }
 
+  # Handle rate limiting with longer wait
+  [ "$LOGIN_STATUS" = "429" ] && {
+    [ "$login_tries" -ge 10 ] && { echo "login failed repeatedly (rate limited)"; exit 1; }
+    echo "login: rate limited (429), wait 30s..."; sleep 30; continue; }
+
   [ "$login_tries" -ge 60 ] && { echo "login failed repeatedly"; exit 1; }
   echo "login got ${LOGIN_STATUS}, wait 3s..."; sleep 3
 done
