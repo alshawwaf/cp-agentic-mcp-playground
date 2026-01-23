@@ -15,9 +15,9 @@
 networks:
   demo:
 
-###############################################################################
-# Volumes
-###############################################################################
+    ###############################################################################
+    # Volumes
+    ###############################################################################
 volumes:
   n8n_storage:
   postgres_storage:
@@ -28,14 +28,14 @@ volumes:
   langflow:
   vllm_storage:
 
-###############################################################################
-# Common Service Definitions (Anchors)
-###############################################################################
+    ###############################################################################
+    # Common Service Definitions (Anchors)
+    ###############################################################################
 
-# ──────────────── n8n Base ────────────────
+    # ──────────────── n8n Base ────────────────
 x-n8n: &service-n8n
   image: n8nio/n8n:latest
-  networks: ["demo"]
+  networks: [ "demo" ]
   environment:
     - DB_TYPE=postgresdb
     - DB_POSTGRESDB_HOST=postgres
@@ -69,7 +69,7 @@ x-n8n: &service-n8n
 
 x-ollama: &service-ollama
   image: ollama/ollama:latest
-  networks: ["demo"]
+  networks: [ "demo" ]
   restart: unless-stopped
   ports:
     - "${OLLAMA_PORT}:11434"
@@ -77,11 +77,7 @@ x-ollama: &service-ollama
     - ollama_storage:/root/.ollama
   # ensure the daemon is actually ready before dependents run
   healthcheck:
-    test:
-      [
-        "CMD-SHELL",
-        "OLLAMA_HOST=http://127.0.0.1:11434 ollama list >/dev/null 2>&1",
-      ]
+    test: [ "CMD-SHELL", "OLLAMA_HOST=http://127.0.0.1:11434 ollama list >/dev/null 2>&1" ]
     interval: 5s
     timeout: 5s
     retries: 20
@@ -89,7 +85,7 @@ x-ollama: &service-ollama
 # ──────────────── Ollama Model Puller ────────────────
 x-init-ollama: &init-ollama
   image: ollama/ollama:latest
-  networks: ["demo"]
+  networks: [ "demo" ]
   volumes:
     - ollama_storage:/root/.ollama
   entrypoint: /bin/sh
@@ -122,7 +118,7 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: postgres
-    networks: ["demo"]
+    networks: [ "demo" ]
     restart: unless-stopped
     ports:
       - "${POSTGRES_PORT}:5432"
@@ -133,21 +129,17 @@ services:
     volumes:
       - postgres_storage:/var/lib/postgresql/data
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}",
-        ]
+      test: [ "CMD-SHELL", "pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 5s
       timeout: 5s
       retries: 10
 
   # ──────────────── Ollama CPU/GPU ────────────────
   ollama-cpu:
-    profiles: ["cpu"]
+    profiles: [ "cpu" ]
     image: ollama/ollama:latest
     container_name: ollama-cpu
-    networks: ["demo"]
+    networks: [ "demo" ]
     restart: unless-stopped
     ports:
       - "${OLLAMA_PORT}:11434"
@@ -158,17 +150,13 @@ services:
       - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE}
     healthcheck:
       # simple: check that the daemon responds
-      test:
-        [
-          "CMD-SHELL",
-          "OLLAMA_HOST=http://127.0.0.1:11434 ollama list >/dev/null 2>&1",
-        ]
+      test: [ "CMD-SHELL", "OLLAMA_HOST=http://127.0.0.1:11434 ollama list >/dev/null 2>&1" ]
       interval: 5s
       timeout: 5s
       retries: 20
 
   ollama-gpu:
-    profiles: ["gpu-nvidia"]
+    profiles: [ "gpu-nvidia" ]
     <<: *service-ollama
     container_name: ollama-gpu
     environment:
@@ -180,14 +168,14 @@ services:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
+              capabilities: [ gpu ]
 
   # ──────────────── Ollama Model Pullers ────────────────
   ollama-pull-models-cpu:
-    profiles: ["cpu"]
+    profiles: [ "cpu" ]
     image: ollama/ollama:latest
     container_name: ollama-pull-models-cpu
-    networks: ["demo"]
+    networks: [ "demo" ]
     volumes:
       - ollama_storage:/root/.ollama
     environment:
@@ -213,7 +201,7 @@ services:
         tail -f /dev/null
 
   ollama-pull-models-gpu:
-    profiles: ["gpu-nvidia"]
+    profiles: [ "gpu-nvidia" ]
     <<: *init-ollama
     container_name: ollama-pull-models-gpu
     environment:
@@ -231,6 +219,8 @@ services:
       dockerfile: Dockerfile
     image: custom-mcp-n8n:custom
     restart: unless-stopped
+    networks:
+      - demo
     ports:
       - "${N8N_PORT}:5678"
     volumes:
@@ -239,13 +229,14 @@ services:
       - ./n8n/shared:/data/shared
       - ./n8n/custom-nodes:/home/node/.n8n/custom
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
   # ──────────────── n8n PROVISIONER (owner + login + MCP install) ────────────────
   n8n-provision:
     image: curlimages/curl:8.9.1
     container_name: n8n-provision
-    networks: ["demo"]
+    networks: [ "demo" ]
     depends_on:
       - n8n
     volumes:
@@ -263,14 +254,14 @@ services:
       # must match n8n basic auth above
       - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
       - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
-    command: ["sh", "/scripts/n8n-provision.sh"]
+    command: [ "sh", "/scripts/n8n-provision.sh" ]
     restart: "no"
 
   # ──────────────── n8n Import Utility ────────────────
   n8n-import:
     image: n8nio/n8n:latest
     container_name: n8n-import
-    networks: ["demo"]
+    networks: [ "demo" ]
     entrypoint: /bin/sh
     command:
       - "-c"
@@ -319,10 +310,10 @@ services:
 
   # ──────────────── Flowise ────────────────
   flowise:
-    profiles: ["${DEPLOY_FLOWISE:-false}"]
+    profiles: [ "${DEPLOY_FLOWISE:-false}" ]
     image: flowiseai/flowise
     container_name: flowise
-    networks: ["demo"]
+    networks: [ "demo" ]
     restart: unless-stopped
     environment:
       - PORT=${FLOWISE_PORT}
@@ -336,10 +327,10 @@ services:
 
   # ──────────────── Open WebUI ────────────────
   open-webui:
-    profiles: ["cpu"]
+    profiles: [ "cpu" ]
     image: ghcr.io/open-webui/open-webui:main
     container_name: open-webui
-    networks: ["demo"]
+    networks: [ "demo" ]
     restart: unless-stopped
     ports:
       - "${OPEN_WEBUI_PORT}:8080"
@@ -356,7 +347,7 @@ services:
   qdrant:
     image: qdrant/qdrant
     container_name: qdrant
-    networks: ["demo"]
+    networks: [ "demo" ]
     restart: unless-stopped
     ports:
       - "${QDRANT_PORT}:6333"
@@ -366,10 +357,10 @@ services:
 
   # ──────────────── Langflow ────────────────
   langflow:
-    profiles: ["${DEPLOY_LANGFLOW:-false}"]
+    profiles: [ "${DEPLOY_LANGFLOW:-false}" ]
     image: langflowai/langflow:latest
     container_name: langflow
-    networks: ["demo"]
+    networks: [ "demo" ]
     restart: unless-stopped
     ports:
       - "${LANGFLOW_PORT}:7860"
@@ -382,10 +373,10 @@ services:
   mcp-documentation:
     image: custom-mcp-n8n:custom
     container_name: mcp-documentation
-    networks: ["demo"]
+    networks: [ "demo" ]
     depends_on:
       - n8n
-    entrypoint: ["/usr/local/bin/mcp-documentation"]
+    entrypoint: [ "/usr/local/bin/mcp-documentation" ]
     environment:
       - CLIENT_ID=${DOC_CLIENT_ID}
       - SECRET_KEY=${DOC_SECRET_KEY}
@@ -403,10 +394,10 @@ services:
   mcp-https-inspection:
     image: custom-mcp-n8n:custom
     container_name: mcp-https-inspection
-    networks: ["demo"]
+    networks: [ "demo" ]
     depends_on:
       - n8n
-    entrypoint: ["/usr/local/bin/mcp-https-inspection"]
+    entrypoint: [ "/usr/local/bin/mcp-https-inspection" ]
     environment:
       - MANAGEMENT_HOST=${MANAGEMENT_HOST}
       - API_KEY=${MANAGEMENT_API_KEY}
@@ -422,10 +413,10 @@ services:
   mcp-quantum-management:
     image: custom-mcp-n8n:custom
     container_name: mcp-quantum-management
-    networks: ["demo"]
+    networks: [ "demo" ]
     depends_on:
       - n8n
-    entrypoint: ["/usr/local/bin/mcp-quantum-management"]
+    entrypoint: [ "/usr/local/bin/mcp-quantum-management" ]
     environment:
       - MANAGEMENT_HOST=${MANAGEMENT_HOST}
       - API_KEY=${MANAGEMENT_API_KEY}
@@ -441,10 +432,10 @@ services:
   mcp-management-logs:
     image: custom-mcp-n8n:custom
     container_name: mcp-management-logs
-    networks: ["demo"]
+    networks: [ "demo" ]
     depends_on:
       - n8n
-    entrypoint: ["/usr/local/bin/mcp-management-logs"]
+    entrypoint: [ "/usr/local/bin/mcp-management-logs" ]
     environment:
       - MANAGEMENT_HOST=${MANAGEMENT_HOST}
       - API_KEY=${MANAGEMENT_API_KEY}
@@ -460,12 +451,12 @@ services:
   threat-emulation-mcp:
     image: custom-mcp-n8n:custom
     container_name: threat-emulation-mcp
-    networks: ["demo"]
+    networks: [ "demo" ]
     volumes:
       - ./n8n/shared:/data/shared
     depends_on:
       - n8n
-    entrypoint: ["/usr/local/bin/threat-emulation-mcp"]
+    entrypoint: [ "/usr/local/bin/threat-emulation-mcp" ]
     environment:
       - API_KEY=${TE_API_KEY}
     command:
@@ -480,10 +471,10 @@ services:
   threat-prevention-mcp:
     image: custom-mcp-n8n:custom
     container_name: threat-prevention-mcp
-    networks: ["demo"]
+    networks: [ "demo" ]
     depends_on:
       - n8n
-    entrypoint: ["/usr/local/bin/threat-prevention-mcp"]
+    entrypoint: [ "/usr/local/bin/threat-prevention-mcp" ]
     environment:
       - MANAGEMENT_HOST=${MANAGEMENT_HOST}
       - API_KEY=${MANAGEMENT_API_KEY}
@@ -499,10 +490,10 @@ services:
   spark-management-mcp:
     image: custom-mcp-n8n:custom
     container_name: spark-management-mcp
-    networks: ["demo"]
+    networks: [ "demo" ]
     depends_on:
       - n8n
-    entrypoint: ["/usr/local/bin/spark-management-mcp"]
+    entrypoint: [ "/usr/local/bin/spark-management-mcp" ]
     environment:
       - CLIENT_ID=${SPARK_MGMT_CLIENT_ID}
       - SECRET_KEY=${SPARK_MGMT_SECRET_KEY}
@@ -520,10 +511,10 @@ services:
   reputation-service-mcp:
     image: custom-mcp-n8n:custom
     container_name: reputation-service-mcp
-    networks: ["demo"]
+    networks: [ "demo" ]
     depends_on:
       - n8n
-    entrypoint: ["/usr/local/bin/reputation-service-mcp"]
+    entrypoint: [ "/usr/local/bin/reputation-service-mcp" ]
     environment:
       - API_KEY=${REPUTATION_API_KEY}
     command:
@@ -538,10 +529,10 @@ services:
   harmony-sase-mcp:
     image: custom-mcp-n8n:custom
     container_name: harmony-sase-mcp
-    networks: ["demo"]
+    networks: [ "demo" ]
     depends_on:
       - n8n
-    entrypoint: ["/usr/local/bin/harmony-sase-mcp"]
+    entrypoint: [ "/usr/local/bin/harmony-sase-mcp" ]
     environment:
       - API_KEY=${HARMONY_SASE_API_KEY}
       - MANAGEMENT_HOST=${HARMONY_SASE_MANAGEMENT_HOST}
@@ -558,10 +549,10 @@ services:
   quantum-gw-cli-mcp:
     image: custom-mcp-n8n:custom
     container_name: quantum-gw-cli-mcp
-    networks: ["demo"]
+    networks: [ "demo" ]
     depends_on:
       - n8n
-    entrypoint: ["/usr/local/bin/quantum-gw-cli-mcp"]
+    entrypoint: [ "/usr/local/bin/quantum-gw-cli-mcp" ]
     environment:
       - MANAGEMENT_HOST=${MANAGEMENT_HOST}
       - API_KEY=${MANAGEMENT_API_KEY}
@@ -577,10 +568,10 @@ services:
   quantum-gw-connection-analysis-mcp:
     image: custom-mcp-n8n:custom
     container_name: quantum-gw-connection-analysis-mcp
-    networks: ["demo"]
+    networks: [ "demo" ]
     depends_on:
       - n8n
-    entrypoint: ["/usr/local/bin/quantum-gw-connection-analysis-mcp"]
+    entrypoint: [ "/usr/local/bin/quantum-gw-connection-analysis-mcp" ]
     environment:
       - MANAGEMENT_HOST=${MANAGEMENT_HOST}
       - API_KEY=${MANAGEMENT_API_KEY}
@@ -596,10 +587,10 @@ services:
   quantum-gaia-mcp:
     image: custom-mcp-n8n:custom
     container_name: quantum-gaia-mcp
-    networks: ["demo"]
+    networks: [ "demo" ]
     depends_on:
       - n8n
-    entrypoint: ["/usr/local/bin/quantum-gaia-mcp"]
+    entrypoint: [ "/usr/local/bin/quantum-gaia-mcp" ]
     environment:
       - MANAGEMENT_HOST=${MANAGEMENT_HOST}
       - API_KEY=${MANAGEMENT_API_KEY}
@@ -615,10 +606,10 @@ services:
   cpinfo-analysis-mcp:
     image: custom-mcp-n8n:custom
     container_name: cpinfo-analysis-mcp
-    networks: ["demo"]
+    networks: [ "demo" ]
     depends_on:
       - n8n
-    entrypoint: ["/usr/local/bin/cpinfo-analysis-mcp"]
+    entrypoint: [ "/usr/local/bin/cpinfo-analysis-mcp" ]
     environment:
       - MANAGEMENT_HOST=${MANAGEMENT_HOST}
       - API_KEY=${MANAGEMENT_API_KEY}
