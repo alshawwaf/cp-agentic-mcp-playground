@@ -279,7 +279,7 @@ services:
         done
 
         echo "Importing n8n credentials & workflows..."
-        n8n import:credentials --separate --input=/backup/credentials && \
+        n8n import:credentials --separate --input=/backup/credentials_public && \
         n8n import:workflow --separate --input=/backup/workflows
 
         echo "N8N Import completed!!!"
