@@ -195,8 +195,8 @@ services:
           sleep 3
         done
         echo "Ollama is up. Pulling models..."
-        OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull gpt-oss:20b-cloud
-        OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull mistral-nemo:latest
+        #OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull gpt-oss:20b-cloud
+        #OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull mistral-nemo:latest
         echo "All models pulled!!!"
         # keep the container alive so logs stay visible
         tail -f /dev/null
