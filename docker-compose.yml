@@ -319,7 +319,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      - ~/.flowise:/root/.flowise
+      - ./flowise_data:/root/.flowise
     entrypoint: /bin/sh -c "sleep 5; flowise start"
 
   # ──────────────── Open WebUI ────────────────
