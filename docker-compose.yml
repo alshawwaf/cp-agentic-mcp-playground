@@ -23,7 +23,6 @@ volumes:
   n8n_storage:
   postgres_storage:
   ollama_storage:
-  qdrant_storage:
   open-webui:
   flowise:
   langflow:
@@ -137,7 +136,6 @@ services:
 
   # ──────────────── Ollama CPU/GPU ────────────────
   ollama-cpu:
-    profiles: [ "cpu" ]
     image: ollama/ollama:latest
     container_name: ollama-cpu
     networks: [ "demo" ]
@@ -173,7 +171,6 @@ services:
 
   # ──────────────── Ollama Model Pullers ────────────────
   ollama-pull-models-cpu:
-    profiles: [ "cpu" ]
     image: ollama/ollama:latest
     container_name: ollama-pull-models-cpu
     networks: [ "demo" ]
@@ -311,7 +308,6 @@ services:
 
   # ──────────────── Flowise ────────────────
   flowise:
-    profiles: [ "${DEPLOY_FLOWISE:-false}" ]
     image: flowiseai/flowise
     container_name: flowise
     networks: [ "demo" ]
@@ -328,7 +324,6 @@ services:
 
   # ──────────────── Open WebUI ────────────────
   open-webui:
-    profiles: [ "cpu" ]
     image: ghcr.io/open-webui/open-webui:main
     container_name: open-webui
     networks: [ "demo", "dokploy-network" ]
@@ -352,21 +347,8 @@ services:
     depends_on:
       - ollama-pull-models-cpu
 
-  # ──────────────── Qdrant ────────────────
-  qdrant:
-    image: qdrant/qdrant
-    container_name: qdrant
-    networks: [ "demo" ]
-    restart: unless-stopped
-    ports:
-      - "${QDRANT_PORT}:6333"
-    volumes:
-      - qdrant_storage:/qdrant/storage
-      - ./quadrant/backup:/backup
-
   # ──────────────── Langflow ────────────────
   langflow:
-    profiles: [ "${DEPLOY_LANGFLOW:-false}" ]
     image: langflowai/langflow:latest
     container_name: langflow
     networks: [ "demo" ]
