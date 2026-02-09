@@ -229,6 +229,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:5678/healthz || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
 
   # ──────────────── n8n PROVISIONER (owner + login + MCP install) ────────────────
   n8n-provision:
@@ -236,7 +242,8 @@ services:
     container_name: n8n-provision
     networks: [ "demo" ]
     depends_on:
-      - n8n
+      n8n:
+        condition: service_healthy
     volumes:
       - ./scripts:/scripts:ro
     environment:
