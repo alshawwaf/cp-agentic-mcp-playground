@@ -7,6 +7,7 @@
 # - Open-WebUI (AI chat interface)
 # - Flowise (LLM orchestration UI)
 # - Qdrant (vector database)
+# - AI-Infra-Guard (AI Red Teaming platform)
 ###############################################################################
 
 ###############################################################################
@@ -27,6 +28,10 @@ volumes:
   flowise:
   langflow:
   vllm_storage:
+  aig_data:
+  aig_db:
+  aig_logs:
+  aig_uploads:
 
     ###############################################################################
     # Common Service Definitions (Anchors)
@@ -93,22 +98,17 @@ x-init-ollama: &init-ollama
     - "-lc"
     - |
       set -e
-      echo "Waiting for Ollama @ $OLLAMA_HOST ..."
+      echo "Waiting for Ollama @ $${OLLAMA_HOST} ..."
       # loop until the server responds
-      until OLLAMA_HOST="$OLLAMA_HOST" ollama list >/dev/null 2>&1; do
+      until OLLAMA_HOST="$${OLLAMA_HOST}" ollama list >/dev/null 2>&1; do
         echo "  Ollama not ready yet..."
         sleep 3
       done
-      echo "Ollama is ready. Pulling models…"
-      OLLAMA_HOST="$OLLAMA_HOST" ollama pull huihui_ai/qwen3-abliterated
-      OLLAMA_HOST="$OLLAMA_HOST" ollama pull mannix/llama3.1-8b-abliterated
-      # OLLAMA_HOST="$OLLAMA_HOST" ollama pull huihui_ai/gpt-oss-abliterated
-      OLLAMA_HOST="$OLLAMA_HOST" ollama pull gpt-oss:20b-cloud
-      OLLAMA_HOST="$OLLAMA_HOST" ollama pull kimi-k2-thinking:cloud
-      OLLAMA_HOST="$OLLAMA_HOST" ollama pull minimax-m2:cloud
+      echo "Ollama is ready. Pulling models..."
+      OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull huihui_ai/foundation-sec-abliterated:latest
       echo "LLM Models pulled successfully!!!"
-      echo "Cloud LLMs require Ollama signin to link this environment o your account for billing (free @Nov2025)"
-      ollama signin
+      # keep the container alive so logs stay visible
+      tail -f /dev/null
 
 ###############################################################################
 # Services
@@ -145,11 +145,10 @@ services:
     volumes:
       - ollama_storage:/root/.ollama
     environment:
-      - OLLAMA_HOST=http://ollama-cpu:11434
+      - OLLAMA_HOST=0.0.0.0:11434
       - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE}
     healthcheck:
-      # simple: check that the daemon responds
-      test: [ "CMD-SHELL", "OLLAMA_HOST=http://127.0.0.1:11434 ollama list >/dev/null 2>&1" ]
+      test: [ "CMD-SHELL", "ollama list >/dev/null 2>&1" ]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -159,7 +158,7 @@ services:
     <<: *service-ollama
     container_name: ollama-gpu
     environment:
-      - OLLAMA_HOST=http://ollama-gpu:11434
+      - OLLAMA_HOST=0.0.0.0:11434
       - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE}
     deploy:
       resources:
@@ -192,8 +191,7 @@ services:
           sleep 3
         done
         echo "Ollama is up. Pulling models..."
-        #OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull gpt-oss:20b-cloud
-        #OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull mistral-nemo:latest
+        OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull huihui_ai/foundation-sec-abliterated:latest
         echo "All models pulled!!!"
         # keep the container alive so logs stay visible
         tail -f /dev/null
@@ -342,10 +340,12 @@ services:
     volumes:
       - open-webui:/app/backend/data
       - ./open-webui/pipes/n8n_pipe.py:/app/backend/data/pipes/n8n_pipe.py:ro
+    environment:
+      - OLLAMA_BASE_URL=http://ollama-cpu:11434
 
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.open-webui.rule=Host(`chat.alshawwaf.ca`)"
+      - "traefik.http.routers.open-webui.rule=Host(`chat.{{DOMAIN}}`)"
       - "traefik.http.routers.open-webui.entrypoints=websecure"
       - "traefik.http.routers.open-webui.tls.certresolver=letsencrypt"
       - "traefik.http.services.open-webui.loadbalancer.server.port=8080"
@@ -622,3 +622,57 @@ services:
     volumes:
       - ./n8n/shared:/data/cpinfo
     restart: unless-stopped
+
+  # ──────────────── AI-Infra-Guard (AI Red Teaming Platform) ────────────────
+  # Tencent Zhuque Lab - AI infrastructure vuln scanning, MCP security
+  # analysis, and jailbreak evaluation. Web UI at port 8088.
+  # https://github.com/Tencent/AI-Infra-Guard
+  aig-webserver:
+    build:
+      context: https://github.com/Tencent/AI-Infra-Guard.git
+      dockerfile: Dockerfile
+    container_name: aig-webserver
+    networks: [ "demo", "dokploy-network" ]
+    restart: unless-stopped
+    ports:
+      - "${AIG_PORT:-8088}:8088"
+    environment:
+      - AIG_ENV=production
+      - AIG_UPLOAD_DIR=/app/uploads
+      - AIG_DB_PATH=/app/database
+      - TZ=UTC
+    volumes:
+      - aig_data:/app/data
+      - aig_db:/app/database
+      - aig_logs:/app/logs
+      - aig_uploads:/app/uploads
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8088/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.aig.rule=Host(`aig.{{DOMAIN}}`)"
+      - "traefik.http.routers.aig.entrypoints=websecure"
+      - "traefik.http.routers.aig.tls.certresolver=letsencrypt"
+      - "traefik.http.services.aig.loadbalancer.server.port=8088"
+      - "traefik.docker.network=dokploy-network"
+
+  aig-agent:
+    build:
+      context: https://github.com/Tencent/AI-Infra-Guard.git
+      dockerfile: Dockerfile_Agent
+    container_name: aig-agent
+    networks: [ "demo" ]
+    restart: unless-stopped
+    environment:
+      - AIG_SERVER=aig-webserver:8088
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp=unconfined
+    shm_size: "2gb"
+    depends_on:
+      aig-webserver:
+        condition: service_healthy
