@@ -76,8 +76,6 @@ x-ollama: &service-ollama
   image: ollama/ollama:latest
   networks: [ "demo" ]
   restart: unless-stopped
-  ports:
-    - "${OLLAMA_PORT}:11434"
   volumes:
     - ollama_storage:/root/.ollama
   # ensure the daemon is actually ready before dependents run
@@ -120,8 +118,6 @@ services:
     container_name: postgres
     networks: [ "demo" ]
     restart: unless-stopped
-    ports:
-      - "${POSTGRES_PORT}:5432"
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -140,8 +136,6 @@ services:
     container_name: ollama-cpu
     networks: [ "demo" ]
     restart: unless-stopped
-    ports:
-      - "${OLLAMA_PORT}:11434"
     volumes:
       - ollama_storage:/root/.ollama
     environment:
@@ -217,8 +211,6 @@ services:
     restart: unless-stopped
     networks:
       - demo
-    ports:
-      - "${N8N_PORT}:5678"
     volumes:
       - n8n_storage:/home/node/.n8n
       - ./n8n/backup:/backup
@@ -319,8 +311,6 @@ services:
     restart: unless-stopped
     environment:
       - PORT=${FLOWISE_PORT}
-    ports:
-      - "${FLOWISE_PORT}:${FLOWISE_PORT}"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -333,8 +323,6 @@ services:
     container_name: open-webui
     networks: [ "demo", "dokploy-network" ]
     restart: unless-stopped
-    ports:
-      - "${OPEN_WEBUI_PORT}:8080"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -360,8 +348,9 @@ services:
     container_name: langflow
     networks: [ "demo" ]
     restart: unless-stopped
-    ports:
-      - "${LANGFLOW_PORT}:7860"
+    environment:
+      - LANGFLOW_AUTO_LOGIN=false
+      - LANGFLOW_SUPERUSER_AUTO_LOGIN=false
     volumes:
       - ./langflow/flows:/app/flows
     depends_on:
@@ -384,9 +373,6 @@ services:
       - "http"
       - "--transport-port"
       - "3000"
-
-    ports:
-      - "7300:3000"
     restart: unless-stopped
 
   mcp-https-inspection:
@@ -404,8 +390,6 @@ services:
       - "http"
       - "--transport-port"
       - "3001"
-    ports:
-      - "7301:3001"
     restart: unless-stopped
 
   mcp-quantum-management:
@@ -423,8 +407,6 @@ services:
       - "http"
       - "--transport-port"
       - "3002"
-    ports:
-      - "7302:3002"
     restart: unless-stopped
 
   mcp-management-logs:
@@ -442,8 +424,6 @@ services:
       - "http"
       - "--transport-port"
       - "3003"
-    ports:
-      - "7303:3003"
     restart: unless-stopped
 
   threat-emulation-mcp:
@@ -462,8 +442,6 @@ services:
       - "http"
       - "--transport-port"
       - "3004"
-    ports:
-      - "7304:3004"
     restart: unless-stopped
 
   threat-prevention-mcp:
@@ -481,8 +459,6 @@ services:
       - "http"
       - "--transport-port"
       - "3005"
-    ports:
-      - "7305:3005"
     restart: unless-stopped
 
   spark-management-mcp:
@@ -502,8 +478,6 @@ services:
       - "http"
       - "--transport-port"
       - "3006"
-    ports:
-      - "7306:3006"
     restart: unless-stopped
 
   reputation-service-mcp:
@@ -520,8 +494,6 @@ services:
       - "http"
       - "--transport-port"
       - "3007"
-    ports:
-      - "7307:3007"
     restart: unless-stopped
 
   harmony-sase-mcp:
@@ -540,8 +512,6 @@ services:
       - "http"
       - "--transport-port"
       - "3008"
-    ports:
-      - "7308:3008"
     restart: unless-stopped
 
   quantum-gw-cli-mcp:
@@ -559,8 +529,6 @@ services:
       - "http"
       - "--transport-port"
       - "3009"
-    ports:
-      - "7309:3009"
     restart: unless-stopped
 
   quantum-gw-connection-analysis-mcp:
@@ -578,8 +546,6 @@ services:
       - "http"
       - "--transport-port"
       - "3010"
-    ports:
-      - "7310:3010"
     restart: unless-stopped
 
   quantum-gaia-mcp:
@@ -597,8 +563,6 @@ services:
       - "http"
       - "--transport-port"
       - "3011"
-    ports:
-      - "7311:3011"
     restart: unless-stopped
 
   cpinfo-analysis-mcp:
@@ -617,8 +581,6 @@ services:
       - "http"
       - "--transport-port"
       - "3012"
-    ports:
-      - "7312:3012"
     volumes:
       - ./n8n/shared:/data/cpinfo
     restart: unless-stopped
@@ -634,8 +596,6 @@ services:
     container_name: aig-webserver
     networks: [ "demo", "dokploy-network" ]
     restart: unless-stopped
-    ports:
-      - "${AIG_PORT:-8088}:8088"
     environment:
       - AIG_ENV=production
       - AIG_UPLOAD_DIR=/app/uploads
