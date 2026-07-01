@@ -213,11 +213,8 @@ services:
       dockerfile: Dockerfile
     image: custom-mcp-n8n:custom
     restart: unless-stopped
-    # dokploy-network lets Traefik reach n8n (like open-webui / langflow); demo is
-    # the internal stack network.
     networks:
       - demo
-      - dokploy-network
     volumes:
       - n8n_storage:/home/node/.n8n
       - ./n8n/backup:/backup
@@ -232,24 +229,12 @@ services:
       timeout: 5s
       retries: 30
       start_period: 30s
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.n8n.rule=Host(`n8n.{{DOMAIN}}`)"
-      - "traefik.http.routers.n8n.entrypoints=websecure"
-      - "traefik.http.routers.n8n.tls.certresolver=letsencrypt"
-      - "traefik.http.services.n8n.loadbalancer.server.port=5678"
-      - "traefik.docker.network=dokploy-network"
-      # Let the dev-hub desktop embed n8n in an iframe (strip X-Frame-Options,
-      # allow the hub in frame-ancestors).
-      - "traefik.http.routers.n8n.middlewares=n8n-hubframe"
-      - "traefik.http.middlewares.n8n-hubframe.headers.customresponseheaders.X-Frame-Options="
-      - "traefik.http.middlewares.n8n-hubframe.headers.customresponseheaders.Content-Security-Policy=frame-ancestors 'self' https://hub.{{DOMAIN}} https://*.{{DOMAIN}}"
 
   # ──────────────── n8n PROVISIONER (owner + login + MCP install) ────────────────
   n8n-provision:
     image: curlimages/curl:8.9.1
     container_name: n8n-provision
-    networks: [ "demo", "dokploy-network" ]
+    networks: [ "demo" ]
     depends_on:
       n8n:
         condition: service_healthy
@@ -275,7 +260,7 @@ services:
   n8n-import:
     image: n8nio/n8n:latest
     container_name: n8n-import
-    networks: [ "demo", "dokploy-network" ]
+    networks: [ "demo" ]
     entrypoint: /bin/sh
     command:
       - "-c"
