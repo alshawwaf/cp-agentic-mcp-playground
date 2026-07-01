@@ -249,7 +249,7 @@ services:
   n8n-provision:
     image: curlimages/curl:8.9.1
     container_name: n8n-provision
-    networks: [ "demo" ]
+    networks: [ "demo", "dokploy-network" ]
     depends_on:
       n8n:
         condition: service_healthy
@@ -275,7 +275,7 @@ services:
   n8n-import:
     image: n8nio/n8n:latest
     container_name: n8n-import
-    networks: [ "demo" ]
+    networks: [ "demo", "dokploy-network" ]
     entrypoint: /bin/sh
     command:
       - "-c"
