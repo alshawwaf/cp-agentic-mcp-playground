@@ -32,6 +32,9 @@ volumes:
   aig_db:
   aig_logs:
   aig_uploads:
+  openclaw_state:
+  openclaw_workspace:
+  openclaw_auth:
 
     ###############################################################################
     # Common Service Definitions (Anchors)
@@ -691,3 +694,95 @@ services:
     depends_on:
       aig-webserver:
         condition: service_healthy
+
+  # ──────────────── OpenClaw (personal AI assistant gateway) ────────────────
+  # Folded in from openclaw/openclaw's own compose so the whole AI stack spins up
+  # together. Uses the prebuilt image (no local build) + named volumes.
+  # SECRETS: set OPENCLAW_GATEWAY_TOKEN / CLAUDE_* in the Dokploy env — never here.
+  openclaw-gateway:
+    image: ${OPENCLAW_IMAGE:-ghcr.io/openclaw/openclaw:latest}
+    container_name: openclaw-gateway
+    # dokploy-network lets Traefik reach it; demo is the internal stack network.
+    networks: [ "demo", "dokploy-network" ]
+    restart: unless-stopped
+    init: true
+    environment:
+      HOME: /home/node
+      OPENCLAW_HOME: /home/node
+      TERM: xterm-256color
+      # Pin container-side paths so host .env values can't leak into runtime code.
+      OPENCLAW_STATE_DIR: /home/node/.openclaw
+      OPENCLAW_CONFIG_PATH: /home/node/.openclaw/openclaw.json
+      OPENCLAW_CONFIG_DIR: /home/node/.openclaw
+      OPENCLAW_WORKSPACE_DIR: /home/node/.openclaw/workspace
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:-}
+      OPENCLAW_ALLOW_INSECURE_PRIVATE_WS: ${OPENCLAW_ALLOW_INSECURE_PRIVATE_WS:-}
+      OPENCLAW_DISABLE_BONJOUR: ${OPENCLAW_DISABLE_BONJOUR:-}
+      CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY:-}
+      CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY:-}
+      CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE:-}
+      TZ: ${OPENCLAW_TZ:-UTC}
+    volumes:
+      - openclaw_state:/home/node/.openclaw
+      - openclaw_workspace:/home/node/.openclaw/workspace
+      - openclaw_auth:/home/node/.config/openclaw
+    cap_drop:
+      - NET_RAW
+      - NET_ADMIN
+    security_opt:
+      - no-new-privileges:true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: [ "node", "dist/index.js", "gateway", "--bind", "${OPENCLAW_GATEWAY_BIND:-lan}", "--port", "18789" ]
+    healthcheck:
+      test: [ "CMD", "node", "-e", "fetch('http://127.0.0.1:18789/healthz').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.openclaw.rule=Host(`claw.{{DOMAIN}}`)"
+      - "traefik.http.routers.openclaw.entrypoints=websecure"
+      - "traefik.http.routers.openclaw.tls.certresolver=letsencrypt"
+      - "traefik.http.services.openclaw.loadbalancer.server.port=18789"
+      - "traefik.docker.network=dokploy-network"
+      # Let the dev-hub desktop embed the OpenClaw dashboard in an iframe.
+      - "traefik.http.routers.openclaw.middlewares=openclaw-hubframe"
+      - "traefik.http.middlewares.openclaw-hubframe.headers.customresponseheaders.X-Frame-Options="
+      - "traefik.http.middlewares.openclaw-hubframe.headers.customresponseheaders.Content-Security-Policy=frame-ancestors 'self' https://hub.{{DOMAIN}} https://*.{{DOMAIN}}"
+
+  openclaw-cli:
+    image: ${OPENCLAW_IMAGE:-ghcr.io/openclaw/openclaw:latest}
+    container_name: openclaw-cli
+    network_mode: "service:openclaw-gateway"
+    restart: unless-stopped
+    init: true
+    stdin_open: true
+    tty: true
+    environment:
+      HOME: /home/node
+      OPENCLAW_HOME: /home/node
+      TERM: xterm-256color
+      OPENCLAW_STATE_DIR: /home/node/.openclaw
+      OPENCLAW_CONFIG_PATH: /home/node/.openclaw/openclaw.json
+      OPENCLAW_CONFIG_DIR: /home/node/.openclaw
+      OPENCLAW_WORKSPACE_DIR: /home/node/.openclaw/workspace
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:-}
+      BROWSER: echo
+      CLAUDE_AI_SESSION_KEY: ${CLAUDE_AI_SESSION_KEY:-}
+      CLAUDE_WEB_SESSION_KEY: ${CLAUDE_WEB_SESSION_KEY:-}
+      CLAUDE_WEB_COOKIE: ${CLAUDE_WEB_COOKIE:-}
+      TZ: ${OPENCLAW_TZ:-UTC}
+    volumes:
+      - openclaw_state:/home/node/.openclaw
+      - openclaw_workspace:/home/node/.openclaw/workspace
+      - openclaw_auth:/home/node/.config/openclaw
+    cap_drop:
+      - NET_RAW
+      - NET_ADMIN
+    security_opt:
+      - no-new-privileges:true
+    entrypoint: [ "node", "dist/index.js" ]
+    depends_on:
+      - openclaw-gateway
