@@ -74,6 +74,7 @@ x-n8n: &service-n8n
 
 x-ollama: &service-ollama
   image: ollama/ollama:latest
+  pull_policy: always
   networks: [ "demo" ]
   restart: unless-stopped
   volumes:
@@ -88,6 +89,7 @@ x-ollama: &service-ollama
 # ──────────────── Ollama Model Puller ────────────────
 x-init-ollama: &init-ollama
   image: ollama/ollama:latest
+  pull_policy: always
   networks: [ "demo" ]
   volumes:
     - ollama_storage:/root/.ollama
@@ -133,6 +135,7 @@ services:
   # ──────────────── Ollama CPU/GPU ────────────────
   ollama-cpu:
     image: ollama/ollama:latest
+    pull_policy: always
     container_name: ollama-cpu
     networks: [ "demo" ]
     restart: unless-stopped
@@ -165,6 +168,7 @@ services:
   # ──────────────── Ollama Model Pullers ────────────────
   ollama-pull-models-cpu:
     image: ollama/ollama:latest
+    pull_policy: always
     container_name: ollama-pull-models-cpu
     networks: [ "demo" ]
     volumes:
@@ -348,6 +352,7 @@ services:
   # ──────────────── Open WebUI ────────────────
   open-webui:
     image: ghcr.io/open-webui/open-webui:main
+    pull_policy: always
     container_name: open-webui
     networks: [ "demo", "dokploy-network" ]
     restart: unless-stopped
