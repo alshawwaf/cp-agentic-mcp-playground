@@ -310,6 +310,7 @@ services:
   # ──────────────── Flowise ────────────────
   flowise:
     image: flowiseai/flowise
+    pull_policy: always
     container_name: flowise
     # dokploy-network lets Traefik reach it (like open-webui / n8n); demo is the
     # internal stack network. Routing lived in the Dokploy UI before — now it's here
@@ -362,7 +363,10 @@ services:
 
   # ──────────────── Langflow ────────────────
   langflow:
-    image: langflowai/langflow:latest
+    # PINNED (not :latest) — CVE-2026-33017 (unauth RCE) compromised this host on a
+    # pre-1.9 build (see the ubuntu-dokploy-ai incident report); 1.10.1 is patched.
+    # Bump this deliberately when a newer patched tag ships — don't float on :latest.
+    image: langflowai/langflow:1.10.1
     container_name: langflow
     # dokploy-network lets Traefik reach it (like open-webui / aig); demo is the
     # internal stack network. Previously demo-only, so Traefik had no route → 404.
