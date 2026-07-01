@@ -346,15 +346,34 @@ services:
   langflow:
     image: langflowai/langflow:latest
     container_name: langflow
-    networks: [ "demo" ]
+    # dokploy-network lets Traefik reach it (like open-webui / aig); demo is the
+    # internal stack network. Previously demo-only, so Traefik had no route → 404.
+    networks: [ "demo", "dokploy-network" ]
     restart: unless-stopped
     environment:
-      - LANGFLOW_AUTO_LOGIN=false
-      - LANGFLOW_SUPERUSER_AUTO_LOGIN=false
+      # Auth ON by default now that Langflow is publicly routed (Traefik below).
+      # The superuser is provisioned from the stack admin creds already in the env
+      # — no hardcoded secret, and it boots cleanly. For a deliberate no-auth demo,
+      # explicitly set LANGFLOW_AUTO_LOGIN=true.
+      - LANGFLOW_AUTO_LOGIN=${LANGFLOW_AUTO_LOGIN:-false}
+      - LANGFLOW_SUPERUSER=${N8N_ADMIN_EMAIL}
+      - LANGFLOW_SUPERUSER_PASSWORD=${N8N_ADMIN_PASSWORD}
     volumes:
       - ./langflow/flows:/app/flows
     depends_on:
       - ollama-pull-models-cpu
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.langflow.rule=Host(`langflow.{{DOMAIN}}`)"
+      - "traefik.http.routers.langflow.entrypoints=websecure"
+      - "traefik.http.routers.langflow.tls.certresolver=letsencrypt"
+      - "traefik.http.services.langflow.loadbalancer.server.port=7860"
+      - "traefik.docker.network=dokploy-network"
+      # Let the dev-hub desktop embed Langflow in an iframe (strip X-Frame-Options,
+      # allow the hub in frame-ancestors).
+      - "traefik.http.routers.langflow.middlewares=langflow-hubframe"
+      - "traefik.http.middlewares.langflow-hubframe.headers.customresponseheaders.X-Frame-Options="
+      - "traefik.http.middlewares.langflow-hubframe.headers.customresponseheaders.Content-Security-Policy=frame-ancestors 'self' https://hub.{{DOMAIN}} https://*.{{DOMAIN}}"
 
   # ─────────── Documentation MCP over HTTP ───────────
   mcp-documentation:
