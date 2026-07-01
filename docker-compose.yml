@@ -322,7 +322,10 @@ services:
   flowise:
     image: flowiseai/flowise
     container_name: flowise
-    networks: [ "demo" ]
+    # dokploy-network lets Traefik reach it (like open-webui / n8n); demo is the
+    # internal stack network. Routing lived in the Dokploy UI before — now it's here
+    # so a fresh spin-up serves flowise.<domain> without manual setup.
+    networks: [ "demo", "dokploy-network" ]
     restart: unless-stopped
     environment:
       - PORT=${FLOWISE_PORT}
@@ -331,6 +334,16 @@ services:
     volumes:
       - ./flowise_data:/root/.flowise
     entrypoint: /bin/sh -c "sleep 5; flowise start"
+    labels:
+      # Flowise already permits iframe embedding, so it needs a route, not a
+      # framing middleware. (Add a flowise-hubframe like n8n's only if a future
+      # version starts sending X-Frame-Options.)
+      - "traefik.enable=true"
+      - "traefik.http.routers.flowise.rule=Host(`flowise.{{DOMAIN}}`)"
+      - "traefik.http.routers.flowise.entrypoints=websecure"
+      - "traefik.http.routers.flowise.tls.certresolver=letsencrypt"
+      - "traefik.http.services.flowise.loadbalancer.server.port=${FLOWISE_PORT}"
+      - "traefik.docker.network=dokploy-network"
 
   # ──────────────── Open WebUI ────────────────
   open-webui:
