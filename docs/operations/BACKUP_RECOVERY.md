@@ -35,10 +35,12 @@ The MCP Playground stores data in **Docker volumes**. Regular backups are essent
 | `n8n_storage` | n8n workflows, credentials, settings | **Critical** |
 | `postgres_storage` | PostgreSQL database (n8n backend) | **Critical** |
 | `ollama_storage` | Downloaded LLM models | High |
-| `qdrant_storage` | Vector database collections | High |
 | `open-webui` | Chat history, user data | Medium |
 | `flowise` | Flow configurations | Medium |
 | `langflow` | Flow data | Medium |
+| `aig_data` / `aig_db` / `aig_logs` / `aig_uploads` | AI-Infra-Guard state, DB, logs, uploads | Medium |
+
+> The default volume list in `scripts/backup-volumes.sh` still names `qdrant_storage` (Qdrant is no longer in the stack — it is simply skipped) and does not yet include the `aig_*` volumes. Pass `--volumes` to back those up explicitly until the script is updated.
 
 ### Configuration Files
 
@@ -186,7 +188,7 @@ echo "✓ Backup verification complete"
 docker compose --profile cpu down
 
 # 2. (Optional) Remove existing volumes to ensure clean restore
-docker volume rm n8n_storage postgres_storage ollama_storage qdrant_storage open-webui flowise langflow
+docker volume rm n8n_storage postgres_storage ollama_storage open-webui flowise langflow aig_data aig_db aig_logs aig_uploads
 
 # 3. Run restore script
 ../scripts/restore-volumes.sh backups/mcp-playground-backup-2025-11-28-153045.tar.gz

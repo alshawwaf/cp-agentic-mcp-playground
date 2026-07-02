@@ -39,25 +39,23 @@ cp-agentic-mcp-playground/
 │
 ├── docker/               # Docker image definitions
 │   └── n8n/
-│       └── Dockerfile               # Custom n8n image with MCP CLIs
+│       ├── Dockerfile               # Custom n8n image with MCP CLIs baked in
+│       └── mcp-src/                 # Vendored Check Point MCP server source (built into the image)
 │
 ├── n8n/                  # n8n configuration
-│   ├── backup/                      # Workflow/credential exports
-│   ├── custom-nodes/                # Community nodes
-│   └── shared/                      # Shared data between containers
+│   ├── backup/
+│   │   ├── credentials_public/      # Credential templates auto-imported by n8n-import
+│   │   └── workflows/               # Example MCP-agent workflows
+│   ├── custom-nodes/                # Community nodes (created at runtime)
+│   └── shared/                      # Shared data between n8n and MCP sidecars (runtime)
 │
-├── open-webui/           # Open WebUI configuration
-│   └── pipes/                       # n8n integration pipes
+├── aig/                  # AI-Infra-Guard support files
+│   └── patches/llm.py               # LLM client patch mounted into aig-agent
 │
-├── langflow/             # Langflow configuration
-│   └── flows/                       # Example flows
-│
-├── flowise/              # Flowise configuration
-├── quadrant/             # Qdrant backups
+├── quadrant/             # Legacy Qdrant backup dir (Qdrant is NOT in the compose stack)
 │   └── backup/
 │
-├── mcp-servers-source/   # MCP server source code
-├── assets/               # Project assets (images, etc.)
+├── assets/               # Demo GIF + exportable n8n tool workflows
 ├── .vscode/              # VS Code settings
 │
 ├── .env                  # Environment configuration (gitignored)
@@ -65,9 +63,13 @@ cp-agentic-mcp-playground/
 ├── .gitignore            # Git ignore patterns
 ├── docker-compose.yml    # Main Docker Compose stack
 ├── setup.sh              # Environment setup script
+├── update.sh / update.ps1 # Pull + rebuild + restart helpers
+├── implementation_plan.md # Design/implementation notes
 ├── LICENSE               # MIT License
 └── README.md             # Main documentation
 ```
+
+> Runtime-only bind-mount dirs (`langflow/`, `open-webui/`, `flowise_data/`) are created when the stack starts and are not committed. The MCP server source lives at `docker/n8n/mcp-src/` (there is no top-level `mcp-servers-source/`).
 
 ---
 
@@ -98,15 +100,13 @@ cp-agentic-mcp-playground/
 
 ### Service Configurations
 
-- **n8n/**: n8n-specific files (workflows, credentials, custom nodes)
-- **open-webui/**: Open WebUI pipes for n8n integration
-- **langflow/**: Langflow example flows
-- **flowise/**: Flowise configuration
-- **quadrant/**: Qdrant backup storage
+- **n8n/**: n8n-specific files (example workflows, credential templates, custom nodes, shared data)
+- **aig/**: AI-Infra-Guard support files (LLM client patch)
+- **quadrant/**: Legacy Qdrant backup directory — Qdrant is not part of the current compose stack
 
 ### Source Code
 
-- **mcp-servers-source/**: Source code for Check Point MCP servers
+- **docker/n8n/mcp-src/**: Vendored source for the Check Point MCP servers, built into the custom n8n image
 
 ---
 
@@ -148,10 +148,10 @@ Docker volumes (not in repository):
 - `n8n_storage/` - n8n data
 - `postgres_storage/` - PostgreSQL database
 - `ollama_storage/` - LLM models
-- `qdrant_storage/` - Vector database
 - `open-webui/` - Chat UI data
 - `flowise/` - Flowise data
 - `langflow/` - Langflow data
+- `aig_data` / `aig_db` / `aig_logs` / `aig_uploads` - AI-Infra-Guard state
 
 Backup location (gitignored):
 - `backups/` - Volume backup archives

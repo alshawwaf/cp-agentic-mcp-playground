@@ -7,12 +7,12 @@
   <img src="https://img.shields.io/badge/langflow-Workflow-green?logo=langflow" />
   <img src="https://img.shields.io/badge/Ollama-LLM-grey" />
   <img src="https://img.shields.io/badge/Check%20Point-MCP-magenta?" />
-  <img src="https://img.shields.io/badge/Status-Production%20Ready-success" />
+  <img src="https://img.shields.io/badge/Deploy-Dokploy%20%2B%20Traefik-blueviolet" />
 </p>
 
-> **A Production-Ready Local Playground for Agentic AI with Check Point MCP Servers**
+> **An Agentic AI Playground built on Check Point MCP Servers**
 >
-> Bring up n8n + Ollama + Flow UIs + Qdrant + a full fleet of Check Point MCP servers with:
+> Bring up n8n + Ollama + Open WebUI + Langflow + Flowise + AI-Infra-Guard + a full fleet of Check Point MCP servers with:
 >
 > ```bash
 > docker compose --profile cpu up -d
@@ -21,23 +21,25 @@
 
 ## Quick Overview
 
-A **production-ready, multi-service Docker Compose stack** that brings up a full local AI + Check Point MCP (Model Context Protocol) environment:
+A **multi-service Docker Compose stack** that brings up a full AI + Check Point MCP (Model Context Protocol) environment:
 
 - **n8n** – workflow automation + MCP tools orchestrator
 - **PostgreSQL** – n8n backend database
 - **Auto-provisioner** – creates the n8n instance owner **and** installs `n8n-nodes-mcp`
 - **Ollama** – local LLMs; CPU **or** NVIDIA GPU; auto model pull
-- **Open WebUI** – chat UI for Ollama / LLMs
+- **Open WebUI** – chat UI for Ollama / LLMs (with an n8n pipe)
 - **Langflow** – visual AI flow builder
 - **Flowise** – LLM orchestration UI
-- **Qdrant** – vector database for embeddings
-- **Check Point MCP servers** – dedicated HTTP sidecars on the Docker network
+- **AI-Infra-Guard** – Tencent Zhuque Lab AI red-teaming platform (MCP security scanning, jailbreak eval)
+- **Check Point MCP servers** – 13 dedicated HTTP sidecars on the Docker network
 
 The goal is a **single lab stack** for building, testing, and demoing AI + Check Point workflows:
 
 - Instance owner is **auto-configured**
 - `n8n-nodes-mcp` is **pre-installed**
 - MCP servers are reachable as **HTTP tools** from inside n8n
+
+> **Deployment model.** This repo is deployed on the lab's bare-metal Ubuntu + [Dokploy](https://dokploy.com) host, where **Traefik** provides ingress and **Let's Encrypt** provides TLS. The web UIs are published as subdomains (e.g. `chat.<domain>`, `langflow.<domain>`, `flowise.<domain>`, `aig.<domain>`) via the external `dokploy-network`, **not** on host ports. You can still run it standalone with `docker compose up`, but no service ports are bound to the host by default — see [URLs & Access](#-urls--access).
 
 ---
 
@@ -48,7 +50,7 @@ The goal is a **single lab stack** for building, testing, and demoing AI + Check
 - [⚙️ Environment--env](#%EF%B8%8F-environment-env)
 - [🏗️ Build & Profiles](#%EF%B8%8F-build--profiles)
 - [🎯 n8n Provision & Auto-Import](#-n8n-provision--auto-import)
-- [🌐 URLs & MCP Endpoints](#-urls--mcp-endpoints)
+- [🌐 URLs & Access](#-urls--access)
 - [🤖 Ollama Models](#-ollama-models)
 - [💾 Data & Persistence](#-data--persistence)
 - [📚 Guides](#-guides)
@@ -65,7 +67,6 @@ The goal is a **single lab stack** for building, testing, and demoing AI + Check
 <summary><strong>1. Requirements</strong></summary>
 
 - **Docker Engine** + **Docker Compose v2**
-- Free ports from `.env` (e.g. `5678`, `5432`, `3000`, `3001`, `7860`, `6333`, `11434`, `73xx`, …)
 - Outbound Internet access from containers (for:
   - Pulling images
   - Installing community nodes
@@ -110,8 +111,9 @@ The goal is a **single lab stack** for building, testing, and demoing AI + Check
 
 5. Browse to **n8n**:
 
-   - <http://localhost:5678>  
-   - Log in with the owner credentials from `.env`
+   - On the Dokploy/Traefik host, use the routed subdomain (e.g. `https://n8n.<domain>`).
+   - Log in with the owner credentials from `.env`.
+   - No host port is bound by default. To reach a service directly on a plain host, add a `ports:` mapping in `docker-compose.yml` (see [URLs & Access](#-urls--access)) or `docker compose exec` into the container.
 
 </details>
 
@@ -153,92 +155,122 @@ docker compose up -d
 | Open WebUI     | Chat UI for Ollama                           |
 | Flowise        | LLM orchestration / low-code builder         |
 | Langflow       | Visual AI flow builder                       |
-| Qdrant         | Vector database                              |
-| MCP sidecars   | Check Point MCP tools as HTTP servers        |
+| AI-Infra-Guard | AI red-teaming: MCP security scan + jailbreak eval |
+| MCP sidecars   | Check Point MCP tools as HTTP servers (13)   |
 
 ### Repository Layout
 
 ```bash
 .
 ├─ docker-compose.yml           # Multi-service stack (CPU / GPU profiles)
-├─ .env                         # Passwords / ports / admin values
+├─ .env                         # Passwords / admin values / MCP creds (from .env-example)
+├─ .env-example                 # Template environment file
+├─ setup.sh                     # Interactive .env + credential bootstrap
+├─ update.sh / update.ps1       # Pull + rebuild + restart helpers
 ├─ docker/
 │  └─ n8n/
-│     └─ Dockerfile             # Custom n8n image (MCP CLIs + wrappers baked in)
-├─ scripts/
-│  └─ n8n-provision.sh          # Sidecar: owner setup + login + community node install
+│     ├─ Dockerfile             # Custom n8n image (MCP CLIs + wrappers baked in)
+│     └─ mcp-src/               # Vendored Check Point MCP server source (built into the image)
+├─ scripts/                     # n8n-provision, health-check, backup/restore, validate-env
+├─ tests/                       # Integration test suite (used by CI)
 ├─ n8n/
-│  ├─ backup/                   # Workflows/credentials to auto-import (optional)
-│  └─ custom-nodes/             # Extra n8n nodes (persisted)
-├─ langflow/
-│  └─ flows/                    # Example Langflow flows
-└─ qdrant/                      # Local backup / collections for Qdrant
+│  ├─ backup/
+│  │  ├─ credentials_public/    # Credential templates auto-imported by n8n-import
+│  │  └─ workflows/             # Example MCP-agent workflows auto-imported by n8n-import
+│  ├─ custom-nodes/             # Extra n8n nodes (persisted, created at runtime)
+│  └─ shared/                   # Shared data between n8n and MCP sidecars (runtime)
+├─ aig/
+│  └─ patches/llm.py            # AI-Infra-Guard LLM client patch (mounted into aig-agent)
+├─ assets/                      # Demo GIF + exportable n8n tool workflows
+├─ quadrant/                    # Legacy Qdrant backup dir (Qdrant is NOT in the compose stack)
+└─ docs/                        # Guides + operations + development docs
 ```
+
+> **Note.** `langflow/`, `open-webui/`, and `flowise_data/` are created at runtime (bind mounts) and are not committed. Qdrant is **not** part of the compose stack despite the leftover `quadrant/` directory.
 
 ---
 
 ## Environment (`.env`)
 
-Create a `.env` next to `docker-compose.yml`:
+Run `./setup.sh` to generate a `.env` from `.env-example` (optionally with random secrets), or copy `.env-example` yourself. The variable names below must match what `docker-compose.yml` reads — the authoritative template is [`.env-example`](.env-example):
 
 ```env
-# ───────── n8n DB ─────────
+# ───────── Postgres (n8n DB) ─────────
 POSTGRES_USER=admin
 POSTGRES_PASSWORD=change_me
 POSTGRES_DB=n8n
 POSTGRES_PORT=5432
 
-# ───────── n8n Web ─────────
+# ───────── n8n ─────────
+N8N_HOST=localhost
 N8N_PORT=5678
-N8N_ENCRYPTION_KEY=long_random_encryption_key
-N8N_USER_MANAGEMENT_JWT_SECRET=supersecretjwtkey
+N8N_ENCRYPTION_KEY=change_me_to_a_long_random_string
+N8N_USER_MANAGEMENT_JWT_SECRET=change_me_to_a_random_secret
 
-# ───────── n8n Owner / Admin ─────────
-N8N_ADMIN_EMAIL=admin@cpdemo.com
+# owner/admin (POSTed by the provisioner to /rest/owner/setup)
+N8N_ADMIN_EMAIL=admin@example.com
 N8N_ADMIN_FIRST_NAME=Admin
 N8N_ADMIN_LAST_NAME=User
 N8N_ADMIN_PASSWORD=change_me
 
-# ───────── n8n Basic Auth ─────────
+# basic auth (MUST match the provisioner)
 N8N_BASIC_AUTH_USER=admin
 N8N_BASIC_AUTH_PASSWORD=change_me
+WEBHOOK_URL=http://localhost:5678/
+N8N_EDITOR_BASE_URL=http://localhost:5678/
+N8N_PUSH_BACKEND=websocket
 
 # ───────── Ollama ─────────
-OLLAMA_HOST=ollama-cpu:11434
 OLLAMA_PORT=11434
+OLLAMA_HOST=localhost
+OLLAMA_KEEP_ALIVE=-1
 
 # ───────── Other UIs ─────────
-OPEN_WEBUI_PORT=3000
-FLOWISE_PORT=3001
 LANGFLOW_PORT=7860
-QDRANT_PORT=6333
+FLOWISE_PORT=3001
+OPEN_WEBUI_PORT=3000
 
-# ───────── MCP (fill what you use) ─────────
+# Auth is ON by default for the publicly-routed Langflow. Set true for a no-auth demo.
+LANGFLOW_AUTO_LOGIN=false
+
+# ───────── Documentation MCP ─────────
 DOC_CLIENT_ID=
-SECRET_KEY=
-DOC_REGION=
+DOC_SECRET_KEY=
+DOC_REGION=EU            # one of: EU, US, STG, Local
 
+# ───────── Management-backed MCP (SMS host + API key) ─────────
 MANAGEMENT_HOST=
-SMS_API_KEY=
-
+MANAGEMENT_API_KEY=
 TE_API_KEY=
 REPUTATION_API_KEY=
 
+# ───────── Spark Management MCP ─────────
 SPARK_MGMT_CLIENT_ID=
 SPARK_MGMT_SECRET_KEY=
-SPARK_MGMT_REGION=
-SPARK_MGMT_INFINITY_PORTAL_URL=
+SPARK_MGMT_REGION=US
+SPARK_MGMT_INFINITY_PORTAL_URL=https://cloudinfra-gw-us.portal.checkpoint.com/auth/external
 
-HARMONY_SASE_CLIENT_ID=
-HARMONY_SASE_SECRET_KEY=
+# ───────── Harmony SASE MCP ─────────
+HARMONY_SASE_API_KEY=
+HARMONY_SASE_MANAGEMENT_HOST=
 HARMONY_SASE_REGION=
 
 CPINFO_LOG_LEVEL=info
+
+# ───────── AI-Infra-Guard (AI red teaming) ─────────
+AIG_PORT=8088
+AIG_LLM_API_KEY=ollama
+AIG_LLM_BASE_URL=http://ollama-cpu:11434/v1
+AIG_LLM_MODEL=huihui_ai/deepseek-r1-abliterated:latest
+
+# ───────── Profiles ─────────
+COMPOSE_PROFILES=true,cpu
 ```
 
 > 💡 **Tip**  
 > - `N8N_ADMIN_*` is used by the provisioner to call `/rest/owner/setup`.  
 > - `N8N_BASIC_AUTH_*` must match what the provisioner uses to authenticate.  
+> - The `MANAGEMENT_HOST` + `MANAGEMENT_API_KEY` pair backs several MCP sidecars (HTTPS Inspection, Quantum Management, Management Logs, Threat Prevention, GW CLI, GW Connection Analysis, Gaia, CPInfo Analysis).  
 > - Only populate the MCP variables for the services you actually use (or comment out those services in `docker-compose.yml`).
 
 ---
@@ -316,38 +348,50 @@ Safe to re-run; it will **skip** already-completed steps.
 
 ### Auto-Import (`n8n-import`)
 
-If you place exported assets in:
+After the provisioner completes, the `n8n-import` container imports the assets committed in the repo:
 
-- `./n8n/backup/credentials`
-- `./n8n/backup/workflows`
+- `./n8n/backup/credentials_public` – credential templates (edit these and replace `CHANGE_ME` with real keys)
+- `./n8n/backup/workflows` – the example MCP-agent workflows
 
-the `n8n-import` container will, after everything is healthy:
+It runs:
 
 ```bash
-n8n import:credentials --separate --input=/backup/credentials
+n8n import:credentials --separate --input=/backup/credentials_public
 n8n import:workflow    --separate --input=/backup/workflows
 ```
 
-Leave these folders empty to skip auto-import.
+> `setup.sh` copies `credentials_public/` to `credentials/` locally so you can fill in real keys without touching the committed templates. The `n8n-import` service imports from `credentials_public`.
 
 ---
 
-## URLs & MCP Endpoints
+## URLs & Access
 
-### Main Web UIs
+> **No host ports are bound.** All direct `ports:` bindings were removed to shrink the external attack surface. On the lab host, the web UIs are reached through **Traefik** at their subdomains. Standalone, reach a service by adding a temporary `ports:` mapping or via `docker compose exec`.
 
-| Service      | URL                         |
-|--------------|-----------------------------|
-| n8n          | <http://localhost:5678>     |
-| Open WebUI   | <http://localhost:3000>     |
-| Flowise      | <http://localhost:3001>     |
-| Langflow     | <http://localhost:7860>     |
-| Qdrant       | <http://localhost:6333>     |
-| Ollama (API) | <http://localhost:11434>    |
+### Main Web UIs (Traefik subdomains)
+
+These services join the external `dokploy-network` and are routed by Traefik with Let's Encrypt TLS:
+
+| Service        | URL (routed)                 |
+|----------------|------------------------------|
+| Open WebUI     | `https://chat.<domain>`      |
+| Flowise        | `https://flowise.<domain>`   |
+| Langflow       | `https://langflow.<domain>`  |
+| AI-Infra-Guard | `https://aig.<domain>`       |
+
+n8n is served on `demo` (internal) and routed by the host's existing Dokploy workflow at `n8n.<domain>`. Ollama is internal-only (`ollama-cpu:11434` on the `demo` network) and is not routed externally.
+
+To reach a service directly on a host without Traefik, add a mapping under that service in `docker-compose.yml`, e.g.:
+
+```yaml
+  open-webui:
+    ports:
+      - "3000:8080"
+```
 
 ### MCP Servers – Internal Docker URLs
 
-Use these from **n8n MCP HTTP nodes** (same `demo` network):
+The 13 Check Point MCP sidecars are **internal-only** on the `demo` network (no host ports, no Traefik route). Use these base URLs from **n8n MCP HTTP nodes**:
 
 - Documentation MCP → `http://mcp-documentation:3000`
 - HTTPS Inspection MCP → `http://mcp-https-inspection:3001`
@@ -362,26 +406,6 @@ Use these from **n8n MCP HTTP nodes** (same `demo` network):
 - Quantum GW Connection Analysis MCP → `http://quantum-gw-connection-analysis-mcp:3010`
 - Quantum Gaia MCP → `http://quantum-gaia-mcp:3011`
 - CPInfo Analysis MCP → `http://cpinfo-analysis-mcp:3012`
-
-### MCP Servers – From the Host
-
-If ports are published:
-
-- Documentation MCP → <http://localhost:7300>
-- HTTPS Inspection MCP → <http://localhost:7301>
-- Quantum Management MCP → <http://localhost:7302>
-- Management Logs MCP → <http://localhost:7303>
-- Threat Emulation MCP → <http://localhost:7304>
-- Threat Prevention MCP → <http://localhost:7305>
-- Spark Management MCP → <http://localhost:7306>
-- Reputation Service MCP → <http://localhost:7307>
-- Harmony SASE MCP → <http://localhost:7308>
-- Quantum GW CLI MCP → <http://localhost:7309>
-- Quantum GW Connection Analysis MCP → <http://localhost:7310>
-- Quantum Gaia MCP → <http://localhost:7311>
-- CPInfo Analysis MCP → <http://localhost:7312>
-
-From another machine, use `http://<docker-host-ip>:73xx`.
 
 ### n8n MCP Node Configuration
 
@@ -424,12 +448,13 @@ For a workflow to work with this pipe, it must:
 
 ## Ollama Models
 
-The `ollama-pull-*` sidecar waits for the Ollama API and then pulls the configured models, for example:
+The `ollama-pull-models-*` sidecar waits for the Ollama API and then pulls the configured model. The stack currently pulls:
 
-- `llama3.1:latest`
-- `nomic-embed-text:latest`
+- `huihui_ai/foundation-sec-abliterated:latest`
 
-To change which models are pulled, edit the `command:` in the `ollama-pull-*` services inside `docker-compose.yml`.
+AI-Infra-Guard's agent additionally uses `huihui_ai/deepseek-r1-abliterated:latest` (via `AIG_LLM_MODEL`), pointed at the local Ollama by default.
+
+To change which models are pulled, edit the `command:` in the `ollama-pull-models-*` services inside `docker-compose.yml`.
 
 To inspect or prune models inside the Ollama container:
 
@@ -449,10 +474,10 @@ The stack uses named Docker volumes so you can destroy containers and keep data.
 | `n8n_storage`     | n8n config, user data, some cached metadata   |
 | `postgres_storage`| PostgreSQL database for n8n                   |
 | `ollama_storage`  | Ollama models and data                        |
-| `qdrant_storage`  | Qdrant collections                            |
 | `open-webui`      | Open WebUI data                               |
 | `flowise`         | Flowise data                                  |
 | `langflow`        | Langflow data                                 |
+| `aig_data` / `aig_db` / `aig_logs` / `aig_uploads` | AI-Infra-Guard state, DB, logs, uploads |
 
 Example: backup `n8n_storage` to a local tarball:
 
@@ -562,10 +587,6 @@ This re-creates the entire environment from zero, re-runs the provisioner, and r
 
 ---
 
----
-
----
-
 ## 📚 Guides
 
 Detailed documentation for specific workflows and agents:
@@ -575,11 +596,11 @@ Detailed documentation for specific workflows and agents:
 
 ---
 
-## 🚀 Production Deployment
+## 🚀 Hardening & Operations
 
-This playground is now **production-ready** with enterprise-grade features:
+This stack is built for **lab and demo** use. Before exposing it more widely, apply the hardening below and read the [Production Deployment Guide](docs/operations/PRODUCTION_DEPLOYMENT.md) (which starts with its own "for production, additional hardening is required" warning). The repo ships operational helpers to support that:
 
-### Quick Production Checklist
+### Checklist
 
 1. **Generate Secure Configuration**
    ```bash
