@@ -282,9 +282,11 @@ services:
         # (this repo is public). Copy to a writable temp dir and substitute the
         # real values from .env at import time. Escape sed-special chars in the
         # password so any password is safe.
+        # $$ escapes compose interpolation so these are evaluated by the
+        # container shell (not substituted at compose-parse time).
         cp -r /backup /tmp/import
-        ESCAPED_PG=$(printf '%s' "$POSTGRES_PASSWORD" | sed -e 's/[\/&|]/\\&/g')
-        sed -i "s|__POSTGRES_PASSWORD__|$ESCAPED_PG|g" /tmp/import/credentials_public/postgres.json
+        ESCAPED_PG=$$(printf '%s' "$$POSTGRES_PASSWORD" | sed -e 's/[\/&|]/\\&/g')
+        sed -i "s|__POSTGRES_PASSWORD__|$$ESCAPED_PG|g" /tmp/import/credentials_public/postgres.json
 
         echo "Importing n8n credentials & workflows..."
         n8n import:credentials --separate --input=/tmp/import/credentials_public && \
@@ -298,6 +300,8 @@ services:
       - DB_POSTGRESDB_USER=${POSTGRES_USER}
       - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
       - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      # available to the credential-injection step in command: above
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
       - N8N_BASIC_AUTH_ACTIVE=true
       - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
