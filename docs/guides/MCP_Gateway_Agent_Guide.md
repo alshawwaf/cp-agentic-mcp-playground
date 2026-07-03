@@ -132,10 +132,15 @@ Observe: one connection, one Bearer token, tools from multiple servers.
    change the Bearer token. Re-run — you'll get `401 Unauthorized`. Restore it.
    (This is exactly what happens silently if the gateway token is *not* pinned
    and the gateway restarts — see below.)
-3. **Add a server to the gateway.** Add another sidecar (e.g.
-   `mcp-management-logs`) to `mcp-gateway/catalog.yaml` and the `--servers=`
-   list, add a healthcheck + `depends_on: service_healthy` for it, redeploy, and
-   watch its tools appear in the gateway's list with no client change.
+3. **Add a server to the gateway (advanced).** Only *gateway-ready* servers can
+   sit behind the gateway — the stock Check Point packages are single-client
+   over HTTP and break on the gateway's concurrent sessions. Currently
+   gateway-ready: **quantum-management** and **documentation** (locally
+   patched). See `docker/n8n/mcp-src/PATCHES.md` for the why, the full
+   capability matrix, and the ~30-line recipe — then make `management-logs`
+   gateway-ready yourself, add it to `mcp-gateway/catalog.yaml` + the
+   `--servers=` list (healthcheck + `depends_on: service_healthy` too), redeploy,
+   and watch its tools appear with **no client change**.
 4. **Security discussion.** With the gateway as the single choke point, where
    would you enforce tool-level allow/deny, DLP on arguments, or scanning of
    tool descriptions? (This is the "MCP security gateway" idea.)
