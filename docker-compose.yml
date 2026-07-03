@@ -685,3 +685,25 @@ services:
     depends_on:
       aig-webserver:
         condition: service_healthy
+
+  # ──────────────── MCP Gateway (pilot) ────────────────
+  # Aggregates the Check Point MCP sidecars behind one endpoint.
+  # Internal-only on `demo`, consistent with the no-host-ports posture.
+  mcp-gateway:
+    image: docker/mcp-gateway:latest
+    container_name: mcp-gateway
+    networks: [ "demo" ]
+    command:
+      - "--transport=streaming"
+      - "--port=8080"
+      - "--catalog=/config/catalog.yaml"
+    environment:
+      # required when running outside Docker Desktop (Dokploy / Docker CE)
+      - DOCKER_MCP_IN_CONTAINER=1
+    volumes:
+      - ./mcp-gateway/catalog.yaml:/config/catalog.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - mcp-documentation
+      - mcp-quantum-management
+    restart: unless-stopped

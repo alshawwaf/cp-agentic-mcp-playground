@@ -1,0 +1,24 @@
+name: checkpoint-mcp
+displayName: Check Point MCP (Pilot)
+registry:
+  documentation:
+    description: "Check Point product documentation MCP"
+    title: "CP Documentation"
+    type: "remote"
+    remote:
+      url: "http://mcp-documentation:3000"
+      transport_type: "streamable"
+    metadata:
+      category: "checkpoint"
+      tags: ["documentation"]
+
+  quantum-management:
+    description: "Check Point Quantum Management MCP"
+    title: "CP Quantum Management"
+    type: "remote"
+    remote:
+      url: "http://mcp-quantum-management:3002"
+      transport_type: "streamable"
+    metadata:
+      category: "checkpoint"
+      tags: ["management", "quantum"]
