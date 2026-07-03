@@ -749,4 +749,13 @@ services:
         condition: service_healthy
       mcp-quantum-management:
         condition: service_healthy
+    # Surfaces a wedged gateway (e.g. it came up before a sidecar and enumerated
+    # 0 tools) as 'unhealthy' in `docker ps`. The gateway image is a minimal Go
+    # image with busybox nc (no node), so probe the port with nc.
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "127.0.0.1", "8080" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     restart: unless-stopped

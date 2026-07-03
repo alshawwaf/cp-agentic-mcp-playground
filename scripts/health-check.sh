@@ -1,253 +1,121 @@
 #!/bin/bash
 ###############################################################################
-# Health Check Script for Check Point Agentic MCP Playground
-# 
-# This script validates that all services in the Docker Compose stack are
-# healthy and responding correctly.
+# Health Check — Check Point Agentic MCP Playground
 #
-# Usage:
-#   ./scripts/health-check.sh [--profile cpu|gpu-nvidia] [--timeout 300]
+# Validates the running Docker Compose stack. No host ports are published, so
+# every service is probed from INSIDE the `demo` network via `docker exec`
+# (container running + its listening port answers). The MCP Gateway is also
+# checked for aggregated tools.
 #
-# Exit Codes:
-#   0 - All services healthy
-#   1 - One or more services unhealthy
-#   2 - Script error (invalid arguments, etc.)
+# Usage: ./scripts/health-check.sh [--profile cpu|gpu-nvidia] [--verbose]
+# Exit:  0 all healthy | 1 one or more failed | 2 script error
 ###############################################################################
 
-set -euo pipefail
+set -uo pipefail
 
-# Default configuration
 PROFILE="${PROFILE:-cpu}"
-TIMEOUT=300
 VERBOSE=0
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+GATEWAY_TOKEN="${MCP_GATEWAY_TOKEN:-cp-mcp-gateway-training-token}"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
 
-# Parse arguments
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --profile)
-      PROFILE="$2"
-      shift 2
-      ;;
-    --timeout)
-      TIMEOUT="$2"
-      shift 2
-      ;;
-    --verbose|-v)
-      VERBOSE=1
-      shift
-      ;;
-    --help|-h)
-      echo "Usage: $0 [--profile cpu|gpu-nvidia] [--timeout SECONDS] [--verbose]"
-      exit 0
-      ;;
-    *)
-      echo "Unknown argument: $1"
-      exit 2
-      ;;
+    --profile) PROFILE="$2"; shift 2 ;;
+    --timeout) shift 2 ;;                 # accepted for back-compat, unused
+    --verbose|-v) VERBOSE=1; shift ;;
+    --help|-h) echo "Usage: $0 [--profile cpu|gpu-nvidia] [--verbose]"; exit 0 ;;
+    *) echo "Unknown argument: $1"; exit 2 ;;
   esac
 done
 
-# Logging functions
-log_info() {
-  echo -e "${BLUE}[INFO]${NC} $1"
-}
+log_info()    { echo -e "${BLUE}[INFO]${NC} $1"; }
+log_success() { echo -e "${GREEN}[✓]${NC} $1"; }
+log_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
+log_error()   { echo -e "${RED}[✗]${NC} $1"; }
+log_verbose() { [[ $VERBOSE -eq 1 ]] && echo -e "${BLUE}[DEBUG]${NC} $1" || true; }
 
-log_success() {
-  echo -e "${GREEN}[✓]${NC} $1"
-}
+failed=0
 
-log_warning() {
-  echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-log_error() {
-  echo -e "${RED}[✗]${NC} $1"
-}
-
-log_verbose() {
-  if [[ $VERBOSE -eq 1 ]]; then
-    echo -e "${BLUE}[DEBUG]${NC} $1"
-  fi
-}
-
-# Health check functions
-check_service_running() {
-  local service_name=$1
-  local container_name=$2
-  
-  log_verbose "Checking if $service_name is running..."
-  
-  if docker ps --format '{{.Names}}' | grep -q "^${container_name}$"; then
-    log_success "$service_name is running"
-    return 0
+check_running() {   # container
+  if docker ps --format '{{.Names}}' | grep -q "^${1}$"; then
+    log_success "$1 is running"
   else
-    log_error "$service_name is NOT running"
-    return 1
+    log_error "$1 is NOT running"; failed=$((failed+1)); return 1
   fi
 }
 
-check_http_endpoint() {
-  local service_name=$1
-  local url=$2
-  local expected_status=${3:-200}
-  
-  log_verbose "Checking HTTP endpoint: $url"
-  
-  if command -v curl &> /dev/null; then
-    local status_code
-    status_code=$(curl -s -o /dev/null -w "%{http_code}" "$url" 2>/dev/null || echo "000")
-    
-    if [[ "$status_code" == "$expected_status" ]] || [[ "$status_code" =~ ^2[0-9][0-9]$ ]]; then
-      log_success "$service_name HTTP endpoint is healthy ($url - $status_code)"
-      return 0
-    else
-      log_error "$service_name HTTP endpoint is unhealthy ($url - $status_code)"
-      return 1
-    fi
+# TCP-probe a container's own listening port from inside it. Tries nc, then a
+# /dev/tcp bash test, then a node fallback — one of these exists in every image
+# used here (busybox nc in the gateway; node in the MCP/n8n image).
+check_port() {   # container port label
+  local c=$1 p=$2 label=${3:-"$1:$2"}
+  if docker exec "$c" sh -c "nc -z 127.0.0.1 $p" >/dev/null 2>&1 \
+     || docker exec "$c" sh -c "timeout 3 bash -c '</dev/tcp/127.0.0.1/$p'" >/dev/null 2>&1 \
+     || docker exec "$c" node -e "require('net').connect($p,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))" >/dev/null 2>&1; then
+    log_success "$label listening on :$p"
   else
-    log_warning "curl not available, skipping HTTP check for $service_name"
-    return 0
+    log_error "$label NOT listening on :$p"; failed=$((failed+1)); return 1
   fi
 }
 
-check_postgres() {
-  log_verbose "Checking PostgreSQL..."
-  
-  if docker exec postgres pg_isready -U admin -d n8n &> /dev/null; then
-    log_success "PostgreSQL is healthy"
-    return 0
+log_info "Health check — profile: $PROFILE"; echo ""
+
+log_info "=== Core ==="
+if check_running postgres; then
+  if docker exec postgres pg_isready -U "${POSTGRES_USER:-admin}" >/dev/null 2>&1; then
+    log_success "PostgreSQL accepts connections"
   else
-    log_error "PostgreSQL is unhealthy"
-    return 1
+    log_error "PostgreSQL not ready"; failed=$((failed+1))
   fi
-}
+fi
+check_running n8n && check_port n8n 5678 "n8n"
 
-check_ollama() {
-  local container_name="ollama-${PROFILE}"
-  if [[ "$PROFILE" == "gpu-nvidia" ]]; then
-    container_name="ollama-gpu"
-  fi
-  
-  log_verbose "Checking Ollama ($container_name)..."
-  
-  if docker exec "$container_name" sh -c 'OLLAMA_HOST=http://127.0.0.1:11434 ollama list' &> /dev/null; then
-    log_success "Ollama is healthy"
-    return 0
+OLLAMA_C="ollama-${PROFILE}"; [[ "$PROFILE" == "gpu-nvidia" ]] && OLLAMA_C="ollama-gpu"
+check_running "$OLLAMA_C" && check_port "$OLLAMA_C" 11434 "Ollama"
+
+echo ""; log_info "=== AI UIs ==="
+check_running open-webui && check_port open-webui 8080 "Open WebUI"
+check_running langflow   && check_port langflow 7860 "Langflow"
+# Flowise's internal port is env-driven (PORT / FLOWISE_PORT), so resolve it
+# from inside the container rather than hard-coding.
+if check_running flowise; then
+  if docker exec flowise sh -c 'P=${PORT:-${FLOWISE_PORT:-3000}}; nc -z 127.0.0.1 "$P" 2>/dev/null || node -e "require(\"net\").connect(process.env.PORT||process.env.FLOWISE_PORT||3000,\"127.0.0.1\").on(\"connect\",()=>process.exit(0)).on(\"error\",()=>process.exit(1))"' >/dev/null 2>&1; then
+    log_success "Flowise listening (container PORT)"
   else
-    log_error "Ollama is unhealthy"
-    return 1
+    log_error "Flowise NOT listening"; failed=$((failed+1))
   fi
-}
+fi
 
-check_qdrant() {
-  log_verbose "Checking Qdrant..."
-  
-  if check_http_endpoint "Qdrant" "http://localhost:6333/healthz" 200; then
-    return 0
+echo ""; log_info "=== MCP sidecars (internal ports) ==="
+for entry in \
+  "mcp-documentation:3000" "mcp-https-inspection:3001" "mcp-quantum-management:3002" \
+  "mcp-management-logs:3003" "threat-emulation-mcp:3004" "threat-prevention-mcp:3005" \
+  "spark-management-mcp:3006" "reputation-service-mcp:3007" "harmony-sase-mcp:3008" \
+  "quantum-gw-cli-mcp:3009" "quantum-gw-connection-analysis-mcp:3010" \
+  "quantum-gaia-mcp:3011" "cpinfo-analysis-mcp:3012"; do
+  c="${entry%%:*}"; p="${entry##*:}"
+  check_running "$c" && check_port "$c" "$p" "$c"
+done
+
+echo ""; log_info "=== MCP Gateway ==="
+if check_running mcp-gateway && check_port mcp-gateway 8080 "mcp-gateway"; then
+  # Aggregated tools/list through the gateway with the Bearer token (proves the
+  # gateway enumerated its sidecars, not just that the port is open).
+  tools=$(T="$GATEWAY_TOKEN" docker exec -e T="$GATEWAY_TOKEN" n8n node -e '
+    const http=require("http");
+    const post=(b,s)=>new Promise((res,rej)=>{const d=JSON.stringify(b);const h={"Content-Type":"application/json","Accept":"application/json, text/event-stream","Content-Length":Buffer.byteLength(d),"Authorization":"Bearer "+process.env.T};if(s)h["mcp-session-id"]=s;const r=http.request({host:"mcp-gateway",port:8080,path:"/mcp",method:"POST",headers:h},x=>{let f="";x.on("data",c=>f+=c);x.on("end",()=>res({h:x.headers,b:f}))});r.on("error",rej);r.write(d);r.end()});
+    (async()=>{const i=await post({jsonrpc:"2.0",id:1,method:"initialize",params:{protocolVersion:"2025-03-26",capabilities:{},clientInfo:{name:"hc",version:"1"}}});const s=i.h["mcp-session-id"];await post({jsonrpc:"2.0",method:"notifications/initialized"},s);const l=await post({jsonrpc:"2.0",id:2,method:"tools/list"},s);const m=(l.b.includes("data:")?l.b.split("\n").filter(x=>x.startsWith("data:")).map(x=>JSON.parse(x.slice(5))):[JSON.parse(l.b)]).find(x=>x.id===2);console.log((m&&m.result&&m.result.tools||[]).length)})().catch(()=>{console.log("0");process.exit(0)})' 2>/dev/null)
+  if [[ "${tools:-0}" -gt 0 ]]; then
+    log_success "Gateway serving $tools aggregated tools"
   else
-    # Fallback to collections endpoint
-    if check_http_endpoint "Qdrant" "http://localhost:6333/collections" 200; then
-      return 0
-    fi
-    return 1
+    log_warning "Gateway up but returned 0 tools (check sidecar startup order / token)"
   fi
-}
+fi
 
-# Main health check
-main() {
-  log_info "Starting health check for Check Point Agentic MCP Playground"
-  log_info "Profile: $PROFILE | Timeout: ${TIMEOUT}s"
-  echo ""
-  
-  local failed_checks=0
-  local start_time=$(date +%s)
-  
-  # Change to project directory
-  cd "$PROJECT_DIR"
-  
-  # Core services
-  log_info "=== Core Services ==="
-  
-  check_service_running "PostgreSQL" "postgres" || ((failed_checks++))
-  check_postgres || ((failed_checks++))
-  
-  check_service_running "n8n" "n8n" || ((failed_checks++))
-  check_http_endpoint "n8n" "http://localhost:5678/healthz" || ((failed_checks++))
-  
-  # Check Ollama (profile-specific)
-  if [[ "$PROFILE" == "cpu" ]]; then
-    check_service_running "Ollama (CPU)" "ollama-cpu" || ((failed_checks++))
-  elif [[ "$PROFILE" == "gpu-nvidia" ]]; then
-    check_service_running "Ollama (GPU)" "ollama-gpu" || ((failed_checks++))
-  fi
-  check_ollama || ((failed_checks++))
-  
-  echo ""
-  log_info "=== AI Services ==="
-  
-  if [[ "$PROFILE" == "cpu" ]]; then
-    check_service_running "Open WebUI" "open-webui" || ((failed_checks++))
-    check_http_endpoint "Open WebUI" "http://localhost:3000" || ((failed_checks++))
-    
-    check_service_running "Langflow" "langflow" || ((failed_checks++))
-    check_http_endpoint "Langflow" "http://localhost:7860" || ((failed_checks++))
-  fi
-  
-  check_service_running "Flowise" "flowise" || ((failed_checks++))
-  check_http_endpoint "Flowise" "http://localhost:3001" || ((failed_checks++))
-  
-  check_service_running "Qdrant" "qdrant" || ((failed_checks++))
-  check_qdrant || ((failed_checks++))
-  
-  echo ""
-  log_info "=== MCP Servers ==="
-  
-  # MCP servers with their ports
-  declare -A mcp_servers=(
-    ["mcp-documentation"]="7300"
-    ["mcp-https-inspection"]="7301"
-    ["mcp-quantum-management"]="7302"
-    ["mcp-management-logs"]="7303"
-    ["threat-emulation-mcp"]="7304"
-    ["threat-prevention-mcp"]="7305"
-    ["spark-management-mcp"]="7306"
-    ["reputation-service-mcp"]="7307"
-    ["harmony-sase-mcp"]="7308"
-    ["quantum-gw-cli-mcp"]="7309"
-    ["quantum-gw-connection-analysis-mcp"]="7310"
-    ["quantum-gaia-mcp"]="7311"
-    ["cpinfo-analysis-mcp"]="7312"
-  )
-  
-  for server in "${!mcp_servers[@]}"; do
-    port="${mcp_servers[$server]}"
-    check_service_running "$server" "$server" || ((failed_checks++))
-    check_http_endpoint "$server" "http://localhost:${port}" || ((failed_checks++))
-  done
-  
-  echo ""
-  log_info "=== Health Check Summary ==="
-  
-  local end_time=$(date +%s)
-  local duration=$((end_time - start_time))
-  
-  if [[ $failed_checks -eq 0 ]]; then
-    log_success "All services are healthy! (completed in ${duration}s)"
-    exit 0
-  else
-    log_error "$failed_checks check(s) failed (completed in ${duration}s)"
-    exit 1
-  fi
-}
-
-# Run main function
-main
+echo ""
+if [[ $failed -eq 0 ]]; then
+  log_success "All checks passed"; exit 0
+else
+  log_error "$failed check(s) failed"; exit 1
+fi

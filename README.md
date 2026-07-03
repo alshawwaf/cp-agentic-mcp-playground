@@ -170,7 +170,9 @@ docker compose up -d
 ├─ docker/
 │  └─ n8n/
 │     ├─ Dockerfile             # Custom n8n image (MCP CLIs + wrappers baked in)
-│     └─ mcp-src/               # Vendored Check Point MCP server source (built into the image)
+│     └─ mcp-src/               # Vendored Check Point MCP server source (PATCHES.md documents the gateway patches)
+├─ mcp-gateway/
+│  └─ catalog.yaml              # Docker MCP Gateway catalog — the MCP servers it fronts
 ├─ scripts/                     # n8n-provision, health-check, backup/restore, validate-env
 ├─ tests/                       # Integration test suite (used by CI)
 ├─ n8n/
@@ -508,7 +510,7 @@ If logs show:
 …then the node is in **package mode**. Switch it to **HTTP** and point at the correct MCP URL, e.g.:
 
 ```text
-http://management-logs-mcp:3003
+http://mcp-management-logs:3003
 ```
 
 ### D) Cannot reach MCP from inside Docker
