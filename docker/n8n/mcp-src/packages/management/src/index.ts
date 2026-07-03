@@ -25,22 +25,16 @@ const pkg = JSON.parse(
 
 process.env.CP_MCP_MAIN_PKG = `${pkg.name} v${pkg.version}`;
 
-const server = new McpServer({ name: 'Check Point Quantum Management' ,
+// Build a fresh MCP server instance with all tools/prompts registered. A factory
+// is used (instead of a shared singleton) so that Streamable HTTP can create one
+// server per session. The MCP SDK forbids connecting a single server to more
+// than one transport, which otherwise breaks concurrent/multi-client use.
+function createManagementServer(): McpServer {
+  const server = new McpServer({ name: 'Check Point Quantum Management' ,
     description:
         "MCP server to run commands on a Check Point Management. Use this to view policies and objects for Access, NAT and VPN.",
   version: '1.0.0'
 });
-
-// Create a multi-user server module
-const serverModule = createServerModule(
-  server,
-  Settings,
-  pkg,
-  APIManagerForAPIKey
-);
-
-// Create an API runner function
-const runApi = createApiRunner(serverModule);
 
 // --- PROMPT RESOURCES ---
 const SHOW_INSTALLED_POLICIES = `Please show me my installed policies per gateway. In order to see which policies are installed, you need to call show-gateways-and-servers with details-level set to 'full'.\nIf you already know the gateway name or uid, you can use the show-simple-gateway or show simple-cluster function with details-level set to 'full' to get the installed policy.\n`;
@@ -1862,8 +1856,24 @@ server.tool(
   }
 );
 
+  return server;
+}
 
-export { server };
+// Singleton server module (used for stdio transport and as a fallback)
+const serverModule = createServerModule(
+  createManagementServer(),
+  Settings,
+  pkg,
+  APIManagerForAPIKey
+);
+
+// Provide a per-session server factory for multi-session Streamable HTTP
+serverModule.createServer = createManagementServer;
+
+// Create an API runner function (reads serverModule at call time)
+const runApi = createApiRunner(serverModule);
+
+export const server = serverModule.server;
 
 const main = async () => {
   await launchMCPServer(
