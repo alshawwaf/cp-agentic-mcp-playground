@@ -122,11 +122,15 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         sed -i "s|^MANAGEMENT_HOST=.*|MANAGEMENT_HOST=$MGMT_HOST|" "$ENV_FILE"
     fi
     
-    read -p "Enter SMS API Key: " SMS_KEY
+    read -p "Enter Management API Key: " SMS_KEY
     if [ ! -z "$SMS_KEY" ]; then
         # Escape special chars for sed
         ESCAPED_KEY=$(printf '%s\n' "$SMS_KEY" | sed -e 's/[\/&]/\\&/g')
-        sed -i "s|^SMS_API_KEY=.*|SMS_API_KEY=$ESCAPED_KEY|" "$ENV_FILE"
+        # MANAGEMENT_API_KEY is what docker-compose.yml feeds every
+        # management-backed MCP sidecar (API_KEY=${MANAGEMENT_API_KEY}).
+        # The old SMS_API_KEY name was consumed by nothing — writing it
+        # left the real variable empty.
+        sed -i "s|^MANAGEMENT_API_KEY=.*|MANAGEMENT_API_KEY=$ESCAPED_KEY|" "$ENV_FILE"
     fi
     
     echo -e "${GREEN}API keys updated.${NC}"
