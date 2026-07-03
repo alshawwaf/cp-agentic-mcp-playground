@@ -98,6 +98,26 @@ The **documentation** server does not touch the SMS (it calls Check Point's
 cloud), so the gateway's doc tools work even while the SMS is unreachable — handy
 for demoing the gateway itself in isolation.
 
+### When the CloudShare address changes
+
+CloudShare VM hostnames (`*.vm.cld.sr`) change when the environment is
+recreated/re-provisioned. `MANAGEMENT_HOST` is the **single place** to update —
+n8n credentials and workflows never change (they point at the sidecars/gateway,
+not the SMS).
+
+1. Get the new address: CloudShare → your environment → **Networks** → SMS
+   adapter → **Inbound Access: Public IP** (hostname or IP).
+2. Update the env — pick the one that matches how the stack is run:
+   * **Dokploy:** project → **Environment** → set
+     `MANAGEMENT_HOST=<new-address>` → **Redeploy**. (This is the durable copy —
+     Dokploy rewrites `.env` from it on redeploy.)
+   * **Plain compose host:** edit `.env`, then `docker compose up -d`
+     (recreates only the services whose env changed).
+3. That's it. Sanity-check with the chat: *"show me the gateways and servers"*.
+   If it times out, re-verify the two connectivity items above (public IP
+   reachable + the SMS return route — a CloudShare **revert** to an old snapshot
+   can silently remove the static route).
+
 ---
 
 ## Walkthrough A — Direct
@@ -155,6 +175,7 @@ Observe: one connection, one Bearer token, tools from multiple servers.
 | n8n gets **401 Unauthorized** from the gateway | Missing/wrong Bearer token, or the gateway generated a new random token on restart | Pin `MCP_GATEWAY_TOKEN` in `.env` (done by default) and set the same value in the `CP MCP Gateway Docker` credential header |
 | **`-32001 Request timed out`** on management tools | SMS unreachable or asymmetric return routing | See **Lab connectivity** above |
 | Gateway logs `connection refused` to a sidecar | Sidecar not healthy yet | Confirm the sidecar's healthcheck passes (`docker ps` shows `healthy`) |
+| Management tools return **`429 err_too_many_requests`** | SMS login-rate throttle: every new MCP session performs its own `/web_api/login`, and bursts of sessions (a classroom, or parallel test runs) trip it | Wait ~1–2 minutes; it clears on its own. Keep one chat session per exercise rather than re-opening workflows rapidly |
 
 ---
 
