@@ -4,7 +4,7 @@
   "id": "hsWhgXyxb7NQNxdM",
   "name": "QdrantApi account",
   "data": {
-    "apiKey": "Cpwins!1",
+    "apiKey": "CHANGE_ME",
     "qdrantUrl": "http://qdrant:6333"
   },
   "type": "qdrantApi",

@@ -170,7 +170,9 @@ docker compose up -d
 ├─ docker/
 │  └─ n8n/
 │     ├─ Dockerfile             # Custom n8n image (MCP CLIs + wrappers baked in)
-│     └─ mcp-src/               # Vendored Check Point MCP server source (built into the image)
+│     └─ mcp-src/               # Vendored Check Point MCP server source (PATCHES.md documents the gateway patches)
+├─ mcp-gateway/
+│  └─ catalog.yaml              # Docker MCP Gateway catalog — the MCP servers it fronts
 ├─ scripts/                     # n8n-provision, health-check, backup/restore, validate-env
 ├─ tests/                       # Integration test suite (used by CI)
 ├─ n8n/
@@ -508,7 +510,7 @@ If logs show:
 …then the node is in **package mode**. Switch it to **HTTP** and point at the correct MCP URL, e.g.:
 
 ```text
-http://management-logs-mcp:3003
+http://mcp-management-logs:3003
 ```
 
 ### D) Cannot reach MCP from inside Docker
@@ -593,6 +595,17 @@ Detailed documentation for specific workflows and agents:
 
 - **[Lakera Playground Guide](docs/guides/n8n_Lakera_Playground_Guide.md)**: A complete guide to the Lakera Guard workflow, including a technical deep dive into each node and security logic.
 - **[Threat Prevention Agent Guide](docs/guides/CheckPoint_Threat_Prevention_Guide.md)**: Documentation for the Check Point Threat Prevention agent, covering the AI agent, MCP client, and policy management.
+- **[MCP Gateway Agent Guide](docs/guides/MCP_Gateway_Agent_Guide.md)**: Two ways to connect agents to the Check Point MCP servers — direct sidecar vs. the Docker MCP Gateway (aggregation + Bearer auth) — with walkthroughs, exercises, and lab-connectivity troubleshooting.
+
+### 🧩 Gateway-ready Check Point MCP servers
+
+The vendored Check Point MCP servers carry a local patch that gives each
+Streamable HTTP session its own server instance — required for fronting them
+with an MCP gateway (stock packages are single-client and break on concurrent
+sessions). **[docker/n8n/mcp-src/PATCHES.md](docker/n8n/mcp-src/PATCHES.md)**
+documents the why, the per-package capability matrix, and how to make more
+packages gateway-ready. Built npm tarballs of all servers are attached to the
+repo's **GitHub Releases** so students can grab and reuse them directly.
 
 ---
 

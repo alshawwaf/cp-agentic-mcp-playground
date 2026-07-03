@@ -277,9 +277,20 @@ services:
           sleep 5
         done
 
+        echo "Preparing credentials (injecting secrets from env, keeping them out of git)..."
+        # The committed credential backups carry placeholders, never real secrets
+        # (this repo is public). Copy to a writable temp dir and substitute the
+        # real values from .env at import time. Escape sed-special chars in the
+        # password so any password is safe.
+        # $$ escapes compose interpolation so these are evaluated by the
+        # container shell (not substituted at compose-parse time).
+        cp -r /backup /tmp/import
+        ESCAPED_PG=$$(printf '%s' "$$POSTGRES_PASSWORD" | sed -e 's/[\/&|]/\\&/g')
+        sed -i "s|__POSTGRES_PASSWORD__|$$ESCAPED_PG|g" /tmp/import/credentials_public/postgres.json
+
         echo "Importing n8n credentials & workflows..."
-        n8n import:credentials --separate --input=/backup/credentials_public && \
-        n8n import:workflow --separate --input=/backup/workflows
+        n8n import:credentials --separate --input=/tmp/import/credentials_public && \
+        n8n import:workflow --separate --input=/tmp/import/workflows
 
         echo "N8N Import completed!!!"
 
@@ -289,6 +300,8 @@ services:
       - DB_POSTGRESDB_USER=${POSTGRES_USER}
       - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
       - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      # available to the credential-injection step in command: above
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
       - N8N_BASIC_AUTH_ACTIVE=true
       - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
@@ -414,6 +427,15 @@ services:
       - "http"
       - "--transport-port"
       - "3000"
+    # Lets the MCP gateway wait for a LISTENING server: the gateway enumerates
+    # tools once at startup, and a sidecar that isn't up yet is silently dropped
+    # (0 tools) until the gateway restarts.
+    healthcheck:
+      test: [ "CMD", "node", "-e", "require('net').connect(3000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))" ]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 20s
     restart: unless-stopped
 
   mcp-https-inspection:
@@ -448,6 +470,13 @@ services:
       - "http"
       - "--transport-port"
       - "3002"
+    # See mcp-documentation: gateway startup must find this server listening.
+    healthcheck:
+      test: [ "CMD", "node", "-e", "require('net').connect(3002,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))" ]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 20s
     restart: unless-stopped
 
   mcp-management-logs:
@@ -685,3 +714,52 @@ services:
     depends_on:
       aig-webserver:
         condition: service_healthy
+
+  # ──────────────── MCP Gateway (pilot) ────────────────
+  # Aggregates the Check Point MCP sidecars behind one endpoint.
+  # Internal-only on `demo`, consistent with the no-host-ports posture.
+  mcp-gateway:
+    image: docker/mcp-gateway:latest
+    container_name: mcp-gateway
+    networks: [ "demo" ]
+    command:
+      - "--transport=streaming"
+      - "--port=8080"
+      # catalog must live under ~/.docker/mcp/catalogs/ and be referenced by name
+      - "--catalog=checkpoint-mcp.yaml"
+      # a custom catalog does not auto-enable its servers; list them explicitly
+      - "--servers=documentation,quantum-management"
+    environment:
+      # required when running outside Docker Desktop (Dokploy / Docker CE)
+      - DOCKER_MCP_IN_CONTAINER=1
+      # sidecars are internal-network HTTP (not HTTPS); opt into insecure remote
+      # MCP URLs. Safe here because traffic stays on the private `demo` network.
+      - DOCKER_MCP_ALLOW_INSECURE_REMOTE_URLS=1
+      # PIN the gateway Bearer token. Without this the gateway generates a NEW
+      # random token on every restart, silently invalidating any client
+      # credential (n8n) configured against the old one. Clients send:
+      #   Authorization: Bearer <token>
+      - MCP_GATEWAY_AUTH_TOKEN=${MCP_GATEWAY_TOKEN:-cp-mcp-gateway-training-token}
+    volumes:
+      - ./mcp-gateway/catalog.yaml:/root/.docker/mcp/catalogs/checkpoint-mcp.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    # service_healthy (not plain startup order): the gateway enumerates each
+    # server's tools ONCE at startup. If a slow-booting sidecar isn't listening
+    # yet, the gateway logs "Can't start <server>: connection refused" and runs
+    # with 0 of its tools until manually restarted. The healthchecks make the
+    # gateway start only after both sidecars accept connections.
+    depends_on:
+      mcp-documentation:
+        condition: service_healthy
+      mcp-quantum-management:
+        condition: service_healthy
+    # Surfaces a wedged gateway (e.g. it came up before a sidecar and enumerated
+    # 0 tools) as 'unhealthy' in `docker ps`. The gateway image is a minimal Go
+    # image with busybox nc (no node), so probe the port with nc.
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "127.0.0.1", "8080" ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped

@@ -7,7 +7,18 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
+# --non-interactive (aka --ci / -y): no prompts — used by CI and unattended
+# setups. Creates .env from .env-example, generates secure random secrets, and
+# skips the optional API-key entry.
+NONINTERACTIVE=0
+for arg in "$@"; do
+    case "$arg" in
+        --non-interactive|--ci|-y) NONINTERACTIVE=1 ;;
+    esac
+done
+
 echo -e "${GREEN}=== Check Point MCP Servers Starting Kit Setup ===${NC}"
+[ "$NONINTERACTIVE" = "1" ] && echo -e "${YELLOW}(non-interactive mode)${NC}"
 
 # 1. Check Prerequisites
 echo -e "\n${YELLOW}[1/4] Checking prerequisites...${NC}"
@@ -34,8 +45,12 @@ EXAMPLE_FILE=".env-example"
 
 if [ -f "$ENV_FILE" ]; then
     echo -e "${YELLOW}A '$ENV_FILE' file already exists.${NC}"
-    read -p "Do you want to overwrite it? (y/N) " -n 1 -r
-    echo
+    if [ "$NONINTERACTIVE" = "1" ]; then
+        REPLY="n"   # never clobber an existing .env unattended
+    else
+        read -p "Do you want to overwrite it? (y/N) " -n 1 -r
+        echo
+    fi
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         echo "Skipping .env generation."
     else
@@ -56,9 +71,13 @@ if [ ! -f "$ENV_FILE" ]; then
     
     echo -e "\n${YELLOW}Do you want to generate secure random passwords?${NC}"
     echo "If you are setting up a demo lab and want to use default credentials, choose 'No'."
-    read -p "Generate random passwords? (y/N) " -n 1 -r
-    echo
-    
+    if [ "$NONINTERACTIVE" = "1" ]; then
+        REPLY="y"   # unattended: always generate secure secrets
+    else
+        read -p "Generate random passwords? (y/N) " -n 1 -r
+        echo
+    fi
+
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "Generating secure passwords..."
         
@@ -114,19 +133,27 @@ fi
 echo -e "\n${YELLOW}[3/4] Optional Configuration${NC}"
 echo "You can edit the .env file manually to add your Check Point API keys."
 echo "Or you can do it now."
-read -p "Do you want to enter API keys now? (y/N) " -n 1 -r
-echo
+if [ "$NONINTERACTIVE" = "1" ]; then
+    REPLY="n"   # unattended: skip interactive key entry (edit .env later)
+else
+    read -p "Do you want to enter API keys now? (y/N) " -n 1 -r
+    echo
+fi
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     read -p "Enter Management Host IP (e.g. 1.2.3.4): " MGMT_HOST
     if [ ! -z "$MGMT_HOST" ]; then
         sed -i "s|^MANAGEMENT_HOST=.*|MANAGEMENT_HOST=$MGMT_HOST|" "$ENV_FILE"
     fi
     
-    read -p "Enter SMS API Key: " SMS_KEY
+    read -p "Enter Management API Key: " SMS_KEY
     if [ ! -z "$SMS_KEY" ]; then
         # Escape special chars for sed
         ESCAPED_KEY=$(printf '%s\n' "$SMS_KEY" | sed -e 's/[\/&]/\\&/g')
-        sed -i "s|^SMS_API_KEY=.*|SMS_API_KEY=$ESCAPED_KEY|" "$ENV_FILE"
+        # MANAGEMENT_API_KEY is what docker-compose.yml feeds every
+        # management-backed MCP sidecar (API_KEY=${MANAGEMENT_API_KEY}).
+        # The old SMS_API_KEY name was consumed by nothing — writing it
+        # left the real variable empty.
+        sed -i "s|^MANAGEMENT_API_KEY=.*|MANAGEMENT_API_KEY=$ESCAPED_KEY|" "$ENV_FILE"
     fi
     
     echo -e "${GREEN}API keys updated.${NC}"
@@ -140,5 +167,8 @@ echo ""
 echo "To start with GPU support (NVIDIA):"
 echo -e "  ${GREEN}docker compose --profile gpu-nvidia up -d${NC}"
 echo ""
-echo "Access n8n at: http://localhost:5678"
-echo "Access Open WebUI at: http://localhost:3000"
+echo ""
+echo "No host ports are published (services talk over the internal 'demo'"
+echo "network). Reach the UIs through your reverse proxy / the dev-hub, or add"
+echo "a temporary 'ports:' mapping for local access. The MCP Gateway is at"
+echo "http://mcp-gateway:8080/mcp inside the network."

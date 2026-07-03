@@ -2,6 +2,23 @@
   "name": "management-logs-mcp-webhook-OpenAI",
   "nodes": [
     {
+      "parameters": {},
+      "id": "a38b55f0-b13d-4762-a64f-2db00696a83e",
+      "name": "Postgres Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.1,
+      "position": [
+        -128,
+        384
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nNfAshAXNQ81bjc7",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
       "parameters": {
         "public": true,
         "options": {
@@ -75,7 +92,7 @@
     },
     {
       "parameters": {
-        "content": "blade:Anti-Bot OR blade:Anti-Virus OR blade:\"Zero Phishing\" OR blade:\"Threat Emulation\" OR blade:\"Threat Extraction\" NOT type:Control NOT action:Accept NOT severity:Low\n\nuse the filter above to see if there are any threats blocked in the \"last-7-days\"  but get only 10 logs",
+        "content": "blade:Anti-Bot OR blade:Anti-Virus OR blade:\"Zero Phishing\" OR blade:\"Threat Emulation\" OR blade:\"Threat Extraction\" NOT type:Control NOT action:Accept NOT severity:Low\n\nuse the filter above to see if there are any threats blocked in the \"last-7-days\"",
         "height": 144,
         "width": 384,
         "color": 6
@@ -133,7 +150,7 @@
     },
     {
       "parameters": {
-        "content": "curl -H \"Content-Type: application/json\"      -d '{\"sessionId\":\"test\",\"chatInput\":\"blade:Anti-Bot OR blade:Anti-Virus OR blade:\\\"Zero Phishing\\\" OR blade:\\\"Threat Emulation\\\" OR blade:\\\"Threat Extraction\\\" NOT type:Control NOT action:Accept NOT severity:Low\\n\\nuse the filter above to see if there are any threats blocked in the past week (time-frame is last-7-days) but get only 10 logs\"}'      http://localhost:5678/webhook-test/n8n-pipe\n",
+        "content": "curl -H \"Content-Type: application/json\"      -d '{\"sessionId\":\"test\",\"chatInput\":\"blade:Anti-Bot OR blade:Anti-Virus OR blade:\\\"Zero Phishing\\\" OR blade:\\\"Threat Emulation\\\" OR blade:\\\"Threat Extraction\\\" NOT type:Control NOT action:Accept NOT severity:Low\\n\\nuse the filter above to see if there are any threats blocked in the past week (time-frame is last-7-days)\"}'      http://localhost:5678/webhook-test/n8n-pipe\n",
         "height": 192,
         "width": 384,
         "color": 7
@@ -292,21 +309,21 @@
           "name": "CP Log MCP Client Docker"
         }
       }
-    },
-    {
-      "parameters": {},
-      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
-      "typeVersion": 1.3,
-      "position": [
-        -128,
-        464
-      ],
-      "id": "97e28cdd-5ba1-46b5-880a-6d2040db6c83",
-      "name": "Simple Memory"
     }
   ],
   "pinData": {},
   "connections": {
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Check Point Logs AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "When chat message received": {
       "main": [
         [
@@ -399,29 +416,13 @@
           }
         ]
       ]
-    },
-    "Simple Memory": {
-      "ai_memory": [
-        [
-          {
-            "node": "Check Point Logs AI Agent",
-            "type": "ai_memory",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenAI Chat Model": {
-      "ai_languageModel": [
-        []
-      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "55501724-bb9c-41a4-91dd-1a5ac1e9e248",
+  "versionId": "aff9932c-3e3d-473f-a237-ef4b05912b87",
   "meta": {
     "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec",
     "templateCredsSetupCompleted": true

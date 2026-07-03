@@ -21,7 +21,12 @@ export interface ServerConfig {
 }
 
 export interface ServerModule {
-  server: any; // The MCP server instance
+  server: any; // The MCP server instance (used for stdio and as a fallback)
+  // Optional factory that builds a fresh MCP server instance with all tools
+  // registered. When provided, Streamable HTTP creates one server per session,
+  // which is required for concurrent/multi-client use: the MCP SDK forbids
+  // connecting a single server to more than one transport.
+  createServer?: () => any;
   Settings: {
     fromArgs(options: any): any;
     fromHeaders(headers: Record<string, string | string[]>): any;
@@ -217,6 +222,9 @@ async function launchHTTPServer(
               if (sid) {
                 delete transports[sid];
 
+                // Close the per-session server instance (if one was created)
+                try { (transport as any)._sessionServer?.close?.(); } catch { /* best effort */ }
+
                 // Clean up session-specific resources
                 serverModule.settingsManager.clearSession(sid);
                 serverModule.apiManagerFactory.clearSession(sid);
@@ -244,7 +252,16 @@ async function launchHTTPServer(
               };
             };
 
-            await serverModule.server.connect(transport)
+            // Use a fresh server instance per session when a factory is provided.
+            // This is required for multi-session Streamable HTTP: the MCP SDK
+            // forbids connecting one server to multiple transports. Servers that
+            // do not provide a factory fall back to the shared singleton.
+            const sessionServer = typeof serverModule.createServer === 'function'
+              ? serverModule.createServer()
+              : serverModule.server;
+            (transport as any)._sessionServer = sessionServer;
+
+            await sessionServer.connect(transport)
               .catch((error: Error) => {
                 console.error('Error connecting to HTTP transport:', error);
               });
@@ -306,6 +323,7 @@ async function launchHTTPServer(
             const sid = (transport as any).sessionId;
             if (sid) {
               delete transports[sid];
+              try { (transport as any)._sessionServer?.close?.(); } catch { /* best effort */ }
               serverModule.settingsManager.clearSession(sid);
               serverModule.apiManagerFactory.clearSession(sid);
               serverModule.sessionManager.removeSession(sid);
@@ -321,7 +339,13 @@ async function launchHTTPServer(
             return { sessionId, transport };
           };
 
-          await serverModule.server.connect(transport)
+          // Fresh server instance per session when a factory is provided (see POST branch).
+          const sessionServer = typeof serverModule.createServer === 'function'
+            ? serverModule.createServer()
+            : serverModule.server;
+          (transport as any)._sessionServer = sessionServer;
+
+          await sessionServer.connect(transport)
             .catch((error: Error) => {
               console.error('Error connecting to HTTP transport:', error);
             });

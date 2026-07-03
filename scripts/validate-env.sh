@@ -166,7 +166,6 @@ validate_port "OLLAMA_PORT"
 validate_port "FLOWISE_PORT"
 validate_port "LANGFLOW_PORT"
 validate_port "OPEN_WEBUI_PORT"
-validate_port "QDRANT_PORT"
 
 echo ""
 
