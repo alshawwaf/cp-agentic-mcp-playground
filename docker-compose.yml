@@ -277,9 +277,18 @@ services:
           sleep 5
         done
 
+        echo "Preparing credentials (injecting secrets from env, keeping them out of git)..."
+        # The committed credential backups carry placeholders, never real secrets
+        # (this repo is public). Copy to a writable temp dir and substitute the
+        # real values from .env at import time. Escape sed-special chars in the
+        # password so any password is safe.
+        cp -r /backup /tmp/import
+        ESCAPED_PG=$(printf '%s' "$POSTGRES_PASSWORD" | sed -e 's/[\/&|]/\\&/g')
+        sed -i "s|__POSTGRES_PASSWORD__|$ESCAPED_PG|g" /tmp/import/credentials_public/postgres.json
+
         echo "Importing n8n credentials & workflows..."
-        n8n import:credentials --separate --input=/backup/credentials_public && \
-        n8n import:workflow --separate --input=/backup/workflows
+        n8n import:credentials --separate --input=/tmp/import/credentials_public && \
+        n8n import:workflow --separate --input=/tmp/import/workflows
 
         echo "N8N Import completed!!!"
 

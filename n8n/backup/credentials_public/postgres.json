@@ -7,7 +7,7 @@
     "host": "postgres",
     "database": "n8n",
     "user": "admin",
-    "password": "Cpwins!1"
+    "password": "__POSTGRES_PASSWORD__"
   },
   "type": "postgres",
   "isManaged": false

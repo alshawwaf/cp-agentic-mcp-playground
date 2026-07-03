@@ -7,7 +7,18 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
+# --non-interactive (aka --ci / -y): no prompts — used by CI and unattended
+# setups. Creates .env from .env-example, generates secure random secrets, and
+# skips the optional API-key entry.
+NONINTERACTIVE=0
+for arg in "$@"; do
+    case "$arg" in
+        --non-interactive|--ci|-y) NONINTERACTIVE=1 ;;
+    esac
+done
+
 echo -e "${GREEN}=== Check Point MCP Servers Starting Kit Setup ===${NC}"
+[ "$NONINTERACTIVE" = "1" ] && echo -e "${YELLOW}(non-interactive mode)${NC}"
 
 # 1. Check Prerequisites
 echo -e "\n${YELLOW}[1/4] Checking prerequisites...${NC}"
@@ -34,8 +45,12 @@ EXAMPLE_FILE=".env-example"
 
 if [ -f "$ENV_FILE" ]; then
     echo -e "${YELLOW}A '$ENV_FILE' file already exists.${NC}"
-    read -p "Do you want to overwrite it? (y/N) " -n 1 -r
-    echo
+    if [ "$NONINTERACTIVE" = "1" ]; then
+        REPLY="n"   # never clobber an existing .env unattended
+    else
+        read -p "Do you want to overwrite it? (y/N) " -n 1 -r
+        echo
+    fi
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         echo "Skipping .env generation."
     else
@@ -56,9 +71,13 @@ if [ ! -f "$ENV_FILE" ]; then
     
     echo -e "\n${YELLOW}Do you want to generate secure random passwords?${NC}"
     echo "If you are setting up a demo lab and want to use default credentials, choose 'No'."
-    read -p "Generate random passwords? (y/N) " -n 1 -r
-    echo
-    
+    if [ "$NONINTERACTIVE" = "1" ]; then
+        REPLY="y"   # unattended: always generate secure secrets
+    else
+        read -p "Generate random passwords? (y/N) " -n 1 -r
+        echo
+    fi
+
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "Generating secure passwords..."
         
@@ -114,8 +133,12 @@ fi
 echo -e "\n${YELLOW}[3/4] Optional Configuration${NC}"
 echo "You can edit the .env file manually to add your Check Point API keys."
 echo "Or you can do it now."
-read -p "Do you want to enter API keys now? (y/N) " -n 1 -r
-echo
+if [ "$NONINTERACTIVE" = "1" ]; then
+    REPLY="n"   # unattended: skip interactive key entry (edit .env later)
+else
+    read -p "Do you want to enter API keys now? (y/N) " -n 1 -r
+    echo
+fi
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     read -p "Enter Management Host IP (e.g. 1.2.3.4): " MGMT_HOST
     if [ ! -z "$MGMT_HOST" ]; then

@@ -7,7 +7,7 @@ This guide provides step-by-step instructions on how to use the **Lakera Playgro
 Ensure you have the following credentials ready:
 *   **n8n URL**: `http://host_ip:5678`
 *   **Email**: `admin@cpdemo.com`
-*   **Password**: `Cpwins!1`
+*   **Password**: `<the N8N_ADMIN_PASSWORD you set in .env>`
 
 ## Step-by-Step Guide
 

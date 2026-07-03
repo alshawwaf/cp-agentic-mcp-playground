@@ -7,7 +7,7 @@
         "apiKey": "CHANGE_ME",
         "resourceName": "CP-Azure-OpenAI",
         "apiVersion": "2025-04-01-preview",
-        "endpoint": "https://staging-openai.azure-api.net/openai-gw-proxy-dev/"
+        "endpoint": "https://YOUR-RESOURCE.openai.azure.com/"
     },
     "type": "azureOpenAiApi",
     "isManaged": false
