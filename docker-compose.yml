@@ -703,6 +703,9 @@ services:
     environment:
       # required when running outside Docker Desktop (Dokploy / Docker CE)
       - DOCKER_MCP_IN_CONTAINER=1
+      # sidecars are internal-network HTTP (not HTTPS); opt into insecure remote
+      # MCP URLs. Safe here because traffic stays on the private `demo` network.
+      - DOCKER_MCP_ALLOW_INSECURE_REMOTE_URLS=1
     volumes:
       - ./mcp-gateway/catalog.yaml:/root/.docker/mcp/catalogs/checkpoint-mcp.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock
