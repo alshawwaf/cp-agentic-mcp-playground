@@ -414,6 +414,15 @@ services:
       - "http"
       - "--transport-port"
       - "3000"
+    # Lets the MCP gateway wait for a LISTENING server: the gateway enumerates
+    # tools once at startup, and a sidecar that isn't up yet is silently dropped
+    # (0 tools) until the gateway restarts.
+    healthcheck:
+      test: [ "CMD", "node", "-e", "require('net').connect(3000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))" ]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 20s
     restart: unless-stopped
 
   mcp-https-inspection:
@@ -448,6 +457,13 @@ services:
       - "http"
       - "--transport-port"
       - "3002"
+    # See mcp-documentation: gateway startup must find this server listening.
+    healthcheck:
+      test: [ "CMD", "node", "-e", "require('net').connect(3002,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))" ]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 20s
     restart: unless-stopped
 
   mcp-management-logs:
@@ -706,10 +722,22 @@ services:
       # sidecars are internal-network HTTP (not HTTPS); opt into insecure remote
       # MCP URLs. Safe here because traffic stays on the private `demo` network.
       - DOCKER_MCP_ALLOW_INSECURE_REMOTE_URLS=1
+      # PIN the gateway Bearer token. Without this the gateway generates a NEW
+      # random token on every restart, silently invalidating any client
+      # credential (n8n) configured against the old one. Clients send:
+      #   Authorization: Bearer <token>
+      - MCP_GATEWAY_AUTH_TOKEN=${MCP_GATEWAY_TOKEN:-cp-mcp-gateway-training-token}
     volumes:
       - ./mcp-gateway/catalog.yaml:/root/.docker/mcp/catalogs/checkpoint-mcp.yaml:ro
       - /var/run/docker.sock:/var/run/docker.sock
+    # service_healthy (not plain startup order): the gateway enumerates each
+    # server's tools ONCE at startup. If a slow-booting sidecar isn't listening
+    # yet, the gateway logs "Can't start <server>: connection refused" and runs
+    # with 0 of its tools until manually restarted. The healthchecks make the
+    # gateway start only after both sidecars accept connections.
     depends_on:
-      - mcp-documentation
-      - mcp-quantum-management
+      mcp-documentation:
+        condition: service_healthy
+      mcp-quantum-management:
+        condition: service_healthy
     restart: unless-stopped
