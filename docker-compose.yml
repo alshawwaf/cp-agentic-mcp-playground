@@ -781,6 +781,9 @@ services:
     environment:
       - IPS_CLIENT_ID=${IPS_CLIENT_ID}
       - IPS_ACCESS_KEY=${IPS_ACCESS_KEY}
+      # optional region override (auth + service host must match); blank = global default
+      - IPS_AUTH_URL=${IPS_AUTH_URL:-}
+      - IPS_SERVICE_URL=${IPS_SERVICE_URL:-}
       - MCP_PORT=3013
     healthcheck:
       test: [ "CMD", "python3", "-c", "import socket; socket.create_connection(('127.0.0.1',3013),3)" ]
