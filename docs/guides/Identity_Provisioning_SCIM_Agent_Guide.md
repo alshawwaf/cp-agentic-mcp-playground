@@ -64,5 +64,15 @@ the email rather than inventing one (per the system prompt).
 - **Full Zero Trust story:** chain this with a PolicyPilot access request — create
   the identity here, then grant its group network access there.
 
-> **Security note:** the SCIM inbound token is a credential — keep it in the n8n
-> credential store, never in the workflow JSON or git.
+> **Security notes** — this agent *provisions identities*, so treat it as a
+> privileged entry point:
+> - The workflow ships **inactive** (`active: false`); test it via the editor's
+>   **Chat** button, which is behind your n8n login. **Do not activate its public
+>   chat/webhook trigger without authentication** — an open endpoint here lets
+>   anyone create users. Set the chat trigger's Authentication to Basic Auth (or
+>   put n8n behind your reverse proxy's auth) before going live, and scope the
+>   SCIM token to least privilege.
+> - Keep the SCIM inbound token in the n8n **credential store**, never in the
+>   workflow JSON or git.
+> - The SCIM URL is **admin-set on the node**, not taken from chat input, so the
+>   agent can't be steered to POST to an arbitrary host (no SSRF via the prompt).
