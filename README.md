@@ -599,6 +599,7 @@ Detailed documentation for specific workflows and agents:
 - **[Exercise: Build Your Own MCP Server](docs/guides/Build_Your_Own_MCP_Exercise.md)**: Author an MCP server from scratch (zero-dependency, stdlib only) that wraps the Check Point IPS/CVE API, then register it behind the gateway. Scaffold (5 TODOs) + solution under `exercises/build-your-own-mcp/`.
 - **[Identity Provisioning Agent (SCIM)](docs/guides/Identity_Provisioning_SCIM_Agent_Guide.md)**: An agent that onboards a person into a Check Point SAML/SCIM Identity Provider from plain language — the identity side of Zero Trust, paired with the [SAML/SCIM IdP Simulator](https://github.com/alshawwaf/SAML_IDP_Simulator).
 - **[PolicyPilot behind the Gateway](docs/guides/PolicyPilot_Gateway_Sidecar_Guide.md)**: Opt-in — front [PolicyPilot](https://github.com/alshawwaf/PolicyPilot)'s MCP server (guarded policy changes: preview/approve/rollback) as a gateway sidecar. The guarded-WRITE counterpart to the read-only Quantum Management tools.
+- **[Capstone: Zero-Trust Contractor Onboarding](docs/guides/Capstone_Zero_Trust_Onboarding.md)**: The end-to-end story tying it together — an agent onboards an identity (SCIM), grants least-privilege network access (PolicyPilot preview/approve/rollback), all behind a Lakera guardrail that blocks prompt-injection.
 
 ### 🧩 Gateway-ready Check Point MCP servers
 
