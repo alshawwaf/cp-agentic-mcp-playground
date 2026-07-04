@@ -1,0 +1,149 @@
+{
+  "name": "identity-provisioning-scim-agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "c1eaf0fa-ec1d-4cb2-90df-43aa3fe2c1cb",
+      "name": "Simple Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [880, 304]
+    },
+    {
+      "parameters": { "options": {} },
+      "id": "d654bfa5-ba59-4321-8409-71ea4fa84eb7",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [304, 112],
+      "webhookId": "9b9f12a9-0a0c-40e2-9302-799f2c23aa03"
+    },
+    {
+      "parameters": {
+        "assignments": { "assignments": [
+          { "id": "95ebfdef-c8e2-4c3e-b716-1479d0cc2b93", "name": "chatInput", "value": "={{ $json?.chatInput || $json.body.chatInput }}", "type": "string" },
+          { "id": "79b7a20f-0626-4861-93e2-015d430c286e", "name": "sessionId", "value": "={{ $json?.sessionId || $json.body.sessionId}}", "type": "string" }
+        ] },
+        "options": {}
+      },
+      "id": "c0193d30-4747-4a3d-b7b9-7f191dfae866",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [576, 112]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Create (provision) a user in the SAML/SCIM Identity Provider. Call this once you know the person's email, first name and last name.",
+        "method": "POST",
+        "url": "https://YOUR-IDP-DOMAIN/scim/v2/Users",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [ { "name": "Content-Type", "value": "application/scim+json" } ] },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"schemas\": [\"urn:ietf:params:scim:schemas:core:2.0:User\"],\n  \"userName\": \"{email}\",\n  \"name\": { \"givenName\": \"{givenName}\", \"familyName\": \"{familyName}\" },\n  \"displayName\": \"{givenName} {familyName}\",\n  \"emails\": [ { \"value\": \"{email}\", \"primary\": true } ],\n  \"active\": true\n}",
+        "placeholderDefinitions": { "values": [
+          { "name": "email", "description": "the new user's email address (also used as SCIM userName)", "type": "string" },
+          { "name": "givenName", "description": "the new user's first name", "type": "string" },
+          { "name": "familyName", "description": "the new user's last name", "type": "string" }
+        ] }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [1160, 352],
+      "id": "99b93582-3d1b-45d6-8a43-64765abc978c",
+      "name": "SCIM-Create-User",
+      "credentials": { "httpHeaderAuth": { "id": "ScimIdpTokenCred1", "name": "CP SCIM IdP Token" } }
+    },
+    {
+      "parameters": {
+        "content": "Onboard a contractor: \"Create an account for Jane Doe, jane.doe@contractor.example, starting Monday.\"",
+        "height": 100,
+        "width": 260
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [0, 112],
+      "typeVersion": 1,
+      "id": "25a385ea-d1d7-4d90-9d4e-409bcf5ece7f",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": { "model": "gpt-4o-mini-2024-07-18", "options": {} },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [480, 384],
+      "id": "2d4d74b8-798d-4b07-9169-ce8cb5711a91",
+      "name": "Azure OpenAI Chat Model",
+      "credentials": { "azureOpenAiApi": { "id": "nmUI0INbLO2IrroY", "name": "Azure Open AI account" } }
+    },
+    {
+      "parameters": { "model": { "__rl": true, "value": "gpt-4o-mini", "mode": "list", "cachedResultName": "gpt-4o-mini" }, "options": {} },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [640, 384],
+      "id": "63a6b741-edfe-4594-8172-3e86e1112b27",
+      "name": "OpenAI Chat Model",
+      "credentials": { "openAiApi": { "id": "6oZqD0UJampaYWCy", "name": "OpenAi account" } }
+    },
+    {
+      "parameters": { "model": "gpt-oss:20b-cloud", "options": {} },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [320, 384],
+      "id": "860614c9-44c4-46d7-b374-0fc6be87b203",
+      "name": "Ollama Chat Model",
+      "credentials": { "ollamaApi": { "id": "i8fXatxwj12xOABO", "name": "Ollama account" } }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are an identity-provisioning assistant for a Check Point SAML/SCIM Identity Provider. When a user asks to onboard / create / add a person, extract their email, first name and last name from the request, then call the SCIM-Create-User tool to provision them. If the email or name is missing, ask for it first. After creating the user, confirm with the userName that was created. Never invent an email address."
+        }
+      },
+      "id": "d4e631b3-c0e3-4c54-abcc-6585a468be83",
+      "name": "Identity Provisioning Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [864, 112],
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": { "content": "SCIM provisioning tool → POSTs a SCIM 2.0 user to the IdP. Edit the URL to your IdP and set the Bearer token in the 'CP SCIM IdP Token' credential.", "width": 320, "color": 6 },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [1072, 336],
+      "typeVersion": 1,
+      "id": "b38bead4-8775-4060-93b6-2e435fab15d4",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": { "content": "LLM Models", "height": 176, "width": 560, "color": 4 },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [224, 336],
+      "typeVersion": 1,
+      "id": "a4fc2516-91c1-41c9-b5fe-2d771b34b378",
+      "name": "Sticky Note2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Simple Memory": { "ai_memory": [ [ { "node": "Identity Provisioning Agent", "type": "ai_memory", "index": 0 } ] ] },
+    "When chat message received": { "main": [ [ { "node": "Edit Fields", "type": "main", "index": 0 } ] ] },
+    "Edit Fields": { "main": [ [ { "node": "Identity Provisioning Agent", "type": "main", "index": 0 } ] ] },
+    "SCIM-Create-User": { "ai_tool": [ [ { "node": "Identity Provisioning Agent", "type": "ai_tool", "index": 0 } ] ] },
+    "Azure OpenAI Chat Model": { "ai_languageModel": [ [] ] },
+    "OpenAI Chat Model": { "ai_languageModel": [ [] ] },
+    "Identity Provisioning Agent": { "main": [ [], [] ] },
+    "Ollama Chat Model": { "ai_languageModel": [ [ { "node": "Identity Provisioning Agent", "type": "ai_languageModel", "index": 0 } ] ] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "versionId": "3fc0679d-3dca-4921-baec-ce199159fa3f",
+  "meta": { "templateCredsSetupCompleted": true, "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec" },
+  "id": "ScimIdpAgent00001",
+  "tags": []
+}
