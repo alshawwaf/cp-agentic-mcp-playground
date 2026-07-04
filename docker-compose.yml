@@ -763,3 +763,28 @@ services:
       retries: 5
       start_period: 20s
     restart: unless-stopped
+
+  # ─────────── Exercise: Build Your Own MCP Server (opt-in) ───────────
+  # Zero-dependency, stdlib-only MCP server wrapping the CP IPS/CVE API. Behind
+  # the `exercises` profile so it never starts with the default stack or CI.
+  # Run: docker compose --profile exercises up -d --build ips-cve-mcp
+  # See docs/guides/Build_Your_Own_MCP_Exercise.md.
+  ips-cve-mcp:
+    build:
+      context: ./exercises/build-your-own-mcp
+      dockerfile: Dockerfile
+    image: ips-cve-mcp:exercise
+    container_name: ips-cve-mcp
+    profiles: [ "exercises" ]
+    networks: [ "demo" ]
+    environment:
+      - IPS_CLIENT_ID=${IPS_CLIENT_ID}
+      - IPS_ACCESS_KEY=${IPS_ACCESS_KEY}
+      - MCP_PORT=3013
+    healthcheck:
+      test: [ "CMD", "python3", "-c", "import socket; socket.create_connection(('127.0.0.1',3013),3)" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped

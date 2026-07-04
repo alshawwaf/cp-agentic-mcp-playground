@@ -1,6 +1,10 @@
 # Environment variables
 .env
 
+# Python bytecode
+__pycache__/
+*.pyc
+
 # Docker volumes / local storage
 n8n_storage/
 postgres_storage/
