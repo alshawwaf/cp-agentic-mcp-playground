@@ -265,8 +265,9 @@ AIG_LLM_API_KEY=ollama
 AIG_LLM_BASE_URL=http://ollama-cpu:11434/v1
 AIG_LLM_MODEL=huihui_ai/deepseek-r1-abliterated:latest
 
-# ───────── Profiles ─────────
-COMPOSE_PROFILES=true,cpu
+# ───────── Profiles (opt-in; core CPU stack always runs) ─────────
+# Real profiles: gpu-nvidia, exercises, policypilot. 'cpu' is a harmless no-op.
+COMPOSE_PROFILES=cpu
 ```
 
 > 💡 **Tip**  
