@@ -29,7 +29,7 @@ RUN npm init -y >/dev/null 2>&1 && \
   npm install --omit=dev /opt/artifacts/*.tgz
 
 # ============== FINAL STAGE ==============
-FROM n8nio/n8n:latest
+FROM n8nio/n8n:2.28.6
 
 USER root
 
