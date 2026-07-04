@@ -25,11 +25,23 @@ in **5 TODOs**, all about declaring and dispatching tools.
 
 ## Prerequisites
 
-An Infinity Portal API key (Client ID + Access Key) with the IPS service. Set:
+A **Check Point Infinity Portal API key** (Client ID + Access Key) — *not* a
+lab/repo credential. Create it at **portal.checkpoint.com → Global Settings →
+API Keys → New**, scoped to the **IPS Info** service (same key family as the
+documentation-MCP `DOC_CLIENT_ID`/`DOC_SECRET_KEY`).
 
 ```bash
-export IPS_CLIENT_ID=...      # from Infinity Portal → Global Settings → API Keys
+export IPS_CLIENT_ID=...
 export IPS_ACCESS_KEY=...
+```
+
+The auth host and the API host **must be the same region**. Defaults target the
+global host (`cloudinfra-gw.portal.checkpoint.com`); for another region override
+both together:
+
+```bash
+export IPS_AUTH_URL=https://cloudinfra-gw-us.portal.checkpoint.com/auth/external
+export IPS_SERVICE_URL=https://cloudinfra-gw-us.portal.checkpoint.com/app/ipsinfoapp
 ```
 
 ## Step 1 — Run the scaffold

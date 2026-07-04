@@ -23,8 +23,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 PROTOCOL_VERSION = "2025-03-26"
 PORT = int(os.getenv("MCP_PORT", "3013"))
 BEARER = os.getenv("MCP_BEARER_TOKEN", "")
-AUTH_URL = os.getenv("IPS_AUTH_URL", "https://cloudinfra-gw-us.portal.checkpoint.com/auth/external").rstrip("/")
-SERVICE_URL = os.getenv("IPS_SERVICE_URL", "https://cloudinfra-gw-us.portal.checkpoint.com/app/ips-info/api/v1").rstrip("/")
+# Auth host and service host MUST be the same region (e.g. both global
+# cloudinfra-gw, or both cloudinfra-gw-us / -eu). Defaults use the global host.
+# `or default` (not getenv's 2nd arg) so an empty env value falls back too.
+AUTH_URL = (os.getenv("IPS_AUTH_URL") or "https://cloudinfra-gw.portal.checkpoint.com/auth/external").rstrip("/")
+SERVICE_URL = (os.getenv("IPS_SERVICE_URL") or "https://cloudinfra-gw.portal.checkpoint.com/app/ipsinfoapp").rstrip("/")
 
 
 # --------------------------------------------------------------------------- #
