@@ -32,6 +32,7 @@ volumes:
   aig_db:
   aig_logs:
   aig_uploads:
+  policypilot_data:   # PolicyPilot MCP sidecar DB (opt-in `policypilot` profile)
 
     ###############################################################################
     # Common Service Definitions (Anchors)
@@ -787,4 +788,39 @@ services:
       timeout: 5s
       retries: 12
       start_period: 10s
+    restart: unless-stopped
+
+  # ─────────── PolicyPilot MCP (opt-in, prereqs required) ───────────
+  # PolicyPilot's own MCP server (guarded-WRITE: preview / approve / rollback)
+  # fronted by the gateway. Behind the `policypilot` profile so it never starts
+  # with the default stack or CI. RUNTIME PREREQS (see the guide): build the
+  # PolicyPilot image (its `mcp` dep installs via Artifactory), and provide a DB
+  # + PILOT_ENCRYPTION_KEY populated by the PolicyPilot portal (share its /data
+  # volume) so its tools can decrypt saved SMS/gateway creds.
+  # Enable: docs/guides/PolicyPilot_Gateway_Sidecar_Guide.md
+  policypilot-mcp:
+    image: ${POLICYPILOT_IMAGE:-policypilot:custom}
+    container_name: policypilot-mcp
+    profiles: [ "policypilot" ]
+    networks: [ "demo" ]
+    # init_db() is skipped by the standalone entrypoint — create tables first,
+    # then run the Streamable-HTTP MCP server on 0.0.0.0 (default binds 127.0.0.1).
+    entrypoint: [ "sh", "-c" ]
+    command:
+      - "python -c 'from app.db import init_db; init_db()' && python -m app.mcp_server"
+    environment:
+      # Required at runtime: PolicyPilot's standalone server exits without it.
+      - PILOT_MCP_TOKEN=${PILOT_MCP_TOKEN:-}
+      - PILOT_MCP_HOST=0.0.0.0
+      - PILOT_MCP_PORT=3020
+      - PILOT_DATABASE_URL=${PILOT_DATABASE_URL:-sqlite:////data/policypilot.db}
+      - PILOT_ENCRYPTION_KEY=${PILOT_ENCRYPTION_KEY:-}
+    volumes:
+      - policypilot_data:/data
+    healthcheck:
+      test: [ "CMD", "sh", "-c", "python -c \"import socket; socket.create_connection(('127.0.0.1',3020),3)\"" ]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
     restart: unless-stopped
