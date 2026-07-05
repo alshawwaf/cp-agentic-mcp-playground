@@ -76,7 +76,7 @@ x-n8n: &service-n8n
 x-ollama: &service-ollama
   image: ollama/ollama:0.31.1
   pull_policy: missing
-  networks: [ "demo" ]
+  networks: [ "demo", "dokploy-network" ]
   restart: unless-stopped
   volumes:
     - ollama_storage:/root/.ollama
@@ -142,7 +142,10 @@ services:
     image: ollama/ollama:0.31.1
     pull_policy: missing
     container_name: ollama-cpu
-    networks: [ "demo" ]
+    # dokploy-network too, so standalone Dokploy apps (e.g. Lakera Demo) can
+    # reach Ollama by name at http://ollama-cpu:11434 — no host-IP hairpin,
+    # no published port, works across redeploys.
+    networks: [ "demo", "dokploy-network" ]
     restart: unless-stopped
     volumes:
       - ollama_storage:/root/.ollama
