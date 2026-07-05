@@ -98,15 +98,19 @@ x-init-ollama: &init-ollama
   command:
     - "-lc"
     - |
-      set -e
       echo "Waiting for Ollama @ $${OLLAMA_HOST} ..."
       # loop until the server responds
       until OLLAMA_HOST="$${OLLAMA_HOST}" ollama list >/dev/null 2>&1; do
         echo "  Ollama not ready yet..."
         sleep 3
       done
-      echo "Ollama is ready. Pulling models..."
-      OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull huihui_ai/foundation-sec-abliterated:latest
+      # Model list comes from OLLAMA_MODELS in the env (comma-separated).
+      MODELS="${OLLAMA_MODELS:-gemma4:e2b}"
+      echo "Ollama is ready. Pulling: $${MODELS}"
+      for m in $$(echo "$${MODELS}" | tr ',' ' '); do
+        echo ">> pulling $${m}"
+        OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull "$${m}" || echo "WARN: pull failed for $${m} (continuing)"
+      done
       echo "LLM Models pulled successfully!!!"
       # keep the container alive so logs stay visible
       tail -f /dev/null
@@ -145,6 +149,8 @@ services:
     environment:
       - OLLAMA_HOST=0.0.0.0:11434
       - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE}
+      # RAM guard: at most N models resident at once (CPU box, several 9B models).
+      - OLLAMA_MAX_LOADED_MODELS=${OLLAMA_MAX_LOADED_MODELS:-2}
     healthcheck:
       test: [ "CMD-SHELL", "ollama list >/dev/null 2>&1" ]
       interval: 5s
@@ -158,6 +164,8 @@ services:
     environment:
       - OLLAMA_HOST=0.0.0.0:11434
       - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE}
+      # RAM guard: at most N models resident at once (CPU box, several 9B models).
+      - OLLAMA_MAX_LOADED_MODELS=${OLLAMA_MAX_LOADED_MODELS:-2}
     deploy:
       resources:
         reservations:
@@ -189,8 +197,13 @@ services:
           echo "  ...still waiting for Ollama ($${OLLAMA_HOST})"
           sleep 3
         done
-        echo "Ollama is up. Pulling models..."
-        OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull huihui_ai/foundation-sec-abliterated:latest
+        # Model list comes from OLLAMA_MODELS in the env (comma-separated).
+        MODELS="${OLLAMA_MODELS:-gemma4:e2b}"
+        echo "Ollama is up. Pulling: $${MODELS}"
+        for m in $$(echo "$${MODELS}" | tr ',' ' '); do
+          echo ">> pulling $${m}"
+          OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull "$${m}" || echo "WARN: pull failed for $${m} (continuing)"
+        done
         echo "All models pulled!!!"
         # keep the container alive so logs stay visible
         tail -f /dev/null
@@ -365,6 +378,8 @@ services:
       - ./open-webui/pipes/n8n_pipe.py:/app/backend/data/pipes/n8n_pipe.py:ro
     environment:
       - OLLAMA_BASE_URL=http://ollama-cpu:11434
+      # Default model(s) for new users/chats — set via the agentic env.
+      - DEFAULT_MODELS=${OPEN_WEBUI_DEFAULT_MODELS:-gemma4:e2b}
 
     labels:
       - "traefik.enable=true"
