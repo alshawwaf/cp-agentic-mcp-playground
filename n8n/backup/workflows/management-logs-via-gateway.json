@@ -1,5 +1,5 @@
 {
-  "name": "management-logs-via-gateway",
+  "name": "CP Logs — AI Agent (Gateway)",
   "nodes": [
     {
       "parameters": {},
@@ -8,8 +8,8 @@
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "typeVersion": 1.1,
       "position": [
-        780,
-        340
+        640,
+        380
       ],
       "credentials": {
         "postgres": {
@@ -21,8 +21,12 @@
     {
       "parameters": {
         "public": true,
+        "initialMessages": "👋 I'm the **Check Point Logs** AI agent — I query the security and audit logs and turn them into clear findings — top sources, preventions, who-changed-what.\n\n⚡ Every call rides through the **Docker MCP Gateway** — one endpoint, Bearer auth, the whole Check Point MCP fleet.\n\n**Try one of these:**\n• Show the last 10 dropped connections\n• Any preventions in the past 24 hours? Summarize by blade\n• Who published policy changes this week?",
         "options": {
-          "responseMode": "responseNode"
+          "responseMode": "lastNode",
+          "title": "CP Logs — AI Agent (Gateway)",
+          "subtitle": "Ask your security logs anything.",
+          "inputPlaceholder": "e.g. Show the last 10 dropped connections"
         }
       },
       "id": "4cb47cf8-64d8-40a2-bf39-06c9450a7a1a",
@@ -30,8 +34,8 @@
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
-        -60,
-        112
+        -180,
+        120
       ],
       "webhookId": "35bcabf8-caf6-4033-b66d-4658abbaa057"
     },
@@ -48,8 +52,8 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
       "position": [
-        336,
-        240
+        760,
+        -80
       ],
       "id": "f8a5439e-8915-4e4b-a7e2-6e411d4f2547",
       "name": "Generate audio",
@@ -71,8 +75,8 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -784,
-        304
+        -180,
+        -80
       ],
       "id": "b39a40f9-eede-4074-9e45-9f1bfc98f5c8",
       "name": "Webhook",
@@ -86,8 +90,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        672,
-        160
+        1020,
+        -80
       ],
       "id": "17e62fc9-a32e-431f-a28b-805e3467614b",
       "name": "Respond to Webhook"
@@ -105,8 +109,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.6,
       "position": [
-        560,
-        112
+        400,
+        100
       ],
       "retryOnFail": true,
       "onError": "continueErrorOutput"
@@ -134,8 +138,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        240,
-        112
+        80,
+        120
       ],
       "name": "Normalize input"
     },
@@ -156,8 +160,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        860,
-        260
+        820,
+        280
       ],
       "name": "Friendly error"
     },
@@ -170,8 +174,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        1000,
-        320
+        1120,
+        380
       ],
       "name": "CP MCP Gateway",
       "credentials": {
@@ -189,10 +193,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        240,
-        340
+        0,
+        560
       ],
-      "name": "Azure OpenAI Chat Model",
+      "name": "Azure OpenAI (default)",
       "credentials": {
         "azureOpenAiApi": {
           "id": "nmUI0INbLO2IrroY",
@@ -208,10 +212,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        420,
-        340
+        220,
+        560
       ],
-      "name": "Ollama Chat Model",
+      "name": "Ollama — local gemma4",
       "credentials": {
         "ollamaApi": {
           "id": "i8fXatxwj12xOABO",
@@ -227,10 +231,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        600,
-        340
+        440,
+        560
       ],
-      "name": "Google Gemini Chat Model",
+      "name": "Gemini 2.5 Flash",
       "credentials": {
         "googlePalmApi": {
           "id": "jQWvIJNDs6CeSDiN",
@@ -251,10 +255,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        780,
-        340
+        660,
+        560
       ],
-      "name": "OpenAI Chat Model",
+      "name": "OpenAI gpt-4o-mini",
       "credentials": {
         "openAiApi": {
           "id": "6oZqD0UJampaYWCy",
@@ -275,10 +279,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        960,
-        340
+        880,
+        560
       ],
-      "name": "Anthropic Chat Model",
+      "name": "Claude Sonnet 4.5",
       "credentials": {
         "anthropicApi": {
           "id": "AnthropicCred001",
@@ -288,62 +292,78 @@
     },
     {
       "parameters": {
-        "content": "## 🛡 Management Logs — via MCP Gateway\n\nSame agent as the direct Management Logs demo, but every MCP call rides through the **Docker MCP Gateway** — ONE endpoint (`mcp-gateway:8080/mcp`), **Bearer auth**, aggregating **all** Check Point MCP servers.\n\n👉 The point to show: one credential + one endpoint fronts the whole CP MCP fleet (rate-limiting, auth, and audit in one place).",
-        "width": 480,
-        "height": 400
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -620,
-        -60
-      ],
-      "name": "Sticky 96944"
-    },
-    {
-      "parameters": {
-        "content": "### 💬 Try these\n\n- Show the last 10 dropped connections\n- Any preventions in the past 24 hours? Summarize by blade\n- Who published policy changes this week?",
-        "width": 480,
-        "height": 240,
+        "content": "## 🛡️ Check Point Logs\n### AI Agent over MCP (Gateway)\n\nI query the security and audit logs and turn them into clear findings — top sources, preventions, who-changed-what.\n\n**How:** one endpoint (`mcp-gateway:8080/mcp`), **Bearer auth**, every CP MCP server aggregated.",
+        "width": 440,
+        "height": 380,
         "color": 4
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -620,
-        380
+        -660,
+        -60
       ],
-      "name": "Sticky 96226"
+      "name": "Zone Header"
     },
     {
       "parameters": {
-        "content": "### 🧠 Models\n\n**Azure OpenAI** is wired as the default. To demo another provider, connect its node to the agent's *Chat Model* port instead — Ollama (local, no API key), Gemini, OpenAI, or Anthropic.\n\nKeys come from the deployment `.env`; a red node just means that provider's key wasn't supplied.",
-        "width": 560,
-        "height": 220,
+        "content": "### 💬 Try these\n\n- Show the last 10 dropped connections\n- Any preventions in the past 24 hours? Summarize by blade\n- Who published policy changes this week?",
+        "width": 440,
+        "height": 260,
         "color": 5
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -100,
-        420
+        -660,
+        360
       ],
-      "name": "Sticky 62902"
+      "name": "Zone Demos"
     },
     {
       "parameters": {
-        "content": "### 🔌 MCP\n\n`CP MCP Gateway` is n8n's **native MCP Client Tool** node (Bearer auth → the gateway token).\nAll tools the server exposes become agent tools automatically.",
-        "width": 460,
-        "height": 220,
+        "content": "### 🧠 Model gallery\n\n**Azure OpenAI** is wired as the default. Swap providers by connecting another model to the agent's *Chat Model* port — local **Ollama** needs no API key.\n\nKeys land automatically from the deployment `.env`.",
+        "width": 1080,
+        "height": 280,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        460
+      ],
+      "name": "Zone Models"
+    },
+    {
+      "parameters": {
+        "content": "### 🔌 MCP\n\n`CP MCP Gateway` — native MCP Client Tool with **Bearer auth** to the gateway.\nEvery tool the server exposes becomes an agent tool automatically.",
+        "width": 400,
+        "height": 320,
         "color": 6
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        500,
-        420
+        1060,
+        260
       ],
-      "name": "Sticky 99122"
+      "name": "Zone MCP"
+    },
+    {
+      "parameters": {
+        "content": "### 🔊 Voice + API\n\nThe same agent is callable as a **REST webhook**, and the answer is spoken back with **OpenAI TTS** — show the response playing out loud.",
+        "width": 520,
+        "height": 120,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        700,
+        -220
+      ],
+      "name": "Zone Voice"
     }
   ],
   "pinData": {},
@@ -426,7 +446,7 @@
         ]
       ]
     },
-    "Azure OpenAI Chat Model": {
+    "Azure OpenAI (default)": {
       "ai_languageModel": [
         [
           {

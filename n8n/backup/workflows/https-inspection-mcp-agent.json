@@ -1,5 +1,5 @@
 {
-  "name": "https-inspection-mcp",
+  "name": "CP HTTPS Inspection — AI Agent",
   "nodes": [
     {
       "parameters": {},
@@ -20,15 +20,22 @@
     },
     {
       "parameters": {
-        "options": {}
+        "public": true,
+        "initialMessages": "👋 I'm the **Check Point HTTPS Inspection** AI agent — I read and change your HTTPS-inspection rulebase, bypass rules and exceptions.\n\n**Try one of these:**\n• Show the HTTPS inspection rules\n• Which categories are bypassed today?",
+        "options": {
+          "responseMode": "lastNode",
+          "title": "CP HTTPS Inspection — AI Agent",
+          "subtitle": "HTTPS inspection policy & exceptions.",
+          "inputPlaceholder": "e.g. Show the HTTPS inspection rules"
+        }
       },
       "id": "9e279237-c20f-4495-a2a3-c2d0271483ff",
       "name": "When chat message received",
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
-        -60,
-        112
+        -180,
+        120
       ],
       "webhookId": "df6e86fa-f71a-4dce-bf1f-86b8b8a01a49"
     },
@@ -45,8 +52,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.6,
       "position": [
-        560,
-        112
+        400,
+        100
       ],
       "retryOnFail": true,
       "onError": "continueErrorOutput"
@@ -74,8 +81,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        240,
-        112
+        80,
+        120
       ],
       "name": "Normalize input"
     },
@@ -96,8 +103,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        860,
-        260
+        820,
+        280
       ],
       "name": "Friendly error"
     },
@@ -109,8 +116,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        1000,
-        320
+        1120,
+        380
       ],
       "name": "HTTPS Inspection MCP"
     },
@@ -122,10 +129,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        240,
-        340
+        0,
+        560
       ],
-      "name": "Azure OpenAI Chat Model",
+      "name": "Azure OpenAI (default)",
       "credentials": {
         "azureOpenAiApi": {
           "id": "nmUI0INbLO2IrroY",
@@ -141,10 +148,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        420,
-        340
+        220,
+        560
       ],
-      "name": "Ollama Chat Model",
+      "name": "Ollama — local gemma4",
       "credentials": {
         "ollamaApi": {
           "id": "i8fXatxwj12xOABO",
@@ -160,10 +167,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        600,
-        340
+        440,
+        560
       ],
-      "name": "Google Gemini Chat Model",
+      "name": "Gemini 2.5 Flash",
       "credentials": {
         "googlePalmApi": {
           "id": "jQWvIJNDs6CeSDiN",
@@ -184,10 +191,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        780,
-        340
+        660,
+        560
       ],
-      "name": "OpenAI Chat Model",
+      "name": "OpenAI gpt-4o-mini",
       "credentials": {
         "openAiApi": {
           "id": "6oZqD0UJampaYWCy",
@@ -208,10 +215,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        960,
-        340
+        880,
+        560
       ],
-      "name": "Anthropic Chat Model",
+      "name": "Claude Sonnet 4.5",
       "credentials": {
         "anthropicApi": {
           "id": "AnthropicCred001",
@@ -221,62 +228,63 @@
     },
     {
       "parameters": {
-        "content": "## 🛡 HTTPS Inspection — Direct MCP\n\nAn AI agent driving the **HTTPS Inspection MCP server** directly over HTTP-streamable MCP (`http://mcp-https-inspection:3001`).\n\n👉 The point to show: n8n's **native MCP Client Tool** node auto-discovers every tool the server exposes — no glue code, the agent just uses them.",
-        "width": 480,
-        "height": 400
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -620,
-        -60
-      ],
-      "name": "Sticky 23927"
-    },
-    {
-      "parameters": {
-        "content": "### 💬 Try these\n\n- Show the HTTPS inspection rules\n- Which categories are bypassed today?",
-        "width": 480,
-        "height": 240,
+        "content": "## 🛡️ Check Point HTTPS Inspection\n### AI Agent over MCP\n\nI read and change your HTTPS-inspection rulebase, bypass rules and exceptions.\n\n**How:** n8n's **native MCP Client Tool** node pointed straight at the server — tools auto-discovered, zero glue.",
+        "width": 440,
+        "height": 380,
         "color": 4
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -620,
-        380
+        -660,
+        -60
       ],
-      "name": "Sticky 36895"
+      "name": "Zone Header"
     },
     {
       "parameters": {
-        "content": "### 🧠 Models\n\n**Azure OpenAI** is wired as the default. To demo another provider, connect its node to the agent's *Chat Model* port instead — Ollama (local, no API key), Gemini, OpenAI, or Anthropic.\n\nKeys come from the deployment `.env`; a red node just means that provider's key wasn't supplied.",
-        "width": 560,
-        "height": 220,
+        "content": "### 💬 Try these\n\n- Show the HTTPS inspection rules\n- Which categories are bypassed today?",
+        "width": 440,
+        "height": 260,
         "color": 5
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -100,
-        420
+        -660,
+        360
       ],
-      "name": "Sticky 62902"
+      "name": "Zone Demos"
     },
     {
       "parameters": {
-        "content": "### 🔌 MCP\n\n`HTTPS Inspection MCP` is n8n's **native MCP Client Tool** node (no auth needed on the internal Docker network).\nAll tools the server exposes become agent tools automatically.",
-        "width": 460,
-        "height": 220,
+        "content": "### 🧠 Model gallery\n\n**Azure OpenAI** is wired as the default. Swap providers by connecting another model to the agent's *Chat Model* port — local **Ollama** needs no API key.\n\nKeys land automatically from the deployment `.env`.",
+        "width": 1080,
+        "height": 280,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        460
+      ],
+      "name": "Zone Models"
+    },
+    {
+      "parameters": {
+        "content": "### 🔌 MCP\n\n`HTTPS Inspection MCP` — native MCP Client Tool (no auth needed inside the Docker network).\nEvery tool the server exposes becomes an agent tool automatically.",
+        "width": 400,
+        "height": 320,
         "color": 6
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        500,
-        420
+        1060,
+        260
       ],
-      "name": "Sticky 36640"
+      "name": "Zone MCP"
     }
   ],
   "pinData": {},
@@ -326,7 +334,7 @@
         ]
       ]
     },
-    "Azure OpenAI Chat Model": {
+    "Azure OpenAI (default)": {
       "ai_languageModel": [
         [
           {

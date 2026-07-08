@@ -1,17 +1,24 @@
 {
-  "name": "reputation-service-mcp-agent",
+  "name": "CP Reputation — AI Agent",
   "nodes": [
     {
       "parameters": {
-        "options": {}
+        "public": true,
+        "initialMessages": "👋 I'm the **Check Point Reputation** AI agent — I look up Check Point reputation for URLs, IPs and file hashes and tell you what to do about it.\n\n**Try one of these:**\n• What's the reputation of 1.2.3.4?\n• Is example-download.com safe?",
+        "options": {
+          "responseMode": "lastNode",
+          "title": "CP Reputation — AI Agent",
+          "subtitle": "URL / IP / file-hash reputation in seconds.",
+          "inputPlaceholder": "e.g. What's the reputation of 1.2.3.4?"
+        }
       },
       "id": "7d2c3510-f5f5-4fd8-9a85-f8d8190726eb",
       "name": "When chat message received",
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
-        -60,
-        112
+        -180,
+        120
       ],
       "webhookId": "d9e1213c-ea8c-4482-aa48-36dffdb2e837"
     },
@@ -28,8 +35,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.6,
       "position": [
-        560,
-        112
+        400,
+        100
       ],
       "onError": "continueErrorOutput"
     },
@@ -38,11 +45,11 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        780,
-        340
+        640,
+        380
       ],
       "id": "2c5835bd-2ed8-40b0-b9a6-97628163a2ee",
-      "name": "Simple Memory"
+      "name": "Conversation Memory"
     },
     {
       "parameters": {
@@ -67,8 +74,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        240,
-        112
+        80,
+        120
       ],
       "name": "Normalize input"
     },
@@ -89,8 +96,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        860,
-        260
+        820,
+        280
       ],
       "name": "Friendly error"
     },
@@ -102,8 +109,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        1000,
-        320
+        1120,
+        380
       ],
       "name": "Reputation Service MCP"
     },
@@ -115,10 +122,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        240,
-        340
+        0,
+        560
       ],
-      "name": "Azure OpenAI Chat Model",
+      "name": "Azure OpenAI (default)",
       "credentials": {
         "azureOpenAiApi": {
           "id": "nmUI0INbLO2IrroY",
@@ -134,10 +141,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        420,
-        340
+        220,
+        560
       ],
-      "name": "Ollama Chat Model",
+      "name": "Ollama — local gemma4",
       "credentials": {
         "ollamaApi": {
           "id": "i8fXatxwj12xOABO",
@@ -153,10 +160,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        600,
-        340
+        440,
+        560
       ],
-      "name": "Google Gemini Chat Model",
+      "name": "Gemini 2.5 Flash",
       "credentials": {
         "googlePalmApi": {
           "id": "jQWvIJNDs6CeSDiN",
@@ -177,10 +184,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        780,
-        340
+        660,
+        560
       ],
-      "name": "OpenAI Chat Model",
+      "name": "OpenAI gpt-4o-mini",
       "credentials": {
         "openAiApi": {
           "id": "6oZqD0UJampaYWCy",
@@ -201,10 +208,10 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        960,
-        340
+        880,
+        560
       ],
-      "name": "Anthropic Chat Model",
+      "name": "Claude Sonnet 4.5",
       "credentials": {
         "anthropicApi": {
           "id": "AnthropicCred001",
@@ -214,62 +221,63 @@
     },
     {
       "parameters": {
-        "content": "## 🛡 Reputation Service — Direct MCP\n\nAn AI agent driving the **Reputation Service MCP server** directly over HTTP-streamable MCP (`http://reputation-service-mcp:3007`).\n\n👉 The point to show: n8n's **native MCP Client Tool** node auto-discovers every tool the server exposes — no glue code, the agent just uses them.",
-        "width": 480,
-        "height": 400
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -620,
-        -60
-      ],
-      "name": "Sticky 32532"
-    },
-    {
-      "parameters": {
-        "content": "### 💬 Try these\n\n- What's the reputation of 1.2.3.4?\n- Is example-download.com safe?",
-        "width": 480,
-        "height": 240,
+        "content": "## 🛡️ Check Point Reputation\n### AI Agent over MCP\n\nI look up Check Point reputation for URLs, IPs and file hashes and tell you what to do about it.\n\n**How:** n8n's **native MCP Client Tool** node pointed straight at the server — tools auto-discovered, zero glue.",
+        "width": 440,
+        "height": 380,
         "color": 4
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -620,
-        380
+        -660,
+        -60
       ],
-      "name": "Sticky 76818"
+      "name": "Zone Header"
     },
     {
       "parameters": {
-        "content": "### 🧠 Models\n\n**Azure OpenAI** is wired as the default. To demo another provider, connect its node to the agent's *Chat Model* port instead — Ollama (local, no API key), Gemini, OpenAI, or Anthropic.\n\nKeys come from the deployment `.env`; a red node just means that provider's key wasn't supplied.",
-        "width": 560,
-        "height": 220,
+        "content": "### 💬 Try these\n\n- What's the reputation of 1.2.3.4?\n- Is example-download.com safe?",
+        "width": 440,
+        "height": 260,
         "color": 5
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -100,
-        420
+        -660,
+        360
       ],
-      "name": "Sticky 62902"
+      "name": "Zone Demos"
     },
     {
       "parameters": {
-        "content": "### 🔌 MCP\n\n`Reputation Service MCP` is n8n's **native MCP Client Tool** node (no auth needed on the internal Docker network).\nAll tools the server exposes become agent tools automatically.",
-        "width": 460,
-        "height": 220,
+        "content": "### 🧠 Model gallery\n\n**Azure OpenAI** is wired as the default. Swap providers by connecting another model to the agent's *Chat Model* port — local **Ollama** needs no API key.\n\nKeys land automatically from the deployment `.env`.",
+        "width": 1080,
+        "height": 280,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        460
+      ],
+      "name": "Zone Models"
+    },
+    {
+      "parameters": {
+        "content": "### 🔌 MCP\n\n`Reputation Service MCP` — native MCP Client Tool (no auth needed inside the Docker network).\nEvery tool the server exposes becomes an agent tool automatically.",
+        "width": 400,
+        "height": 320,
         "color": 6
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        500,
-        420
+        1060,
+        260
       ],
-      "name": "Sticky 82299"
+      "name": "Zone MCP"
     }
   ],
   "pinData": {},
@@ -285,7 +293,7 @@
         ]
       ]
     },
-    "Simple Memory": {
+    "Conversation Memory": {
       "ai_memory": [
         [
           {
@@ -307,7 +315,7 @@
         ]
       ]
     },
-    "Azure OpenAI Chat Model": {
+    "Azure OpenAI (default)": {
       "ai_languageModel": [
         [
           {
