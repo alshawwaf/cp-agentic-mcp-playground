@@ -1,0 +1,431 @@
+{
+  "name": "CP SOC Response Chain — Logs→Reputation→Rule",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🚨 SOC Response Chain — three agents, three MCP servers\n**Logs → Reputation → Policy**, fully agentic. A log-hunter finds the noisiest blocked IP, a reputation analyst classifies it, and a policy drafter proposes a block rule (confirm-gated, never auto-published). One narrative across the Check Point estate.",
+        "width": 1800,
+        "height": 120,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -140,
+        -280
+      ],
+      "id": "cf3a68a8-d4e6-593f-86ab-b5935b837795",
+      "name": "Banner"
+    },
+    {
+      "parameters": {
+        "content": "### ▶️ Run it\nOpen the chat and send anything (e.g. `run the triage`). The chain runs left → right; each agent hands its finding to the next.\n\n### 🔗 The chain\n1. **Log Hunter** → noisiest dropped source IP\n2. **Reputation Analyst** → risk classification\n3. **Policy Drafter** → proposed block rule (DRAFT ONLY)\n\nAll three call the **MCP Gateway**; nothing is published.",
+        "width": 460,
+        "height": 300,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -660,
+        -280
+      ],
+      "id": "614a5e52-a909-5f30-b4dd-2b807ecfbeec",
+      "name": "Guide"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "🚨 This is a **three-agent SOC triage chain**. Send anything (e.g. *run the triage*) and watch: a log-hunter finds the noisiest blocked IP, a reputation analyst classifies it, and a policy drafter proposes a block rule — confirm-gated, never auto-published.",
+        "options": {
+          "responseMode": "lastNode",
+          "title": "🚨 SOC Response Chain",
+          "subtitle": "Logs → Reputation → drafted block rule, agentic.",
+          "inputPlaceholder": "Type 'run the triage' to start…"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -140,
+        80
+      ],
+      "id": "2447f6d2-e803-544c-90b9-92097fd414a5",
+      "name": "When chat message received",
+      "webhookId": "28f939f7-e257-5ac9-8a78-0668f6f1595b"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "chatInput",
+              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "sessionId",
+              "value": "={{ $json?.sessionId || $json.body.sessionId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        120,
+        80
+      ],
+      "id": "388d2649-f100-5cc1-92f2-ae496e280c54",
+      "name": "Normalize input"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are a Check Point **log hunter**. Use the logs tools over the MCP gateway to find the SINGLE most active DROPPED source IP in roughly the last 24 hours. Return ONLY a compact JSON object: {\"ip\":\"<addr>\",\"drop_count\":<n>,\"note\":\"<one line>\"}. No prose."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        360,
+        60
+      ],
+      "id": "9fe6c6dc-6dbf-5b7a-9d2b-0d913ff25425",
+      "name": "1 · Log Hunter",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "options": {
+          "systemMessage": "You are a Check Point **reputation analyst**. The prior step found a suspicious IP (see the incoming text). Use the reputation tools over the MCP gateway to classify it. Return a short Markdown verdict: the IP, its risk/classification, and a one-line recommendation (block / monitor / ignore)."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        700,
+        60
+      ],
+      "id": "b1fb1e10-f779-58ec-80d0-0dbf7458dd2c",
+      "name": "2 · Reputation Analyst",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "options": {
+          "systemMessage": "You are a Check Point **policy drafter**. Given the IP and its reputation verdict from the prior steps, DRAFT (do NOT publish, do NOT install) an access rule that blocks that source IP. Describe exactly the rule you would create (name, source, destination=Any, service=Any, action=Drop, track=Log, target layer) and the tool call you would make — then STOP and ask the operator to confirm before any change is applied."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        1040,
+        60
+      ],
+      "id": "6fcb07e2-159e-5e4e-a238-e542e2d92cac",
+      "name": "3 · Policy Drafter",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1",
+              "name": "output",
+              "value": "=⚠️ I hit an error and made **no changes**.\n\n```\n{{ ($json.error && $json.error.message) || $json.error || $json.message || 'Unknown error' }}\n```\nPlease retry, or rephrase.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1380,
+        200
+      ],
+      "id": "cd8bd5d6-60c4-5f0d-ab04-7979e67e1643",
+      "name": "Friendly error"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://mcp-gateway:8080/mcp",
+        "authentication": "bearerAuth",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        360,
+        320
+      ],
+      "id": "311db663-9ee5-5e0d-85fd-6fa91579a907",
+      "name": "Gateway · logs",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "McpGatewayBearer",
+          "name": "CP MCP Gateway Bearer"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://mcp-gateway:8080/mcp",
+        "authentication": "bearerAuth",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        700,
+        320
+      ],
+      "id": "1e0ccbd2-d014-57be-98c3-3611480931a7",
+      "name": "Gateway · reputation",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "McpGatewayBearer",
+          "name": "CP MCP Gateway Bearer"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://mcp-gateway:8080/mcp",
+        "authentication": "bearerAuth",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        320
+      ],
+      "id": "e0b866af-e39e-5d80-bc4c-736b6be47093",
+      "name": "Gateway · management",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "McpGatewayBearer",
+          "name": "CP MCP Gateway Bearer"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-5.4-2026-03-05",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        240,
+        320
+      ],
+      "id": "e2a46892-5358-5c1d-8993-7f0890572aaa",
+      "name": "Model · Hunter",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "nmUI0INbLO2IrroY",
+          "name": "Azure Open AI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-5.4-2026-03-05",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        580,
+        320
+      ],
+      "id": "7ac4befb-631e-5fdd-9f51-2f681045abb0",
+      "name": "Model · Analyst",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "nmUI0INbLO2IrroY",
+          "name": "Azure Open AI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-5.4-2026-03-05",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        920,
+        320
+      ],
+      "id": "cbe165ee-e630-55f5-89c4-fa2c2dfbf96f",
+      "name": "Model · Drafter",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "nmUI0INbLO2IrroY",
+          "name": "Azure Open AI account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Normalize input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize input": {
+      "main": [
+        [
+          {
+            "node": "1 · Log Hunter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Model · Hunter": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "1 · Log Hunter",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gateway · logs": {
+      "ai_tool": [
+        [
+          {
+            "node": "1 · Log Hunter",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1 · Log Hunter": {
+      "main": [
+        [
+          {
+            "node": "2 · Reputation Analyst",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Friendly error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Model · Analyst": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "2 · Reputation Analyst",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gateway · reputation": {
+      "ai_tool": [
+        [
+          {
+            "node": "2 · Reputation Analyst",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2 · Reputation Analyst": {
+      "main": [
+        [
+          {
+            "node": "3 · Policy Drafter",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Friendly error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Model · Drafter": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "3 · Policy Drafter",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gateway · management": {
+      "ai_tool": [
+        [
+          {
+            "node": "3 · Policy Drafter",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3 · Policy Drafter": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Friendly error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "SocResponseChainWf1",
+  "tags": []
+}

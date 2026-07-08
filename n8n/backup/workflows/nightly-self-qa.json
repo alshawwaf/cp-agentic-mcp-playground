@@ -1,0 +1,188 @@
+{
+  "name": "CP Agents — Nightly Self-QA",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🌙 Nightly Self-QA — the fleet tests itself\nOn a schedule, this workflow sends one real chat turn to **every** agent's webhook, checks each answered without an error, and builds a pass/fail digest. Catch a broken agent before a customer does.",
+        "width": 1500,
+        "height": 110,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -140,
+        -260
+      ],
+      "id": "36d74c52-bbe9-5353-a84f-b5e6ec20752f",
+      "name": "Banner"
+    },
+    {
+      "parameters": {
+        "content": "### ⚙️ How it works\n1. **Schedule** fires (default 02:00 daily)\n2. **Build probe list** — one `{name,url,prompt}` per agent (internal `n8n:5678` webhooks)\n3. **HTTP Request** hits each (continue-on-fail)\n4. **Score** → Markdown digest (`report_markdown`)\n\nWire the digest to Slack/email to get a nightly report. Runs manually too — click **Test workflow**.",
+        "width": 460,
+        "height": 300,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -660,
+        -260
+      ],
+      "id": "184ca4f6-3ee1-5a5d-a7e1-d50f1d858698",
+      "name": "Guide"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 2
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -140,
+        60
+      ],
+      "id": "50a0b1b8-c110-5b26-bd20-69b19208c850",
+      "name": "Schedule (nightly 02:00)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const probes = [{\"name\": \"CP CPinfo Analysis — AI Agent\", \"url\": \"http://n8n:5678/webhook/f68c312c-1ad1-4d8b-b7c1-a5ced2248f23/chat\", \"prompt\": \"What cpinfo bundles are available?\"}, {\"name\": \"CP Documentation — AI Agent\", \"url\": \"http://n8n:5678/webhook/6457b028-9b78-42c9-b3a7-2e43073c468e/chat\", \"prompt\": \"Find the SK about the Gaia API\"}, {\"name\": \"CP Fleet Commander — Estate Agent\", \"url\": \"http://n8n:5678/webhook/0e5e1455-3148-5047-88ab-d999b6002eb3/chat\", \"prompt\": \"Which gateways are in my estate?\"}, {\"name\": \"CP HTTPS Inspection — AI Agent\", \"url\": \"http://n8n:5678/webhook/df6e86fa-f71a-4dce-bf1f-86b8b8a01a49/chat\", \"prompt\": \"Show the HTTPS inspection rules\"}, {\"name\": \"CP Logs — AI Agent\", \"url\": \"http://n8n:5678/webhook/35bcabf8-caf6-4033-b66d-4658abbaa057/chat\", \"prompt\": \"Show the last 10 dropped connections\"}, {\"name\": \"CP Gaia OS — AI Agent\", \"url\": \"http://n8n:5678/webhook/414009d6-7ae2-471c-9f11-f3590bc2e024/chat\", \"prompt\": \"Show the interfaces and their IPs\"}, {\"name\": \"CP Gateway CLI — AI Agent\", \"url\": \"http://n8n:5678/webhook/7b1a963d-5338-4954-97bf-77f18643fdc3/chat\", \"prompt\": \"Show the cluster status\"}, {\"name\": \"CP Quantum Management — AI Agent\", \"url\": \"http://n8n:5678/webhook/799f12a9-0a0c-40e2-9302-799f2c23a881/chat\", \"prompt\": \"List the gateways and their IPs\"}, {\"name\": \"CP Reputation — AI Agent\", \"url\": \"http://n8n:5678/webhook/d9e1213c-ea8c-4482-aa48-36dffdb2e837/chat\", \"prompt\": \"What's the reputation of 1.2.3.4?\"}, {\"name\": \"CP Threat Emulation — AI Agent\", \"url\": \"http://n8n:5678/webhook/dac0e01a-cbec-41fd-8de0-c9fa951c1369/chat\", \"prompt\": \"What file types can you emulate?\"}, {\"name\": \"CP Threat Prevention — AI Agent\", \"url\": \"http://n8n:5678/webhook/f9c04e85-08a8-405c-9835-5426c9b01420/chat\", \"prompt\": \"List the Threat Prevention profiles\"}];\nreturn probes.map(p => ({ json: p }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        120,
+        60
+      ],
+      "id": "50b75465-92d4-5fda-9f55-75f44f65c8af",
+      "name": "Build probe list"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"action\": \"sendMessage\",\n  \"chatInput\": {{ JSON.stringify($json.prompt) }},\n  \"sessionId\": \"nightly-qa\"\n}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        60
+      ],
+      "id": "48ed2d59-b712-51a5-9766-9cd7e715e5da",
+      "name": "Ping agent",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "m1",
+              "name": "name",
+              "value": "={{ $('Build probe list').item.json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "m2",
+              "name": "__response",
+              "value": "={{ $json }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        660,
+        60
+      ],
+      "id": "01b8dcbf-06f1-50f7-8175-addcc0efa022",
+      "name": "Merge response"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst rows = items.map(i => {\n  const p = i.json;\n  const body = p.__response || {};\n  const out = (body.output || body.text || JSON.stringify(body) || '');\n  const failed = !out || /I hit an error|Connection error|Error in sub-node/i.test(out);\n  return { agent: p.name, ok: !failed, sample: String(out).slice(0, 140) };\n});\nconst pass = rows.filter(r => r.ok).length;\nconst md = `# CP Agent self-QA\\n\\n**${pass}/${rows.length} passed**\\n\\n` +\n  rows.map(r => `- ${r.ok ? '✅' : '❌'} **${r.agent}** — ${r.sample}`).join('\\n');\nreturn [{ json: { passed: pass, total: rows.length, report_markdown: md, rows } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        920,
+        60
+      ],
+      "id": "945402c7-c616-5e2b-a67e-d836be68ff27",
+      "name": "Score & digest"
+    }
+  ],
+  "connections": {
+    "Schedule (nightly 02:00)": {
+      "main": [
+        [
+          {
+            "node": "Build probe list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build probe list": {
+      "main": [
+        [
+          {
+            "node": "Ping agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ping agent": {
+      "main": [
+        [
+          {
+            "node": "Merge response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge response": {
+      "main": [
+        [
+          {
+            "node": "Score & digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "NightlySelfQaWf01",
+  "tags": []
+}
