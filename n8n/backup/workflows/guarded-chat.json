@@ -107,7 +107,8 @@
           "id": "wgkC8cfxORfo2dU0",
           "name": "Lakera"
         }
-      }
+      },
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -207,7 +208,8 @@
           "id": "wgkC8cfxORfo2dU0",
           "name": "Lakera"
         }
-      }
+      },
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
@@ -568,6 +570,52 @@
           "name": "Anthropic account"
         }
       }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "g1",
+              "name": "output",
+              "value": "=⚠️ **Lakera Guard is not configured** (add the `Lakera` API key in n8n credentials). Input screening was skipped and the agent did not run. This demo needs a Lakera key to show input/output security screening.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        840,
+        -260
+      ],
+      "id": "00000000-0000-5000-a000-075984850932",
+      "name": "Guard unavailable (input)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "g1",
+              "name": "output",
+              "value": "={{ $('CP Security Agent').item.json.output }}\n\n---\n⚠️ *Lakera Guard output screening was skipped (no Lakera API key configured).*",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1640,
+        -60
+      ],
+      "id": "00000000-0000-5000-a000-945720173188",
+      "name": "Guard unavailable (output)"
     }
   ],
   "connections": {
@@ -598,6 +646,13 @@
         [
           {
             "node": "Input flagged?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Guard unavailable (input)",
             "type": "main",
             "index": 0
           }
@@ -678,6 +733,13 @@
         [
           {
             "node": "Output flagged?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Guard unavailable (output)",
             "type": "main",
             "index": 0
           }
