@@ -356,14 +356,23 @@ After the provisioner completes, the `n8n-import` container imports the assets c
 - `./n8n/backup/credentials_public` – credential templates (edit these and replace `CHANGE_ME` with real keys)
 - `./n8n/backup/workflows` – the example MCP-agent workflows
 
-It runs:
+Before importing, it copies `./n8n/backup` to a temp dir and rewrites it (the committed files are public, so they carry placeholders — never real secrets):
+
+- **Secret substitution** — real values from `.env` replace the placeholders `__POSTGRES_PASSWORD__`, `__PILOT_MCP_TOKEN__` (PolicyPilot bearer), and `__DEVHUB_MCP_TOKEN__` (DevHub bearer). If a token env is empty, that credential file is **dropped** (not imported with a broken placeholder) and a warning is logged.
+- **Domain resolution** — the `{{DOMAIN}}` placeholder in the `policypilot-management-agent`, `policypilot-dynamic-layer-agent`, and `devhub-agent` workflows is resolved to the real deployment domain (`DOMAIN`, falling back to `N8N_HOST` minus the `n8n.` prefix).
+
+It then runs:
 
 ```bash
-n8n import:credentials --separate --input=/backup/credentials_public
-n8n import:workflow    --separate --input=/backup/workflows
+n8n import:credentials --separate --input=/tmp/import/credentials_public
+n8n import:workflow    --separate --input=/tmp/import/workflows
 ```
 
+> **Tags are stripped.** `n8n import:workflow` errors on duplicate tag names, so every committed workflow JSON keeps an empty `"tags": []`. Preserve that when re-exporting a workflow.
+
 > `setup.sh` copies `credentials_public/` to `credentials/` locally so you can fill in real keys without touching the committed templates. The `n8n-import` service imports from `credentials_public`.
+
+Each direct MCP-agent workflow also ships a `*-via-gateway.json` twin that connects through the Docker MCP Gateway (Bearer auth) instead of a single sidecar; both are re-imported on every redeploy. See the [MCP Gateway Agent Guide](docs/guides/MCP_Gateway_Agent_Guide.md).
 
 ---
 
