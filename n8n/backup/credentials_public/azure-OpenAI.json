@@ -7,7 +7,7 @@
     "apiKey": "__AZURE_OPENAI_API_KEY__",
     "resourceName": "CP-Azure-OpenAI",
     "apiVersion": "2025-04-01-preview",
-    "endpoint": "https://YOUR-RESOURCE.openai.azure.com/"
+    "endpoint": "__AZURE_OPENAI_ENDPOINT__"
   },
   "type": "azureOpenAiApi",
   "isManaged": false

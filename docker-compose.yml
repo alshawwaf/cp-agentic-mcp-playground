@@ -347,6 +347,7 @@ services:
         }
         subst_llm_key OPENAI_API_KEY "$$OPENAI_API_KEY" "openai.json"
         subst_llm_key AZURE_OPENAI_API_KEY "$$AZURE_OPENAI_API_KEY" "azure-OpenAI.json"
+        subst_llm_key AZURE_OPENAI_ENDPOINT "$$AZURE_OPENAI_ENDPOINT" "azure-OpenAI.json"
         subst_llm_key GEMINI_API_KEY "$$GEMINI_API_KEY" "Google Gemini(PaLM) Api account.json"
         subst_llm_key ANTHROPIC_API_KEY "$$ANTHROPIC_API_KEY" "anthropic.json"
 
@@ -401,6 +402,7 @@ services:
       # model row works on a fresh deploy without hand-editing credentials
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - DOMAIN=${DOMAIN:-}
