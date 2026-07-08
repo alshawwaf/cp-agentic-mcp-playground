@@ -8,8 +8,8 @@
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "typeVersion": 1.1,
       "position": [
-        640,
-        380
+        480,
+        400
       ],
       "credentials": {
         "postgres": {
@@ -34,7 +34,7 @@
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
-        -180,
+        -160,
         120
       ],
       "webhookId": "35bcabf8-caf6-4033-b66d-4658abbaa057"
@@ -53,7 +53,7 @@
       "typeVersion": 1.8,
       "position": [
         760,
-        -80
+        -100
       ],
       "id": "f8a5439e-8915-4e4b-a7e2-6e411d4f2547",
       "name": "Generate audio",
@@ -75,8 +75,8 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -180,
-        -80
+        -160,
+        -100
       ],
       "id": "b39a40f9-eede-4074-9e45-9f1bfc98f5c8",
       "name": "Webhook",
@@ -91,7 +91,7 @@
       "typeVersion": 1.4,
       "position": [
         1020,
-        -80
+        -100
       ],
       "id": "17e62fc9-a32e-431f-a28b-805e3467614b",
       "name": "Respond to Webhook"
@@ -141,7 +141,8 @@
         80,
         120
       ],
-      "name": "Normalize input"
+      "name": "Normalize input",
+      "id": "37a3509e-c252-533d-bd2f-1b8617e6b4dc"
     },
     {
       "parameters": {
@@ -160,10 +161,11 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        820,
-        280
+        860,
+        260
       ],
-      "name": "Friendly error"
+      "name": "Friendly error",
+      "id": "2b54140d-0ce7-55de-8861-a3a7c6bfcde6"
     },
     {
       "parameters": {
@@ -173,10 +175,11 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        1120,
-        380
+        720,
+        400
       ],
-      "name": "Management Logs MCP"
+      "name": "Management Logs MCP",
+      "id": "fd681087-ea05-58f0-a9f1-ecf9d85fe046"
     },
     {
       "parameters": {
@@ -186,8 +189,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        0,
-        560
+        -160,
+        620
       ],
       "name": "Azure OpenAI (default)",
       "credentials": {
@@ -195,26 +198,28 @@
           "id": "nmUI0INbLO2IrroY",
           "name": "Azure Open AI account"
         }
-      }
+      },
+      "id": "ee9d3751-973c-533e-9edc-d3418337c862"
     },
     {
       "parameters": {
-        "model": "gemma4:e2b",
+        "model": "qwen3.5:9b",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        220,
-        560
+        60,
+        620
       ],
-      "name": "Ollama — local gemma4",
+      "name": "Ollama — local qwen3.5",
       "credentials": {
         "ollamaApi": {
           "id": "i8fXatxwj12xOABO",
           "name": "Ollama account"
         }
-      }
+      },
+      "id": "08f1fd42-e673-5f57-b963-f3580bcf753a"
     },
     {
       "parameters": {
@@ -224,8 +229,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        440,
-        560
+        280,
+        620
       ],
       "name": "Gemini 2.5 Flash",
       "credentials": {
@@ -233,7 +238,8 @@
           "id": "jQWvIJNDs6CeSDiN",
           "name": "Google Gemini(PaLM) Api account"
         }
-      }
+      },
+      "id": "b8bd24cd-22cb-5ffe-98a7-e0d5d005cae5"
     },
     {
       "parameters": {
@@ -248,8 +254,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        660,
-        560
+        500,
+        620
       ],
       "name": "OpenAI gpt-4o-mini",
       "credentials": {
@@ -257,106 +263,49 @@
           "id": "6oZqD0UJampaYWCy",
           "name": "OpenAi account"
         }
-      }
+      },
+      "id": "a5d2911c-b5f1-5956-ae9e-f05e28be4f43"
     },
     {
       "parameters": {
         "model": {
           "__rl": true,
           "mode": "list",
-          "value": "claude-sonnet-4-5-20250929",
-          "cachedResultName": "Claude Sonnet 4.5"
+          "value": "claude-sonnet-5",
+          "cachedResultName": "Claude Sonnet 5"
         },
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        880,
-        560
+        720,
+        620
       ],
-      "name": "Claude Sonnet 4.5",
+      "name": "Claude Sonnet 5",
       "credentials": {
         "anthropicApi": {
           "id": "AnthropicCred001",
           "name": "Anthropic account"
         }
-      }
+      },
+      "id": "2fd9f1ae-68e9-5925-a7cf-270831a8ebb0"
     },
     {
       "parameters": {
-        "content": "## 🛡️ Check Point Logs\n### AI Agent over MCP\n\nI query the security and audit logs and turn them into clear findings — top sources, preventions, who-changed-what.\n\n**How:** n8n's **native MCP Client Tool** node pointed straight at the server — tools auto-discovered, zero glue.",
-        "width": 440,
-        "height": 380,
+        "content": "## 🛡️ Check Point Logs\n#### AI Agent over MCP\n\nQueries security and audit logs and turns them into clear findings — top sources, preventions, who-changed-what.\n\n**How it works:** n8n's **native MCP Client Tool** node pointed straight at the server — every tool auto-discovered, zero glue.\n\n🔊 Also callable as a **REST webhook** — the answer comes back as **spoken audio** (OpenAI TTS).\n\n**💬 Try these:**\n- Show the last 10 dropped connections\n- Any preventions in the past 24 hours? Summarize by blade\n- Who published policy changes this week?\n\n**🧠 Models:** Azure OpenAI `gpt-5.4` is wired as default — swap by connecting Ollama (local, no key), Gemini, OpenAI or Claude to the *Chat Model* port.",
+        "width": 500,
+        "height": 640,
         "color": 4
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -660,
-        -60
+        -760,
+        -100
       ],
-      "name": "Zone Header"
-    },
-    {
-      "parameters": {
-        "content": "### 💬 Try these\n\n- Show the last 10 dropped connections\n- Any preventions in the past 24 hours? Summarize by blade\n- Who published policy changes this week?",
-        "width": 440,
-        "height": 260,
-        "color": 5
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -660,
-        360
-      ],
-      "name": "Zone Demos"
-    },
-    {
-      "parameters": {
-        "content": "### 🧠 Model gallery\n\n**Azure OpenAI** is wired as the default. Swap providers by connecting another model to the agent's *Chat Model* port — local **Ollama** needs no API key.\n\nKeys land automatically from the deployment `.env`.",
-        "width": 1080,
-        "height": 280,
-        "color": 7
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -60,
-        460
-      ],
-      "name": "Zone Models"
-    },
-    {
-      "parameters": {
-        "content": "### 🔌 MCP\n\n`Management Logs MCP` — native MCP Client Tool (no auth needed inside the Docker network).\nEvery tool the server exposes becomes an agent tool automatically.",
-        "width": 400,
-        "height": 320,
-        "color": 6
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        1060,
-        260
-      ],
-      "name": "Zone MCP"
-    },
-    {
-      "parameters": {
-        "content": "### 🔊 Voice + API\n\nThe same agent is callable as a **REST webhook**, and the answer is spoken back with **OpenAI TTS** — show the response playing out loud.",
-        "width": 520,
-        "height": 120,
-        "color": 3
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        700,
-        -220
-      ],
-      "name": "Zone Voice"
+      "name": "About this demo",
+      "id": "6a9dd960-2c92-517d-9890-822a06c09246"
     }
   ],
   "pinData": {},

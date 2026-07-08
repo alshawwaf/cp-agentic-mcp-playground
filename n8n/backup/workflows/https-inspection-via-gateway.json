@@ -34,7 +34,7 @@
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
-        -180,
+        -160,
         120
       ],
       "webhookId": "f8a2c2e9-ed9a-5ddf-b101-3bda12921a90"
@@ -84,7 +84,8 @@
         80,
         120
       ],
-      "name": "Normalize input"
+      "name": "Normalize input",
+      "id": "9a997538-60cb-57a1-89cc-c29dabd746c8"
     },
     {
       "parameters": {
@@ -103,10 +104,11 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        820,
-        280
+        860,
+        260
       ],
-      "name": "Friendly error"
+      "name": "Friendly error",
+      "id": "509e29d6-0766-5dfe-b2c3-8acd72a9170a"
     },
     {
       "parameters": {
@@ -117,8 +119,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        1120,
-        380
+        720,
+        400
       ],
       "name": "CP MCP Gateway",
       "credentials": {
@@ -126,7 +128,8 @@
           "id": "McpGatewayBearer",
           "name": "CP MCP Gateway Bearer"
         }
-      }
+      },
+      "id": "188b5361-5e8d-5e9c-8df8-839d0008ca1d"
     },
     {
       "parameters": {
@@ -136,8 +139,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        0,
-        560
+        -160,
+        620
       ],
       "name": "Azure OpenAI (default)",
       "credentials": {
@@ -145,26 +148,28 @@
           "id": "nmUI0INbLO2IrroY",
           "name": "Azure Open AI account"
         }
-      }
+      },
+      "id": "9e740eb6-c06c-5b1a-b9ad-4101df4a7f40"
     },
     {
       "parameters": {
-        "model": "gemma4:e2b",
+        "model": "qwen3.5:9b",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        220,
-        560
+        60,
+        620
       ],
-      "name": "Ollama — local gemma4",
+      "name": "Ollama — local qwen3.5",
       "credentials": {
         "ollamaApi": {
           "id": "i8fXatxwj12xOABO",
           "name": "Ollama account"
         }
-      }
+      },
+      "id": "6c92d9bd-6193-5601-aedf-b2609a65ed08"
     },
     {
       "parameters": {
@@ -174,8 +179,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        440,
-        560
+        280,
+        620
       ],
       "name": "Gemini 2.5 Flash",
       "credentials": {
@@ -183,7 +188,8 @@
           "id": "jQWvIJNDs6CeSDiN",
           "name": "Google Gemini(PaLM) Api account"
         }
-      }
+      },
+      "id": "4c599077-4e55-58f1-ba37-e57e2317ce5e"
     },
     {
       "parameters": {
@@ -198,8 +204,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        660,
-        560
+        500,
+        620
       ],
       "name": "OpenAI gpt-4o-mini",
       "credentials": {
@@ -207,91 +213,49 @@
           "id": "6oZqD0UJampaYWCy",
           "name": "OpenAi account"
         }
-      }
+      },
+      "id": "2c168560-b12d-5ee4-8ba9-e52b2f03b0ba"
     },
     {
       "parameters": {
         "model": {
           "__rl": true,
           "mode": "list",
-          "value": "claude-sonnet-4-5-20250929",
-          "cachedResultName": "Claude Sonnet 4.5"
+          "value": "claude-sonnet-5",
+          "cachedResultName": "Claude Sonnet 5"
         },
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        880,
-        560
+        720,
+        620
       ],
-      "name": "Claude Sonnet 4.5",
+      "name": "Claude Sonnet 5",
       "credentials": {
         "anthropicApi": {
           "id": "AnthropicCred001",
           "name": "Anthropic account"
         }
-      }
-    },
-    {
-      "parameters": {
-        "content": "## 🛡️ Check Point HTTPS Inspection\n### AI Agent over MCP (Gateway)\n\nI read and change your HTTPS-inspection rulebase, bypass rules and exceptions.\n\n**How:** one endpoint (`mcp-gateway:8080/mcp`), **Bearer auth**, every CP MCP server aggregated.",
-        "width": 440,
-        "height": 380,
-        "color": 4
       },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -660,
-        -60
-      ],
-      "name": "Zone Header"
+      "id": "082113e8-871c-5f3e-b4dd-b9fb50bcf432"
     },
     {
       "parameters": {
-        "content": "### 💬 Try these\n\n- Show the HTTPS inspection rules\n- Which categories are bypassed today?",
-        "width": 440,
-        "height": 260,
-        "color": 5
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -660,
-        360
-      ],
-      "name": "Zone Demos"
-    },
-    {
-      "parameters": {
-        "content": "### 🧠 Model gallery\n\n**Azure OpenAI** is wired as the default. Swap providers by connecting another model to the agent's *Chat Model* port — local **Ollama** needs no API key.\n\nKeys land automatically from the deployment `.env`.",
-        "width": 1080,
-        "height": 280,
-        "color": 7
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -60,
-        460
-      ],
-      "name": "Zone Models"
-    },
-    {
-      "parameters": {
-        "content": "### 🔌 MCP\n\n`CP MCP Gateway` — native MCP Client Tool with **Bearer auth** to the gateway.\nEvery tool the server exposes becomes an agent tool automatically.",
-        "width": 400,
-        "height": 320,
+        "content": "## 🛡️ Check Point HTTPS Inspection\n#### AI Agent over MCP · via Gateway\n\nReads and changes the HTTPS-inspection rulebase, bypass rules and exceptions.\n\n**How it works:** Every call rides the **Docker MCP Gateway** — one endpoint, Bearer auth, the whole Check Point MCP fleet behind it.\n\n**💬 Try these:**\n- Show the HTTPS inspection rules\n- Which categories are bypassed today?\n\n**🧠 Models:** Azure OpenAI `gpt-5.4` is wired as default — swap by connecting Ollama (local, no key), Gemini, OpenAI or Claude to the *Chat Model* port.",
+        "width": 500,
+        "height": 640,
         "color": 6
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1060,
-        260
+        -760,
+        -100
       ],
-      "name": "Zone MCP"
+      "name": "About this demo",
+      "id": "19d4a571-727a-5d12-bc89-38b8626b6ddb"
     }
   ],
   "pinData": {},

@@ -17,7 +17,7 @@
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
-        -180,
+        -160,
         120
       ],
       "webhookId": "f9c04e85-08a8-405c-9835-5426c9b01420"
@@ -45,8 +45,8 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        640,
-        380
+        480,
+        400
       ],
       "id": "0c991f56-af4a-49df-b2e1-41d72747369d",
       "name": "Conversation Memory"
@@ -77,7 +77,8 @@
         80,
         120
       ],
-      "name": "Normalize input"
+      "name": "Normalize input",
+      "id": "f54a98a3-43a4-5b84-a6c3-dd1b528f82be"
     },
     {
       "parameters": {
@@ -96,10 +97,11 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        820,
-        280
+        860,
+        260
       ],
-      "name": "Friendly error"
+      "name": "Friendly error",
+      "id": "14ab1d8e-4a27-5d73-8763-5d3db57f701b"
     },
     {
       "parameters": {
@@ -109,10 +111,11 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        1120,
-        380
+        720,
+        400
       ],
-      "name": "Threat Prevention MCP"
+      "name": "Threat Prevention MCP",
+      "id": "5b840dc2-e8bd-5786-9506-c8a72ff461b9"
     },
     {
       "parameters": {
@@ -122,8 +125,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        0,
-        560
+        -160,
+        620
       ],
       "name": "Azure OpenAI (default)",
       "credentials": {
@@ -131,26 +134,28 @@
           "id": "nmUI0INbLO2IrroY",
           "name": "Azure Open AI account"
         }
-      }
+      },
+      "id": "4672826a-e148-5f63-8bc8-3fcc3beaf91d"
     },
     {
       "parameters": {
-        "model": "gemma4:e2b",
+        "model": "qwen3.5:9b",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        220,
-        560
+        60,
+        620
       ],
-      "name": "Ollama — local gemma4",
+      "name": "Ollama — local qwen3.5",
       "credentials": {
         "ollamaApi": {
           "id": "i8fXatxwj12xOABO",
           "name": "Ollama account"
         }
-      }
+      },
+      "id": "c85f6e3d-77a6-5b76-9f28-3960af6eb47a"
     },
     {
       "parameters": {
@@ -160,8 +165,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        440,
-        560
+        280,
+        620
       ],
       "name": "Gemini 2.5 Flash",
       "credentials": {
@@ -169,7 +174,8 @@
           "id": "jQWvIJNDs6CeSDiN",
           "name": "Google Gemini(PaLM) Api account"
         }
-      }
+      },
+      "id": "f8bdf376-8055-546b-b064-f39c9f110eab"
     },
     {
       "parameters": {
@@ -184,8 +190,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        660,
-        560
+        500,
+        620
       ],
       "name": "OpenAI gpt-4o-mini",
       "credentials": {
@@ -193,91 +199,49 @@
           "id": "6oZqD0UJampaYWCy",
           "name": "OpenAi account"
         }
-      }
+      },
+      "id": "0d08bc83-e9d4-57bb-92fe-4b5ba6d2439f"
     },
     {
       "parameters": {
         "model": {
           "__rl": true,
           "mode": "list",
-          "value": "claude-sonnet-4-5-20250929",
-          "cachedResultName": "Claude Sonnet 4.5"
+          "value": "claude-sonnet-5",
+          "cachedResultName": "Claude Sonnet 5"
         },
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        880,
-        560
+        720,
+        620
       ],
-      "name": "Claude Sonnet 4.5",
+      "name": "Claude Sonnet 5",
       "credentials": {
         "anthropicApi": {
           "id": "AnthropicCred001",
           "name": "Anthropic account"
         }
-      }
+      },
+      "id": "85a1af56-f328-5a65-85f5-bfe960ee101e"
     },
     {
       "parameters": {
-        "content": "## 🛡️ Check Point Threat Prevention\n### AI Agent over MCP\n\nI manage your Threat Prevention policy: profiles, IPS protections, exceptions and indicators.\n\n**How:** n8n's **native MCP Client Tool** node pointed straight at the server — tools auto-discovered, zero glue.",
-        "width": 440,
-        "height": 380,
+        "content": "## 🛡️ Check Point Threat Prevention\n#### AI Agent over MCP\n\nManages Threat Prevention policy — profiles, IPS protections, exceptions, indicators.\n\n**How it works:** n8n's **native MCP Client Tool** node pointed straight at the server — every tool auto-discovered, zero glue.\n\n**💬 Try these:**\n- List the Threat Prevention profiles\n- Which profile is strictest and what does it activate?\n- Search IPS protections related to log4j\n\n**🧠 Models:** Azure OpenAI `gpt-5.4` is wired as default — swap by connecting Ollama (local, no key), Gemini, OpenAI or Claude to the *Chat Model* port.",
+        "width": 500,
+        "height": 640,
         "color": 4
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -660,
-        -60
+        -760,
+        -100
       ],
-      "name": "Zone Header"
-    },
-    {
-      "parameters": {
-        "content": "### 💬 Try these\n\n- List the Threat Prevention profiles\n- Which profile is strictest and what does it activate?\n- Search IPS protections related to log4j",
-        "width": 440,
-        "height": 260,
-        "color": 5
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -660,
-        360
-      ],
-      "name": "Zone Demos"
-    },
-    {
-      "parameters": {
-        "content": "### 🧠 Model gallery\n\n**Azure OpenAI** is wired as the default. Swap providers by connecting another model to the agent's *Chat Model* port — local **Ollama** needs no API key.\n\nKeys land automatically from the deployment `.env`.",
-        "width": 1080,
-        "height": 280,
-        "color": 7
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -60,
-        460
-      ],
-      "name": "Zone Models"
-    },
-    {
-      "parameters": {
-        "content": "### 🔌 MCP\n\n`Threat Prevention MCP` — native MCP Client Tool (no auth needed inside the Docker network).\nEvery tool the server exposes becomes an agent tool automatically.",
-        "width": 400,
-        "height": 320,
-        "color": 6
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        1060,
-        260
-      ],
-      "name": "Zone MCP"
+      "name": "About this demo",
+      "id": "bb4cfd68-e460-501c-a097-399973fa94ec"
     }
   ],
   "pinData": {},

@@ -34,7 +34,7 @@
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
-        -180,
+        -160,
         120
       ],
       "webhookId": "df6e86fa-f71a-4dce-bf1f-86b8b8a01a49"
@@ -84,7 +84,8 @@
         80,
         120
       ],
-      "name": "Normalize input"
+      "name": "Normalize input",
+      "id": "ec96af08-51bf-53a1-8c3e-66b1b373e260"
     },
     {
       "parameters": {
@@ -103,10 +104,11 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        820,
-        280
+        860,
+        260
       ],
-      "name": "Friendly error"
+      "name": "Friendly error",
+      "id": "74979caf-da71-5329-a7b3-cf2d82e6ea8f"
     },
     {
       "parameters": {
@@ -116,10 +118,11 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        1120,
-        380
+        720,
+        400
       ],
-      "name": "HTTPS Inspection MCP"
+      "name": "HTTPS Inspection MCP",
+      "id": "b7fcade2-ec8e-5d86-bc07-60ec3844f2cd"
     },
     {
       "parameters": {
@@ -129,8 +132,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        0,
-        560
+        -160,
+        620
       ],
       "name": "Azure OpenAI (default)",
       "credentials": {
@@ -138,26 +141,28 @@
           "id": "nmUI0INbLO2IrroY",
           "name": "Azure Open AI account"
         }
-      }
+      },
+      "id": "3fb6574e-7dce-5c82-b762-93eb94466eac"
     },
     {
       "parameters": {
-        "model": "gemma4:e2b",
+        "model": "qwen3.5:9b",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        220,
-        560
+        60,
+        620
       ],
-      "name": "Ollama — local gemma4",
+      "name": "Ollama — local qwen3.5",
       "credentials": {
         "ollamaApi": {
           "id": "i8fXatxwj12xOABO",
           "name": "Ollama account"
         }
-      }
+      },
+      "id": "f636b0f1-8d67-5cde-9c30-250cf9b0c254"
     },
     {
       "parameters": {
@@ -167,8 +172,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        440,
-        560
+        280,
+        620
       ],
       "name": "Gemini 2.5 Flash",
       "credentials": {
@@ -176,7 +181,8 @@
           "id": "jQWvIJNDs6CeSDiN",
           "name": "Google Gemini(PaLM) Api account"
         }
-      }
+      },
+      "id": "a0f7bd4f-3704-5a63-8e35-4a550345d28e"
     },
     {
       "parameters": {
@@ -191,8 +197,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        660,
-        560
+        500,
+        620
       ],
       "name": "OpenAI gpt-4o-mini",
       "credentials": {
@@ -200,91 +206,49 @@
           "id": "6oZqD0UJampaYWCy",
           "name": "OpenAi account"
         }
-      }
+      },
+      "id": "d534f009-08d1-5130-a9e1-9f70dd8bf8d6"
     },
     {
       "parameters": {
         "model": {
           "__rl": true,
           "mode": "list",
-          "value": "claude-sonnet-4-5-20250929",
-          "cachedResultName": "Claude Sonnet 4.5"
+          "value": "claude-sonnet-5",
+          "cachedResultName": "Claude Sonnet 5"
         },
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        880,
-        560
+        720,
+        620
       ],
-      "name": "Claude Sonnet 4.5",
+      "name": "Claude Sonnet 5",
       "credentials": {
         "anthropicApi": {
           "id": "AnthropicCred001",
           "name": "Anthropic account"
         }
-      }
+      },
+      "id": "fadc71aa-c4f1-5a71-ad5a-0a3ae63a0649"
     },
     {
       "parameters": {
-        "content": "## 🛡️ Check Point HTTPS Inspection\n### AI Agent over MCP\n\nI read and change your HTTPS-inspection rulebase, bypass rules and exceptions.\n\n**How:** n8n's **native MCP Client Tool** node pointed straight at the server — tools auto-discovered, zero glue.",
-        "width": 440,
-        "height": 380,
+        "content": "## 🛡️ Check Point HTTPS Inspection\n#### AI Agent over MCP\n\nReads and changes the HTTPS-inspection rulebase, bypass rules and exceptions.\n\n**How it works:** n8n's **native MCP Client Tool** node pointed straight at the server — every tool auto-discovered, zero glue.\n\n**💬 Try these:**\n- Show the HTTPS inspection rules\n- Which categories are bypassed today?\n\n**🧠 Models:** Azure OpenAI `gpt-5.4` is wired as default — swap by connecting Ollama (local, no key), Gemini, OpenAI or Claude to the *Chat Model* port.",
+        "width": 500,
+        "height": 640,
         "color": 4
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -660,
-        -60
+        -760,
+        -100
       ],
-      "name": "Zone Header"
-    },
-    {
-      "parameters": {
-        "content": "### 💬 Try these\n\n- Show the HTTPS inspection rules\n- Which categories are bypassed today?",
-        "width": 440,
-        "height": 260,
-        "color": 5
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -660,
-        360
-      ],
-      "name": "Zone Demos"
-    },
-    {
-      "parameters": {
-        "content": "### 🧠 Model gallery\n\n**Azure OpenAI** is wired as the default. Swap providers by connecting another model to the agent's *Chat Model* port — local **Ollama** needs no API key.\n\nKeys land automatically from the deployment `.env`.",
-        "width": 1080,
-        "height": 280,
-        "color": 7
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -60,
-        460
-      ],
-      "name": "Zone Models"
-    },
-    {
-      "parameters": {
-        "content": "### 🔌 MCP\n\n`HTTPS Inspection MCP` — native MCP Client Tool (no auth needed inside the Docker network).\nEvery tool the server exposes becomes an agent tool automatically.",
-        "width": 400,
-        "height": 320,
-        "color": 6
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        1060,
-        260
-      ],
-      "name": "Zone MCP"
+      "name": "About this demo",
+      "id": "0582afab-2191-5cc6-9e4f-ec38ef601ae4"
     }
   ],
   "pinData": {},

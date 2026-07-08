@@ -17,7 +17,7 @@
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
-        -180,
+        -160,
         120
       ],
       "webhookId": "dac0e01a-cbec-41fd-8de0-c9fa951c1369"
@@ -45,8 +45,8 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        640,
-        380
+        480,
+        400
       ],
       "id": "598e5fa9-de73-4670-996d-bca53599f666",
       "name": "Conversation Memory"
@@ -77,7 +77,8 @@
         80,
         120
       ],
-      "name": "Normalize input"
+      "name": "Normalize input",
+      "id": "a0aea16a-155f-5261-ab1b-abfd271c0bfb"
     },
     {
       "parameters": {
@@ -96,10 +97,11 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        820,
-        280
+        860,
+        260
       ],
-      "name": "Friendly error"
+      "name": "Friendly error",
+      "id": "1e29aa6f-9636-577c-a6e4-c942766b9de4"
     },
     {
       "parameters": {
@@ -109,10 +111,11 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        1120,
-        380
+        720,
+        400
       ],
-      "name": "Threat Emulation MCP"
+      "name": "Threat Emulation MCP",
+      "id": "c174c3fd-94be-5206-bf56-a7adc0a17aaf"
     },
     {
       "parameters": {
@@ -122,8 +125,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        0,
-        560
+        -160,
+        620
       ],
       "name": "Azure OpenAI (default)",
       "credentials": {
@@ -131,26 +134,28 @@
           "id": "nmUI0INbLO2IrroY",
           "name": "Azure Open AI account"
         }
-      }
+      },
+      "id": "17848f51-f94c-5b20-997a-97012ca9e59b"
     },
     {
       "parameters": {
-        "model": "gemma4:e2b",
+        "model": "qwen3.5:9b",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        220,
-        560
+        60,
+        620
       ],
-      "name": "Ollama — local gemma4",
+      "name": "Ollama — local qwen3.5",
       "credentials": {
         "ollamaApi": {
           "id": "i8fXatxwj12xOABO",
           "name": "Ollama account"
         }
-      }
+      },
+      "id": "7a930368-961a-53ea-9dfb-efb48f5d278d"
     },
     {
       "parameters": {
@@ -160,8 +165,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        440,
-        560
+        280,
+        620
       ],
       "name": "Gemini 2.5 Flash",
       "credentials": {
@@ -169,7 +174,8 @@
           "id": "jQWvIJNDs6CeSDiN",
           "name": "Google Gemini(PaLM) Api account"
         }
-      }
+      },
+      "id": "ebbc06fb-732c-52b3-8c1d-e3c368b6fd62"
     },
     {
       "parameters": {
@@ -184,8 +190,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        660,
-        560
+        500,
+        620
       ],
       "name": "OpenAI gpt-4o-mini",
       "credentials": {
@@ -193,91 +199,49 @@
           "id": "6oZqD0UJampaYWCy",
           "name": "OpenAi account"
         }
-      }
+      },
+      "id": "c1b457c9-0480-5080-a3e5-bf0150048fca"
     },
     {
       "parameters": {
         "model": {
           "__rl": true,
           "mode": "list",
-          "value": "claude-sonnet-4-5-20250929",
-          "cachedResultName": "Claude Sonnet 4.5"
+          "value": "claude-sonnet-5",
+          "cachedResultName": "Claude Sonnet 5"
         },
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        880,
-        560
+        720,
+        620
       ],
-      "name": "Claude Sonnet 4.5",
+      "name": "Claude Sonnet 5",
       "credentials": {
         "anthropicApi": {
           "id": "AnthropicCred001",
           "name": "Anthropic account"
         }
-      }
+      },
+      "id": "fbcef7d7-8943-55c5-8f35-b86ebc8101d9"
     },
     {
       "parameters": {
-        "content": "## 🛡️ Check Point Threat Emulation\n### AI Agent over MCP\n\nI submit files to the Check Point sandbox and explain the verdicts.\n\n**How:** n8n's **native MCP Client Tool** node pointed straight at the server — tools auto-discovered, zero glue.",
-        "width": 440,
-        "height": 380,
+        "content": "## 🛡️ Check Point Threat Emulation\n#### AI Agent over MCP\n\nSubmits files to the Check Point sandbox and explains the verdicts.\n\n**How it works:** n8n's **native MCP Client Tool** node pointed straight at the server — every tool auto-discovered, zero glue.\n\n**💬 Try these:**\n- Check this hash for a verdict: <sha256>\n- What file types can you emulate?\n\n**🧠 Models:** Azure OpenAI `gpt-5.4` is wired as default — swap by connecting Ollama (local, no key), Gemini, OpenAI or Claude to the *Chat Model* port.",
+        "width": 500,
+        "height": 640,
         "color": 4
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -660,
-        -60
+        -760,
+        -100
       ],
-      "name": "Zone Header"
-    },
-    {
-      "parameters": {
-        "content": "### 💬 Try these\n\n- Check this hash for a verdict: <sha256>\n- What file types can you emulate?",
-        "width": 440,
-        "height": 260,
-        "color": 5
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -660,
-        360
-      ],
-      "name": "Zone Demos"
-    },
-    {
-      "parameters": {
-        "content": "### 🧠 Model gallery\n\n**Azure OpenAI** is wired as the default. Swap providers by connecting another model to the agent's *Chat Model* port — local **Ollama** needs no API key.\n\nKeys land automatically from the deployment `.env`.",
-        "width": 1080,
-        "height": 280,
-        "color": 7
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -60,
-        460
-      ],
-      "name": "Zone Models"
-    },
-    {
-      "parameters": {
-        "content": "### 🔌 MCP\n\n`Threat Emulation MCP` — native MCP Client Tool (no auth needed inside the Docker network).\nEvery tool the server exposes becomes an agent tool automatically.",
-        "width": 400,
-        "height": 320,
-        "color": 6
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        1060,
-        260
-      ],
-      "name": "Zone MCP"
+      "name": "About this demo",
+      "id": "056b573c-752a-5667-855b-9f6e0603c661"
     }
   ],
   "pinData": {},

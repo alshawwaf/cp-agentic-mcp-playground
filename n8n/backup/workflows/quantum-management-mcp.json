@@ -17,7 +17,7 @@
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
-        -180,
+        -160,
         120
       ],
       "webhookId": "799f12a9-0a0c-40e2-9302-799f2c23a881"
@@ -46,8 +46,8 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        640,
-        380
+        480,
+        400
       ],
       "id": "08702c96-b115-402b-8037-0ebc81af7692",
       "name": "Conversation Memory"
@@ -78,7 +78,8 @@
         80,
         120
       ],
-      "name": "Normalize input"
+      "name": "Normalize input",
+      "id": "410e622a-92bd-5e7c-ad17-cec6b44d47c4"
     },
     {
       "parameters": {
@@ -97,10 +98,11 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        820,
-        280
+        860,
+        260
       ],
-      "name": "Friendly error"
+      "name": "Friendly error",
+      "id": "1f939fb5-0237-55ac-aa8a-06f613635ea0"
     },
     {
       "parameters": {
@@ -110,10 +112,11 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        1120,
-        380
+        720,
+        400
       ],
-      "name": "Quantum Management MCP"
+      "name": "Quantum Management MCP",
+      "id": "bae92bbf-ffc6-5072-ac4b-c45602283692"
     },
     {
       "parameters": {
@@ -123,8 +126,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        0,
-        560
+        -160,
+        620
       ],
       "name": "Azure OpenAI (default)",
       "credentials": {
@@ -132,26 +135,28 @@
           "id": "nmUI0INbLO2IrroY",
           "name": "Azure Open AI account"
         }
-      }
+      },
+      "id": "6a90ff3e-3c6e-520d-a6da-4ee582dd21b5"
     },
     {
       "parameters": {
-        "model": "gemma4:e2b",
+        "model": "qwen3.5:9b",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        220,
-        560
+        60,
+        620
       ],
-      "name": "Ollama — local gemma4",
+      "name": "Ollama — local qwen3.5",
       "credentials": {
         "ollamaApi": {
           "id": "i8fXatxwj12xOABO",
           "name": "Ollama account"
         }
-      }
+      },
+      "id": "c2151c2c-e991-5b06-96bc-c1251fad50b2"
     },
     {
       "parameters": {
@@ -161,8 +166,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        440,
-        560
+        280,
+        620
       ],
       "name": "Gemini 2.5 Flash",
       "credentials": {
@@ -170,7 +175,8 @@
           "id": "jQWvIJNDs6CeSDiN",
           "name": "Google Gemini(PaLM) Api account"
         }
-      }
+      },
+      "id": "cabe76e9-abe3-59ed-9863-0263c7cc845c"
     },
     {
       "parameters": {
@@ -185,8 +191,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        660,
-        560
+        500,
+        620
       ],
       "name": "OpenAI gpt-4o-mini",
       "credentials": {
@@ -194,91 +200,49 @@
           "id": "6oZqD0UJampaYWCy",
           "name": "OpenAi account"
         }
-      }
+      },
+      "id": "de81161c-9b69-54b1-9627-72937ce9a963"
     },
     {
       "parameters": {
         "model": {
           "__rl": true,
           "mode": "list",
-          "value": "claude-sonnet-4-5-20250929",
-          "cachedResultName": "Claude Sonnet 4.5"
+          "value": "claude-sonnet-5",
+          "cachedResultName": "Claude Sonnet 5"
         },
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        880,
-        560
+        720,
+        620
       ],
-      "name": "Claude Sonnet 4.5",
+      "name": "Claude Sonnet 5",
       "credentials": {
         "anthropicApi": {
           "id": "AnthropicCred001",
           "name": "Anthropic account"
         }
-      }
+      },
+      "id": "9cfe756b-0d87-561a-92a9-478c0a3b07fb"
     },
     {
       "parameters": {
-        "content": "## 🛡️ Check Point Quantum Management\n### AI Agent over MCP\n\nI read and change your Check Point security policy: objects, access rules, packages — and publish/install only when you say so.\n\n**How:** n8n's **native MCP Client Tool** node pointed straight at the server — tools auto-discovered, zero glue.",
-        "width": 440,
-        "height": 380,
+        "content": "## 🛡️ Check Point Quantum Management\n#### AI Agent over MCP\n\nReads and changes your Check Point security policy — objects, access rules, packages — and publishes/installs only when you say so.\n\n**How it works:** n8n's **native MCP Client Tool** node pointed straight at the server — every tool auto-discovered, zero glue.\n\n**💬 Try these:**\n- Show me all the gateways and their IPs\n- List the rules in the Network layer as a table\n- Create a host object web-srv-1 at 10.1.1.50 (don't publish yet)\n\n**🧠 Models:** Azure OpenAI `gpt-5.4` is wired as default — swap by connecting Ollama (local, no key), Gemini, OpenAI or Claude to the *Chat Model* port.",
+        "width": 500,
+        "height": 640,
         "color": 4
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -660,
-        -60
+        -760,
+        -100
       ],
-      "name": "Zone Header"
-    },
-    {
-      "parameters": {
-        "content": "### 💬 Try these\n\n- Show me all the gateways and their IPs\n- List the rules in the Network layer as a table\n- Create a host object web-srv-1 at 10.1.1.50 (don't publish yet)",
-        "width": 440,
-        "height": 260,
-        "color": 5
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -660,
-        360
-      ],
-      "name": "Zone Demos"
-    },
-    {
-      "parameters": {
-        "content": "### 🧠 Model gallery\n\n**Azure OpenAI** is wired as the default. Swap providers by connecting another model to the agent's *Chat Model* port — local **Ollama** needs no API key.\n\nKeys land automatically from the deployment `.env`.",
-        "width": 1080,
-        "height": 280,
-        "color": 7
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -60,
-        460
-      ],
-      "name": "Zone Models"
-    },
-    {
-      "parameters": {
-        "content": "### 🔌 MCP\n\n`Quantum Management MCP` — native MCP Client Tool (no auth needed inside the Docker network).\nEvery tool the server exposes becomes an agent tool automatically.",
-        "width": 400,
-        "height": 320,
-        "color": 6
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        1060,
-        260
-      ],
-      "name": "Zone MCP"
+      "name": "About this demo",
+      "id": "b8a33ea9-844a-5618-a6c6-6457e2f58672"
     }
   ],
   "pinData": {},

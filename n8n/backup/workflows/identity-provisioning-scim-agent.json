@@ -178,7 +178,7 @@
     },
     {
       "parameters": {
-        "model": "gpt-oss:20b-cloud",
+        "model": "qwen3.5:9b",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
@@ -188,7 +188,7 @@
         532
       ],
       "id": "860614c9-44c4-46d7-b374-0fc6be87b203",
-      "name": "Ollama — local gemma4",
+      "name": "Ollama — local qwen3.5",
       "credentials": {
         "ollamaApi": {
           "id": "i8fXatxwj12xOABO",
@@ -263,15 +263,16 @@
           "id": "jQWvIJNDs6CeSDiN",
           "name": "Google Gemini(PaLM) Api account"
         }
-      }
+      },
+      "id": "f7475222-c86d-5a66-94ab-f1a90513938f"
     },
     {
       "parameters": {
         "model": {
           "__rl": true,
           "mode": "list",
-          "value": "claude-sonnet-4-5-20250929",
-          "cachedResultName": "Claude Sonnet 4.5"
+          "value": "claude-sonnet-5",
+          "cachedResultName": "Claude Sonnet 5"
         },
         "options": {}
       },
@@ -281,13 +282,14 @@
         1304,
         532
       ],
-      "name": "Claude Sonnet 4.5",
+      "name": "Claude Sonnet 5",
       "credentials": {
         "anthropicApi": {
           "id": "AnthropicCred001",
           "name": "Anthropic account"
         }
-      }
+      },
+      "id": "938e5b0e-db48-5962-9c7b-4ea8b4357be9"
     },
     {
       "parameters": {
@@ -302,7 +304,8 @@
         364,
         472
       ],
-      "name": "Zone Models"
+      "name": "Zone Models",
+      "id": "60c1f13e-fb7d-5a23-80b0-28d0e7755283"
     }
   ],
   "pinData": {},
@@ -373,7 +376,7 @@
         []
       ]
     },
-    "Ollama — local gemma4": {
+    "Ollama — local qwen3.5": {
       "ai_languageModel": [
         []
       ]

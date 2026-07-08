@@ -17,7 +17,7 @@
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
-        -180,
+        -160,
         120
       ],
       "webhookId": "b65c5069-69c6-56c8-83c3-7ba83219a3bd"
@@ -45,8 +45,8 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        640,
-        380
+        480,
+        400
       ],
       "id": "c956e47f-0004-4e28-a4ba-cbcb9a7ce709",
       "name": "Conversation Memory"
@@ -77,7 +77,8 @@
         80,
         120
       ],
-      "name": "Normalize input"
+      "name": "Normalize input",
+      "id": "62f60a38-0518-5800-bf50-93efb750ffaf"
     },
     {
       "parameters": {
@@ -96,10 +97,11 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        820,
-        280
+        860,
+        260
       ],
-      "name": "Friendly error"
+      "name": "Friendly error",
+      "id": "07f68512-8e0f-5a2e-8f54-d9476b0e67b0"
     },
     {
       "parameters": {
@@ -110,8 +112,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        1120,
-        380
+        720,
+        400
       ],
       "name": "CP MCP Gateway",
       "credentials": {
@@ -119,7 +121,8 @@
           "id": "McpGatewayBearer",
           "name": "CP MCP Gateway Bearer"
         }
-      }
+      },
+      "id": "7f416562-4695-54bb-a277-cb0d372444d6"
     },
     {
       "parameters": {
@@ -129,8 +132,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        0,
-        560
+        -160,
+        620
       ],
       "name": "Azure OpenAI (default)",
       "credentials": {
@@ -138,26 +141,28 @@
           "id": "nmUI0INbLO2IrroY",
           "name": "Azure Open AI account"
         }
-      }
+      },
+      "id": "979d0fce-8c56-5389-ac5d-43d6b697290a"
     },
     {
       "parameters": {
-        "model": "gemma4:e2b",
+        "model": "qwen3.5:9b",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        220,
-        560
+        60,
+        620
       ],
-      "name": "Ollama — local gemma4",
+      "name": "Ollama — local qwen3.5",
       "credentials": {
         "ollamaApi": {
           "id": "i8fXatxwj12xOABO",
           "name": "Ollama account"
         }
-      }
+      },
+      "id": "5a531cc6-a810-51a3-824d-4295ea089244"
     },
     {
       "parameters": {
@@ -167,8 +172,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        440,
-        560
+        280,
+        620
       ],
       "name": "Gemini 2.5 Flash",
       "credentials": {
@@ -176,7 +181,8 @@
           "id": "jQWvIJNDs6CeSDiN",
           "name": "Google Gemini(PaLM) Api account"
         }
-      }
+      },
+      "id": "60f763df-48c7-5b50-ace7-c411533567b1"
     },
     {
       "parameters": {
@@ -191,8 +197,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        660,
-        560
+        500,
+        620
       ],
       "name": "OpenAI gpt-4o-mini",
       "credentials": {
@@ -200,91 +206,49 @@
           "id": "6oZqD0UJampaYWCy",
           "name": "OpenAi account"
         }
-      }
+      },
+      "id": "d6f359b4-df65-5b1d-8627-d2d83ba49aa4"
     },
     {
       "parameters": {
         "model": {
           "__rl": true,
           "mode": "list",
-          "value": "claude-sonnet-4-5-20250929",
-          "cachedResultName": "Claude Sonnet 4.5"
+          "value": "claude-sonnet-5",
+          "cachedResultName": "Claude Sonnet 5"
         },
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        880,
-        560
+        720,
+        620
       ],
-      "name": "Claude Sonnet 4.5",
+      "name": "Claude Sonnet 5",
       "credentials": {
         "anthropicApi": {
           "id": "AnthropicCred001",
           "name": "Anthropic account"
         }
-      }
-    },
-    {
-      "parameters": {
-        "content": "## 🛡️ Check Point Gaia OS\n### AI Agent over MCP (Gateway)\n\nI inspect and configure the Gaia OS of your gateways and management servers over the Gaia REST API.\n\n**How:** one endpoint (`mcp-gateway:8080/mcp`), **Bearer auth**, every CP MCP server aggregated.",
-        "width": 440,
-        "height": 380,
-        "color": 4
       },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -660,
-        -60
-      ],
-      "name": "Zone Header"
+      "id": "48a217ca-0226-50ce-a930-af3119dc83b6"
     },
     {
       "parameters": {
-        "content": "### 💬 Try these\n\n- Show the interfaces and their IPs\n- What are the static routes?\n- Check the DNS and NTP configuration",
-        "width": 440,
-        "height": 260,
-        "color": 5
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -660,
-        360
-      ],
-      "name": "Zone Demos"
-    },
-    {
-      "parameters": {
-        "content": "### 🧠 Model gallery\n\n**Azure OpenAI** is wired as the default. Swap providers by connecting another model to the agent's *Chat Model* port — local **Ollama** needs no API key.\n\nKeys land automatically from the deployment `.env`.",
-        "width": 1080,
-        "height": 280,
-        "color": 7
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -60,
-        460
-      ],
-      "name": "Zone Models"
-    },
-    {
-      "parameters": {
-        "content": "### 🔌 MCP\n\n`CP MCP Gateway` — native MCP Client Tool with **Bearer auth** to the gateway.\nEvery tool the server exposes becomes an agent tool automatically.",
-        "width": 400,
-        "height": 320,
+        "content": "## 🛡️ Check Point Gaia OS\n#### AI Agent over MCP · via Gateway\n\nInspects and configures the Gaia OS of your gateways — interfaces, routes, DNS, NTP.\n\n**How it works:** Every call rides the **Docker MCP Gateway** — one endpoint, Bearer auth, the whole Check Point MCP fleet behind it.\n\n**💬 Try these:**\n- Show the interfaces and their IPs\n- What are the static routes?\n- Check the DNS and NTP configuration\n\n**🧠 Models:** Azure OpenAI `gpt-5.4` is wired as default — swap by connecting Ollama (local, no key), Gemini, OpenAI or Claude to the *Chat Model* port.",
+        "width": 500,
+        "height": 640,
         "color": 6
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1060,
-        260
+        -760,
+        -100
       ],
-      "name": "Zone MCP"
+      "name": "About this demo",
+      "id": "1cba3d05-2e77-5070-8a15-401483ac1dc4"
     }
   ],
   "pinData": {},

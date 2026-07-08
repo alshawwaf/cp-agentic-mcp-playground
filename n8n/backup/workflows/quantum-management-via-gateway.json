@@ -34,7 +34,7 @@
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
-        -180,
+        -160,
         120
       ],
       "webhookId": "8a9f12a9-0a0c-40e2-9302-799f2c23a992"
@@ -84,7 +84,8 @@
         80,
         120
       ],
-      "name": "Normalize input"
+      "name": "Normalize input",
+      "id": "f3c022ae-181b-58cf-93db-8efd3da78d88"
     },
     {
       "parameters": {
@@ -103,10 +104,11 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        820,
-        280
+        860,
+        260
       ],
-      "name": "Friendly error"
+      "name": "Friendly error",
+      "id": "1ee44a86-90c2-50c9-b3db-bff5f7900811"
     },
     {
       "parameters": {
@@ -117,8 +119,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        1120,
-        380
+        720,
+        400
       ],
       "name": "CP MCP Gateway",
       "credentials": {
@@ -126,7 +128,8 @@
           "id": "McpGatewayBearer",
           "name": "CP MCP Gateway Bearer"
         }
-      }
+      },
+      "id": "e408206f-53b9-5ba4-a9c3-dabfc9f526cd"
     },
     {
       "parameters": {
@@ -136,8 +139,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        0,
-        560
+        -160,
+        620
       ],
       "name": "Azure OpenAI (default)",
       "credentials": {
@@ -145,26 +148,28 @@
           "id": "nmUI0INbLO2IrroY",
           "name": "Azure Open AI account"
         }
-      }
+      },
+      "id": "aa123c55-49ca-5838-811b-0d31b4b9b736"
     },
     {
       "parameters": {
-        "model": "gemma4:e2b",
+        "model": "qwen3.5:9b",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        220,
-        560
+        60,
+        620
       ],
-      "name": "Ollama — local gemma4",
+      "name": "Ollama — local qwen3.5",
       "credentials": {
         "ollamaApi": {
           "id": "i8fXatxwj12xOABO",
           "name": "Ollama account"
         }
-      }
+      },
+      "id": "720432ba-008e-565b-86be-4a1fc59a4762"
     },
     {
       "parameters": {
@@ -174,8 +179,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        440,
-        560
+        280,
+        620
       ],
       "name": "Gemini 2.5 Flash",
       "credentials": {
@@ -183,7 +188,8 @@
           "id": "jQWvIJNDs6CeSDiN",
           "name": "Google Gemini(PaLM) Api account"
         }
-      }
+      },
+      "id": "ebdd48b4-1d4b-50fb-a113-26b2e5fe4558"
     },
     {
       "parameters": {
@@ -198,8 +204,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        660,
-        560
+        500,
+        620
       ],
       "name": "OpenAI gpt-4o-mini",
       "credentials": {
@@ -207,91 +213,49 @@
           "id": "6oZqD0UJampaYWCy",
           "name": "OpenAi account"
         }
-      }
+      },
+      "id": "26103b75-2147-510a-830f-0d8235733a94"
     },
     {
       "parameters": {
         "model": {
           "__rl": true,
           "mode": "list",
-          "value": "claude-sonnet-4-5-20250929",
-          "cachedResultName": "Claude Sonnet 4.5"
+          "value": "claude-sonnet-5",
+          "cachedResultName": "Claude Sonnet 5"
         },
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        880,
-        560
+        720,
+        620
       ],
-      "name": "Claude Sonnet 4.5",
+      "name": "Claude Sonnet 5",
       "credentials": {
         "anthropicApi": {
           "id": "AnthropicCred001",
           "name": "Anthropic account"
         }
-      }
-    },
-    {
-      "parameters": {
-        "content": "## 🛡️ Check Point Quantum Management\n### AI Agent over MCP (Gateway)\n\nI read and change your Check Point security policy: objects, access rules, packages — and publish/install only when you say so.\n\n**How:** one endpoint (`mcp-gateway:8080/mcp`), **Bearer auth**, every CP MCP server aggregated.",
-        "width": 440,
-        "height": 380,
-        "color": 4
       },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -660,
-        -60
-      ],
-      "name": "Zone Header"
+      "id": "35c887de-7445-57fa-886f-09dc078691ec"
     },
     {
       "parameters": {
-        "content": "### 💬 Try these\n\n- Show me all the gateways and their IPs\n- List the rules in the Network layer as a table\n- Create a host object web-srv-1 at 10.1.1.50 (don't publish yet)",
-        "width": 440,
-        "height": 260,
-        "color": 5
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -660,
-        360
-      ],
-      "name": "Zone Demos"
-    },
-    {
-      "parameters": {
-        "content": "### 🧠 Model gallery\n\n**Azure OpenAI** is wired as the default. Swap providers by connecting another model to the agent's *Chat Model* port — local **Ollama** needs no API key.\n\nKeys land automatically from the deployment `.env`.",
-        "width": 1080,
-        "height": 280,
-        "color": 7
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -60,
-        460
-      ],
-      "name": "Zone Models"
-    },
-    {
-      "parameters": {
-        "content": "### 🔌 MCP\n\n`CP MCP Gateway` — native MCP Client Tool with **Bearer auth** to the gateway.\nEvery tool the server exposes becomes an agent tool automatically.",
-        "width": 400,
-        "height": 320,
+        "content": "## 🛡️ Check Point Quantum Management\n#### AI Agent over MCP · via Gateway\n\nReads and changes your Check Point security policy — objects, access rules, packages — and publishes/installs only when you say so.\n\n**How it works:** Every call rides the **Docker MCP Gateway** — one endpoint, Bearer auth, the whole Check Point MCP fleet behind it.\n\n**💬 Try these:**\n- Show me all the gateways and their IPs\n- List the rules in the Network layer as a table\n- Create a host object web-srv-1 at 10.1.1.50 (don't publish yet)\n\n**🧠 Models:** Azure OpenAI `gpt-5.4` is wired as default — swap by connecting Ollama (local, no key), Gemini, OpenAI or Claude to the *Chat Model* port.",
+        "width": 500,
+        "height": 640,
         "color": 6
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1060,
-        260
+        -760,
+        -100
       ],
-      "name": "Zone MCP"
+      "name": "About this demo",
+      "id": "3ab48e94-fbee-52eb-938a-1d949e016dc1"
     }
   ],
   "pinData": {},
