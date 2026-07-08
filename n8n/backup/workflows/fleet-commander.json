@@ -19,7 +19,7 @@
     },
     {
       "parameters": {
-        "content": "### 💬 Try these\n- Which gateways are in my estate and are their policies installed?\n- Any drops from 10.1.1.222 in the last 24h — and what's that IP's reputation?\n- Draft (don't publish) a rule blocking Facebook for the Guest network\n- Summarize the strictest Threat Prevention profile\n\n### ⚙️ How it works\n**One endpoint, every tool.** Calls ride the Docker MCP Gateway (`mcp-gateway:8080/mcp`, Bearer auth) which aggregates the whole Check Point MCP fleet — ~180 tools behind a single agent.\n\n### 🧠 Models\nAzure OpenAI **gpt-5.4** is the wired default; Ollama (local), Gemini 2.5 Pro, GPT-5.1 and Claude Opus 4.8 are one click away.",
+        "content": "### 💬 Try these\n- Which gateways are in my estate and are their policies installed?\n- Any drops from 10.1.1.222 in the last 24h — and what's that IP's reputation?\n- Draft (don't publish) a rule blocking Facebook for the Guest network\n- Summarize the strictest Threat Prevention profile\n\n### ⚙️ How it works\n**One endpoint, every tool.** Calls ride the Docker MCP Gateway (`mcp-gateway:8080/mcp`, Bearer auth) which aggregates the whole Check Point MCP fleet — a curated 113-tool core across every domain (the model API caps tools at 128).\n\n### 🧠 Models\nAzure OpenAI **gpt-5.4** is the wired default; Ollama (local), Gemini 2.5 Pro, GPT-5.1 and Claude Opus 4.8 are one click away.",
         "width": 460,
         "height": 640,
         "color": 7
@@ -139,7 +139,123 @@
       "parameters": {
         "endpointUrl": "http://mcp-gateway:8080/mcp",
         "authentication": "bearerAuth",
-        "options": {}
+        "options": {},
+        "include": "selected",
+        "includeTools": [
+          "find_zero_hits_rules",
+          "management__init",
+          "management__show_gateways_and_servers",
+          "management__show_object",
+          "management__show_objects",
+          "show_access_layer",
+          "show_access_layers",
+          "show_access_point_names",
+          "show_access_rule",
+          "show_access_rulebase",
+          "show_access_section",
+          "show_address_ranges",
+          "show_application_site_categories",
+          "show_application_site_groups",
+          "show_application_sites",
+          "show_cluster_member",
+          "show_cluster_members",
+          "show_domains",
+          "show_dynamic_objects",
+          "show_groups",
+          "show_hosts",
+          "show_lsm_cluster",
+          "show_lsm_clusters",
+          "show_lsm_gateway",
+          "show_lsm_gateways",
+          "show_mdss",
+          "show_multicast_address_ranges",
+          "show_nat_rulebase",
+          "show_nat_section",
+          "show_networks",
+          "show_security_zones",
+          "show_service_groups",
+          "manage_gaia_credentials",
+          "show_arp",
+          "show_bgp_groups",
+          "show_bgp_paths",
+          "show_bgp_peers",
+          "show_bgp_routemaps",
+          "show_bgp_routes_in",
+          "show_bgp_routes_out",
+          "show_bgp_summary",
+          "show_bootp_interfaces",
+          "show_configuration_bgp",
+          "show_date_time",
+          "show_dhcp",
+          "show_dhcp6",
+          "cphaprob_if",
+          "cphaprob_stat",
+          "cphaprob_syncstat",
+          "cpinfo_all",
+          "cplic_print",
+          "disk_usage",
+          "dmidecode",
+          "dynamic_balancing",
+          "fw_accel_conns",
+          "fw_accel_stat",
+          "fw_accel_stats",
+          "fw_ctl_arp",
+          "fw_ctl_chain",
+          "fw_ctl_conn",
+          "check_cve_protection",
+          "show_exception_group",
+          "show_exception_groups",
+          "show_ips_protection_extended_attribute",
+          "show_ips_protection_extended_attributes",
+          "show_ips_status",
+          "show_ips_update_schedule",
+          "show_threat_advanced_settings",
+          "show_threat_indicator",
+          "show_threat_indicators",
+          "show_threat_layer",
+          "show_threat_layers",
+          "show_threat_profile",
+          "show_threat_profiles",
+          "show_threat_protection",
+          "show_threat_protections",
+          "show_threat_rule",
+          "show_threat_rule_exception_rulebase",
+          "download_report",
+          "get_quota",
+          "query_file",
+          "scan_file",
+          "upload_file",
+          "reputation_file",
+          "reputation_ip",
+          "reputation_url",
+          "analyze_cpinfo_overview",
+          "analyze_performance_metrics",
+          "audit_security_settings",
+          "browse_sections_by_category",
+          "check_initialization_status",
+          "comprehensive_health_analysis",
+          "detect_system_crashes",
+          "extract_license_information",
+          "extract_network_config",
+          "extract_system_details",
+          "https-inspection__init",
+          "https-inspection__show_gateways_and_servers",
+          "https-inspection__show_object",
+          "https-inspection__show_objects",
+          "show_https_layer",
+          "show_https_layers",
+          "show_https_rule",
+          "show_https_rulebase",
+          "show_https_section",
+          "build_logs_query_filter",
+          "get_next_query_page",
+          "management-logs__init",
+          "management-logs__show_gateways_and_servers",
+          "management-logs__show_object",
+          "management-logs__show_objects",
+          "run_logs_query",
+          "ask-checkpoint-docs"
+        ]
       },
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
@@ -148,7 +264,7 @@
         320
       ],
       "id": "1acdc5e2-6e6b-5c39-9b6a-f121aa86d35b",
-      "name": "CP MCP Gateway (all tools)",
+      "name": "CP MCP Gateway (core toolset)",
       "credentials": {
         "httpBearerAuth": {
           "id": "McpGatewayBearer",
@@ -312,17 +428,6 @@
         ]
       ]
     },
-    "CP MCP Gateway (all tools)": {
-      "ai_tool": [
-        [
-          {
-            "node": "Fleet Commander",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Fleet Commander": {
       "main": [
         [],
@@ -330,6 +435,17 @@
           {
             "node": "Friendly error",
             "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CP MCP Gateway (core toolset)": {
+      "ai_tool": [
+        [
+          {
+            "node": "Fleet Commander",
+            "type": "ai_tool",
             "index": 0
           }
         ]

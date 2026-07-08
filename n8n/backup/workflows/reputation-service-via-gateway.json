@@ -107,7 +107,15 @@
       "parameters": {
         "endpointUrl": "http://mcp-gateway:8080/mcp",
         "options": {},
-        "authentication": "bearerAuth"
+        "authentication": "bearerAuth",
+        "include": "selected",
+        "includeTools": [
+          "reputation_file",
+          "reputation_ip",
+          "reputation_url",
+          "show_threat_ioc_feed",
+          "show_threat_ioc_feeds"
+        ]
       },
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,

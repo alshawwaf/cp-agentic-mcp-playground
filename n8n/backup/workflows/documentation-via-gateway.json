@@ -107,7 +107,11 @@
       "parameters": {
         "endpointUrl": "http://mcp-gateway:8080/mcp",
         "options": {},
-        "authentication": "bearerAuth"
+        "authentication": "bearerAuth",
+        "include": "selected",
+        "includeTools": [
+          "ask-checkpoint-docs"
+        ]
       },
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,

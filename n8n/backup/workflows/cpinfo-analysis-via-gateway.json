@@ -107,7 +107,22 @@
       "parameters": {
         "endpointUrl": "http://mcp-gateway:8080/mcp",
         "options": {},
-        "authentication": "bearerAuth"
+        "authentication": "bearerAuth",
+        "include": "selected",
+        "includeTools": [
+          "analyze_cpinfo_overview",
+          "analyze_performance_metrics",
+          "audit_security_settings",
+          "browse_sections_by_category",
+          "check_initialization_status",
+          "comprehensive_health_analysis",
+          "detect_system_crashes",
+          "extract_license_information",
+          "extract_network_config",
+          "extract_system_details",
+          "read_section_content",
+          "smart_content_search"
+        ]
       },
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,

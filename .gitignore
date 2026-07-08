@@ -14,6 +14,10 @@ open-webui/
 flowise/
 langflow/
 
+# …but keep the importable builder flows under integrations/ (not runtime data)
+!integrations/flowise/
+!integrations/langflow/
+
 # Backups
 backups/
 *.tar.gz
