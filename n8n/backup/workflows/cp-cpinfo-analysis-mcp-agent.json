@@ -3,163 +3,10 @@
   "nodes": [
     {
       "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "gpt-4o-mini",
-          "mode": "list",
-          "cachedResultName": "gpt-4o-mini"
-        },
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        -272,
-        112
-      ],
-      "id": "da8f789d-e081-4639-b96f-9a55ef611fbd",
-      "name": "OpenAI Chat Model",
-      "credentials": {
-        "openAiApi": {
-          "id": "6oZqD0UJampaYWCy",
-          "name": "OpenAi account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "content": "Analyze the file GW-cpinfo.info under /data/cpinfo/",
-        "height": 80,
-        "color": 2
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        -864,
-        -160
-      ],
-      "typeVersion": 1,
-      "id": "0f33ccc5-a09b-45be-87a9-8ca3b7103c8f",
-      "name": "Sticky Note1"
-    },
-    {
-      "parameters": {
-        "model": "gpt-4o-mini-2024-07-18",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
-      "typeVersion": 1,
-      "position": [
-        -432,
-        112
-      ],
-      "id": "89e967a5-aab3-4597-9b91-65ad9c5e9859",
-      "name": "Azure OpenAI Chat Model",
-      "credentials": {
-        "azureOpenAiApi": {
-          "id": "nmUI0INbLO2IrroY",
-          "name": "Azure Open AI account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "model": "gpt-oss:20b-cloud",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
-      "typeVersion": 1,
-      "position": [
-        -592,
-        112
-      ],
-      "id": "baeccca2-86d9-4f5d-97ee-dab077f13f45",
-      "name": "Ollama Chat Model",
-      "credentials": {
-        "ollamaApi": {
-          "id": "i8fXatxwj12xOABO",
-          "name": "Ollama account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "connectionType": "http"
-      },
-      "type": "n8n-nodes-mcp.mcpClientTool",
-      "typeVersion": 1,
-      "position": [
-        176,
-        80
-      ],
-      "id": "8860e798-aae4-4c22-8e56-096efbf0cbc8",
-      "name": "List-CP-MCP-Tools",
-      "credentials": {
-        "mcpClientHttpApi": {
-          "id": "icfVodDPaIITDiRE",
-          "name": "CP-Cpinfo_alaysis-MCP-Client-Docker"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "connectionType": "http",
-        "operation": "executeTool",
-        "toolName": "={{  $fromAI('Tool_Name')  }}",
-        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
-      },
-      "type": "n8n-nodes-mcp.mcpClientTool",
-      "typeVersion": 1,
-      "position": [
-        336,
-        80
-      ],
-      "id": "df30dcc5-8468-4813-99b5-46e95eaf74e2",
-      "name": "Execute-CP-MCP-Tools",
-      "credentials": {
-        "mcpClientHttpApi": {
-          "id": "icfVodDPaIITDiRE",
-          "name": "CP-Cpinfo_alaysis-MCP-Client-Docker"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "content": "LLM Models",
-        "height": 176,
-        "width": 560,
-        "color": 5
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        -688,
-        64
-      ],
-      "typeVersion": 1,
-      "id": "f6d24530-4d31-40b0-bad5-fd1b10fb58cc",
-      "name": "Sticky Note"
-    },
-    {
-      "parameters": {
-        "content": "MCP",
-        "height": 176,
-        "width": 352,
-        "color": 6
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        112,
-        64
-      ],
-      "typeVersion": 1,
-      "id": "6f7d96b6-f915-4421-b846-aa4305478056",
-      "name": "Sticky Note2"
-    },
-    {
-      "parameters": {
         "promptType": "define",
         "text": "={{ $json.chatInput }}",
         "options": {
-          "systemMessage": "You are a smart AI assistant. Always follow these rules:\n\n1. Start every run by calling tools. Do not execute yet.\n2. Show the available tool names.\n3. Use the best available tool name from step 1 in the tool CP-MCP-Client.\n4. summarize the results you receive from check point after triggering the CP-MCP-Client in the previous step."
+          "systemMessage": "You are the **Check Point cpinfo analysis** assistant. You analyze cpinfo diagnostic bundles over MCP to speed up troubleshooting.\n\n== WHAT YOU CAN DO ==\n- List and inspect uploaded cpinfo bundles.\n- Extract configuration, versions, hotfixes, and health indicators from a bundle.\n- Point at anomalies worth investigating and suggest next diagnostic steps.\n\n== HOW TO WORK ==\n- Use ONLY the MCP tools exposed to you. Never invent tool names or parameters; if no tool fits, say so.\n- Start with read-only tools (show/list/get) to gather facts before answering.\n- If a tool call fails, show the error in one short line and suggest the next step.\n- You have conversation memory: use prior turns for context instead of re-asking.\n\n== OUTPUT STYLE ==\n- Answer in concise Markdown: short paragraphs, bullets, and small tables for object/rule lists.\n- Summarize tool results faithfully. Do NOT paste raw JSON unless the user explicitly asks for raw output; \"verbatim\" means faithful to the data, not raw JSON.\n- For long lists show the 15 most relevant items and say how many more exist.\n- End multi-step work with a one-line summary of what was done."
         }
       },
       "id": "2b2c307b-b2e3-4044-a3dd-133526d79f3f",
@@ -167,8 +14,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.6,
       "position": [
-        -160,
-        -176
+        560,
+        112
       ],
       "onError": "continueErrorOutput"
     },
@@ -181,8 +28,8 @@
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
-        -496,
-        -176
+        -60,
+        112
       ],
       "webhookId": "f68c312c-1ad1-4d8b-b7c1-a5ced2248f23"
     },
@@ -191,37 +38,270 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        -64,
-        64
+        780,
+        340
       ],
       "id": "b2e47a6f-86b1-45b9-8fa0-e21d7da7b5d0",
       "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "chatInput",
+              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "sessionId",
+              "value": "={{ $json?.sessionId || $json.body.sessionId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        112
+      ],
+      "name": "Normalize input"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1",
+              "name": "output",
+              "value": "=⚠️ I hit an error and made **no changes**.\n\n```\n{{ ($json.error && $json.error.message) || $json.error || $json.message || 'Unknown error' }}\n```\nPlease retry, or rephrase the request.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        860,
+        260
+      ],
+      "name": "Friendly error"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://cpinfo-analysis-mcp:3012",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        1000,
+        320
+      ],
+      "name": "CPinfo Analysis MCP"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini-2024-07-18",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        240,
+        340
+      ],
+      "name": "Azure OpenAI Chat Model",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "nmUI0INbLO2IrroY",
+          "name": "Azure Open AI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gemma4:e2b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        420,
+        340
+      ],
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "i8fXatxwj12xOABO",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        600,
+        340
+      ],
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jQWvIJNDs6CeSDiN",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        780,
+        340
+      ],
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-4-5-20250929",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        960,
+        340
+      ],
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "AnthropicCred001",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 🛡 CPinfo Analysis — Direct MCP\n\nAn AI agent driving the **CPinfo Analysis MCP server** directly over HTTP-streamable MCP (`http://cpinfo-analysis-mcp:3012`).\n\n👉 The point to show: n8n's **native MCP Client Tool** node auto-discovers every tool the server exposes — no glue code, the agent just uses them.",
+        "width": 480,
+        "height": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -620,
+        -60
+      ],
+      "name": "Sticky 65355"
+    },
+    {
+      "parameters": {
+        "content": "### 💬 Try these\n\n- What cpinfo bundles are available?\n- Summarize the health of the latest bundle",
+        "width": 480,
+        "height": 240,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -620,
+        380
+      ],
+      "name": "Sticky 45438"
+    },
+    {
+      "parameters": {
+        "content": "### 🧠 Models\n\n**Azure OpenAI** is wired as the default. To demo another provider, connect its node to the agent's *Chat Model* port instead — Ollama (local, no API key), Gemini, OpenAI, or Anthropic.\n\nKeys come from the deployment `.env`; a red node just means that provider's key wasn't supplied.",
+        "width": 560,
+        "height": 220,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -100,
+        420
+      ],
+      "name": "Sticky 62902"
+    },
+    {
+      "parameters": {
+        "content": "### 🔌 MCP\n\n`CPinfo Analysis MCP` is n8n's **native MCP Client Tool** node (no auth needed on the internal Docker network).\nAll tools the server exposes become agent tools automatically.",
+        "width": 460,
+        "height": 220,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        500,
+        420
+      ],
+      "name": "Sticky 91979"
     }
   ],
   "pinData": {},
   "connections": {
-    "OpenAI Chat Model": {
-      "ai_languageModel": [
-        []
-      ]
-    },
-    "List-CP-MCP-Tools": {
-      "ai_tool": [
+    "When chat message received": {
+      "main": [
         [
           {
-            "node": "CP CPinfo Analysis AI Agent",
-            "type": "ai_tool",
+            "node": "Normalize input",
+            "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Execute-CP-MCP-Tools": {
-      "ai_tool": [
+    "Simple Memory": {
+      "ai_memory": [
         [
           {
             "node": "CP CPinfo Analysis AI Agent",
-            "type": "ai_tool",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize input": {
+      "main": [
+        [
+          {
+            "node": "CP CPinfo Analysis AI Agent",
+            "type": "main",
             "index": 0
           }
         ]
@@ -238,23 +318,24 @@
         ]
       ]
     },
-    "When chat message received": {
-      "main": [
+    "CPinfo Analysis MCP": {
+      "ai_tool": [
         [
           {
             "node": "CP CPinfo Analysis AI Agent",
-            "type": "main",
+            "type": "ai_tool",
             "index": 0
           }
         ]
       ]
     },
-    "Simple Memory": {
-      "ai_memory": [
+    "CP CPinfo Analysis AI Agent": {
+      "main": [
+        [],
         [
           {
-            "node": "CP CPinfo Analysis AI Agent",
-            "type": "ai_memory",
+            "node": "Friendly error",
+            "type": "main",
             "index": 0
           }
         ]

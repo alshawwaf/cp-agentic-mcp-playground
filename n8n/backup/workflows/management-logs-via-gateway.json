@@ -8,8 +8,8 @@
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "typeVersion": 1.1,
       "position": [
-        -128,
-        384
+        780,
+        340
       ],
       "credentials": {
         "postgres": {
@@ -30,39 +30,10 @@
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
-        -784,
+        -60,
         112
       ],
       "webhookId": "35bcabf8-caf6-4033-b66d-4658abbaa057"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "75ebfdef-c8e2-4c3e-b716-1479d0cc2a73",
-              "name": "chatInput",
-              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
-              "type": "string"
-            },
-            {
-              "id": "59b7a20f-0626-4861-93e2-015d430c266e",
-              "name": "sessionId",
-              "value": "={{ $json?.sessionId || $json.body.sessionId}}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "aaca716b-158a-43c7-b5b2-42e53cbaec34",
-      "name": "Edit Fields",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -512,
-        176
-      ]
     },
     {
       "parameters": {
@@ -92,47 +63,6 @@
     },
     {
       "parameters": {
-        "content": "blade:Anti-Bot OR blade:Anti-Virus OR blade:\"Zero Phishing\" OR blade:\"Threat Emulation\" OR blade:\"Threat Extraction\" NOT type:Control NOT action:Accept NOT severity:Low\n\nuse the filter above to see if there are any threats blocked in the \"last-7-days\"",
-        "height": 144,
-        "width": 384,
-        "color": 6
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        544,
-        336
-      ],
-      "typeVersion": 1,
-      "id": "ad2c53cf-b8a2-47ce-a950-2212a3505edc",
-      "name": "Sticky Note"
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "gpt-4o-mini",
-          "mode": "list",
-          "cachedResultName": "gpt-4o-mini"
-        },
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        -336,
-        496
-      ],
-      "id": "f4632651-9b8d-4ff9-b9c5-f5f102355d77",
-      "name": "OpenAI Chat Model",
-      "credentials": {
-        "openAiApi": {
-          "id": "6oZqD0UJampaYWCy",
-          "name": "OpenAi account"
-        }
-      }
-    },
-    {
-      "parameters": {
         "httpMethod": "POST",
         "path": "n8n-pipe",
         "responseMode": "responseNode",
@@ -150,22 +80,6 @@
     },
     {
       "parameters": {
-        "content": "curl -H \"Content-Type: application/json\"      -d '{\"sessionId\":\"test\",\"chatInput\":\"blade:Anti-Bot OR blade:Anti-Virus OR blade:\\\"Zero Phishing\\\" OR blade:\\\"Threat Emulation\\\" OR blade:\\\"Threat Extraction\\\" NOT type:Control NOT action:Accept NOT severity:Low\\n\\nuse the filter above to see if there are any threats blocked in the past week (time-frame is last-7-days)\"}'      http://localhost:5678/webhook-test/n8n-pipe\n",
-        "height": 192,
-        "width": 384,
-        "color": 7
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        544,
-        496
-      ],
-      "typeVersion": 1,
-      "id": "9e85c7e8-6d41-465f-8d26-a06a8d688bd4",
-      "name": "Sticky Note1"
-    },
-    {
-      "parameters": {
         "respondWith": "allIncomingItems",
         "options": {}
       },
@@ -180,16 +94,104 @@
     },
     {
       "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are the **Check Point logs** assistant. You query security and audit logs from the Management Log server over MCP and turn them into clear findings. All calls go through the Docker MCP Gateway.\n\n== WHAT YOU CAN DO ==\n- Search connection/security logs with filters (source, destination, blade, action, time frame).\n- Summarize what happened: top sources, drops vs accepts, notable preventions.\n- Query audit logs to answer who-changed-what questions.\n\n== HOW TO WORK ==\n- Use ONLY the MCP tools exposed to you. Never invent tool names or parameters; if no tool fits, say so.\n- Start with read-only tools (show/list/get) to gather facts before answering.\n- If a tool call fails, show the error in one short line and suggest the next step.\n- You have conversation memory: use prior turns for context instead of re-asking.\n\n== GATEWAY ==\nYour tools arrive through the Check Point Docker MCP Gateway: ONE endpoint with Bearer auth that aggregates EVERY CP MCP server. You will therefore see tools from other Check Point domains too (management, Gaia, logs, threat prevention, reputation, ...). Prefer the tools relevant to this agent's domain; use the others only when the user's request clearly needs them.\n\n== OUTPUT STYLE ==\n- Answer in concise Markdown: short paragraphs, bullets, and small tables for object/rule lists.\n- Summarize tool results faithfully. Do NOT paste raw JSON unless the user explicitly asks for raw output; \"verbatim\" means faithful to the data, not raw JSON.\n- For long lists show the 15 most relevant items and say how many more exist.\n- End multi-step work with a one-line summary of what was done."
+        }
+      },
+      "id": "b8fb44dd-b95b-42b6-a5b8-235366403420",
+      "name": "Check Point Logs AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        560,
+        112
+      ],
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "chatInput",
+              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "sessionId",
+              "value": "={{ $json?.sessionId || $json.body.sessionId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        112
+      ],
+      "name": "Normalize input"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1",
+              "name": "output",
+              "value": "=⚠️ I hit an error and made **no changes**.\n\n```\n{{ ($json.error && $json.error.message) || $json.error || $json.message || 'Unknown error' }}\n```\nPlease retry, or rephrase the request.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        860,
+        260
+      ],
+      "name": "Friendly error"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://mcp-gateway:8080/mcp",
+        "options": {},
+        "authentication": "bearerAuth"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        1000,
+        320
+      ],
+      "name": "CP MCP Gateway",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "McpGatewayBearer",
+          "name": "CP MCP Gateway Bearer"
+        }
+      }
+    },
+    {
+      "parameters": {
         "model": "gpt-4o-mini-2024-07-18",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        -496,
-        496
+        240,
+        340
       ],
-      "id": "1b88cdf3-dfd4-4012-a96e-f25534895df8",
       "name": "Azure OpenAI Chat Model",
       "credentials": {
         "azureOpenAiApi": {
@@ -200,16 +202,15 @@
     },
     {
       "parameters": {
-        "model": "gpt-oss:20b-cloud",
+        "model": "gemma4:e2b",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        -656,
-        496
+        420,
+        340
       ],
-      "id": "91576f59-e12a-4b8d-bb8b-55aadf9a6e1f",
       "name": "Ollama Chat Model",
       "credentials": {
         "ollamaApi": {
@@ -220,95 +221,129 @@
     },
     {
       "parameters": {
-        "promptType": "define",
-        "text": "={{ $json.chatInput }}",
-        "options": {
-          "systemMessage": "You are a smart AI assistant. Always follow these rules:\n\n1. Start every run by calling \"management-logs-MCP-tools-list\". Do not execute yet.\n2. Show the available tool names and the proper parameters.\n3. Use the best available tool in the tool \"management-logs-MCP-tools-execute\" Client.\n4. summarize the results.\n\n(Connection note: this agent reaches its tools through the shared Docker MCP Gateway at http://mcp-gateway:8080/mcp \u2014 the same tools as the direct agent, one hop further. The direct twin connects straight to the MCP server instead.)"
-        }
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
       },
-      "id": "b8fb44dd-b95b-42b6-a5b8-235366403420",
-      "name": "Check Point Logs AI Agent",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1.6,
-      "position": [
-        -160,
-        176
-      ],
-      "retryOnFail": true,
-      "onError": "continueErrorOutput"
-    },
-    {
-      "parameters": {
-        "content": "LLMs",
-        "height": 192,
-        "width": 528,
-        "color": 5
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        -720,
-        448
-      ],
-      "typeVersion": 1,
-      "id": "63dd6c51-6352-4f16-80f6-3441462acaa7",
-      "name": "Sticky Note2"
-    },
-    {
-      "parameters": {
-        "content": "MCP",
-        "height": 176,
-        "width": 368,
-        "color": 5
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        32,
-        464
-      ],
-      "typeVersion": 1,
-      "id": "13ed3e5d-bda6-4419-aa44-81e3014f49b9",
-      "name": "Sticky Note3"
-    },
-    {
-      "parameters": {
-        "connectionType": "http"
-      },
-      "type": "n8n-nodes-mcp.mcpClientTool",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        96,
-        496
+        600,
+        340
       ],
-      "id": "7d688e50-70ae-4d81-931e-2ca6dbbcaf7a",
-      "name": "management-logs-MCP-tools-list",
+      "name": "Google Gemini Chat Model",
       "credentials": {
-        "mcpClientHttpApi": {
-          "id": "McpGatewayCred01",
-          "name": "CP MCP Gateway Docker"
+        "googlePalmApi": {
+          "id": "jQWvIJNDs6CeSDiN",
+          "name": "Google Gemini(PaLM) Api account"
         }
       }
     },
     {
       "parameters": {
-        "connectionType": "http",
-        "operation": "executeTool",
-        "toolName": "={{ $fromAI('Tool_Name') }}",
-        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
       },
-      "type": "n8n-nodes-mcp.mcpClientTool",
-      "typeVersion": 1,
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
       "position": [
-        272,
-        496
+        780,
+        340
       ],
-      "id": "1929e22f-90d6-41aa-a979-c25f498f537b",
-      "name": "management-logs-MCP-tools-execute",
+      "name": "OpenAI Chat Model",
       "credentials": {
-        "mcpClientHttpApi": {
-          "id": "McpGatewayCred01",
-          "name": "CP MCP Gateway Docker"
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "OpenAi account"
         }
       }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-4-5-20250929",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        960,
+        340
+      ],
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "AnthropicCred001",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 🛡 Management Logs — via MCP Gateway\n\nSame agent as the direct Management Logs demo, but every MCP call rides through the **Docker MCP Gateway** — ONE endpoint (`mcp-gateway:8080/mcp`), **Bearer auth**, aggregating **all** Check Point MCP servers.\n\n👉 The point to show: one credential + one endpoint fronts the whole CP MCP fleet (rate-limiting, auth, and audit in one place).",
+        "width": 480,
+        "height": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -620,
+        -60
+      ],
+      "name": "Sticky 96944"
+    },
+    {
+      "parameters": {
+        "content": "### 💬 Try these\n\n- Show the last 10 dropped connections\n- Any preventions in the past 24 hours? Summarize by blade\n- Who published policy changes this week?",
+        "width": 480,
+        "height": 240,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -620,
+        380
+      ],
+      "name": "Sticky 96226"
+    },
+    {
+      "parameters": {
+        "content": "### 🧠 Models\n\n**Azure OpenAI** is wired as the default. To demo another provider, connect its node to the agent's *Chat Model* port instead — Ollama (local, no API key), Gemini, OpenAI, or Anthropic.\n\nKeys come from the deployment `.env`; a red node just means that provider's key wasn't supplied.",
+        "width": 560,
+        "height": 220,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -100,
+        420
+      ],
+      "name": "Sticky 62902"
+    },
+    {
+      "parameters": {
+        "content": "### 🔌 MCP\n\n`CP MCP Gateway` is n8n's **native MCP Client Tool** node (Bearer auth → the gateway token).\nAll tools the server exposes become agent tools automatically.",
+        "width": 460,
+        "height": 220,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        500,
+        420
+      ],
+      "name": "Sticky 99122"
     }
   ],
   "pinData": {},
@@ -328,18 +363,7 @@
       "main": [
         [
           {
-            "node": "Edit Fields",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Edit Fields": {
-      "main": [
-        [
-          {
-            "node": "Check Point Logs AI Agent",
+            "node": "Normalize input",
             "type": "main",
             "index": 0
           }
@@ -361,7 +385,7 @@
       "main": [
         [
           {
-            "node": "Edit Fields",
+            "node": "Normalize input",
             "type": "main",
             "index": 0
           }
@@ -381,6 +405,24 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Friendly error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize input": {
+      "main": [
+        [
+          {
+            "node": "Check Point Logs AI Agent",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -395,18 +437,7 @@
         ]
       ]
     },
-    "management-logs-MCP-tools-list": {
-      "ai_tool": [
-        [
-          {
-            "node": "Check Point Logs AI Agent",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "management-logs-MCP-tools-execute": {
+    "CP MCP Gateway": {
       "ai_tool": [
         [
           {
@@ -427,5 +458,6 @@
     "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec",
     "templateCredsSetupCompleted": true
   },
-  "id": "GwManagementLogsWf1"
+  "id": "GwManagementLogsWf1",
+  "tags": []
 }

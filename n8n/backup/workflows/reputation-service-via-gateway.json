@@ -10,93 +10,121 @@
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
-        -576,
-        -176
+        -60,
+        112
       ],
       "webhookId": "d9e1213c-ea8c-4482-aa48-36dffdb2e837"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are the **Check Point Reputation Service** assistant. You look up URL / IP / file-hash reputation over MCP and interpret the classification for the user. All calls go through the Docker MCP Gateway.\n\n== WHAT YOU CAN DO ==\n- Query reputation and risk for URLs, IP addresses, and file hashes.\n- Explain the classification, risk level, and what action a customer should take.\n\n== HOW TO WORK ==\n- Use ONLY the MCP tools exposed to you. Never invent tool names or parameters; if no tool fits, say so.\n- Start with read-only tools (show/list/get) to gather facts before answering.\n- If a tool call fails, show the error in one short line and suggest the next step.\n- You have conversation memory: use prior turns for context instead of re-asking.\n\n== GATEWAY ==\nYour tools arrive through the Check Point Docker MCP Gateway: ONE endpoint with Bearer auth that aggregates EVERY CP MCP server. You will therefore see tools from other Check Point domains too (management, Gaia, logs, threat prevention, reputation, ...). Prefer the tools relevant to this agent's domain; use the others only when the user's request clearly needs them.\n\n== OUTPUT STYLE ==\n- Answer in concise Markdown: short paragraphs, bullets, and small tables for object/rule lists.\n- Summarize tool results faithfully. Do NOT paste raw JSON unless the user explicitly asks for raw output; \"verbatim\" means faithful to the data, not raw JSON.\n- For long lists show the 15 most relevant items and say how many more exist.\n- End multi-step work with a one-line summary of what was done."
+        }
+      },
+      "id": "63ae7368-9206-4c3c-9b6b-a7e184addff5",
+      "name": "CP Reputation Service AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        560,
+        112
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        780,
+        340
+      ],
+      "id": "2c5835bd-2ed8-40b0-b9a6-97628163a2ee",
+      "name": "Simple Memory"
     },
     {
       "parameters": {
         "assignments": {
           "assignments": [
             {
-              "id": "75ebfdef-c8e2-4c3e-b716-1479d0cc2a73",
+              "id": "a1",
               "name": "chatInput",
               "value": "={{ $json?.chatInput || $json.body.chatInput }}",
               "type": "string"
             },
             {
-              "id": "59b7a20f-0626-4861-93e2-015d430c266e",
+              "id": "a2",
               "name": "sessionId",
-              "value": "={{ $json?.sessionId || $json.body.sessionId}}",
+              "value": "={{ $json?.sessionId || $json.body.sessionId }}",
               "type": "string"
             }
           ]
         },
-        "includeOtherFields": true,
-        "include": "selected",
         "options": {}
       },
-      "id": "a0af3606-5752-4df9-bd21-3c8e8c43b9f1",
-      "name": "Edit Fields",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -352,
-        -176
-      ]
+        240,
+        112
+      ],
+      "name": "Normalize input"
     },
     {
       "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "gpt-4o-mini",
-          "mode": "list",
-          "cachedResultName": "gpt-4o-mini"
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1",
+              "name": "output",
+              "value": "=⚠️ I hit an error and made **no changes**.\n\n```\n{{ ($json.error && $json.error.message) || $json.error || $json.message || 'Unknown error' }}\n```\nPlease retry, or rephrase the request.",
+              "type": "string"
+            }
+          ]
         },
         "options": {}
       },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        860,
+        260
+      ],
+      "name": "Friendly error"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://mcp-gateway:8080/mcp",
+        "options": {},
+        "authentication": "bearerAuth"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        -336,
-        128
+        1000,
+        320
       ],
-      "id": "3120782d-d8a3-4b8c-988d-94461648bfb5",
-      "name": "OpenAI Chat Model",
+      "name": "CP MCP Gateway",
       "credentials": {
-        "openAiApi": {
-          "id": "6oZqD0UJampaYWCy",
-          "name": "OpenAi account"
+        "httpBearerAuth": {
+          "id": "McpGatewayBearer",
+          "name": "CP MCP Gateway Bearer"
         }
       }
     },
     {
       "parameters": {
-        "content": "is the domain \"hotmil.com\" malicious?\n\n",
-        "height": 80
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        -928,
-        -160
-      ],
-      "typeVersion": 1,
-      "id": "1ebe1018-afc9-4322-8b85-db6f2b6a3d3c",
-      "name": "Sticky Note7"
-    },
-    {
-      "parameters": {
-        "model": "gpt-4o-2024-07-18",
+        "model": "gpt-4o-mini-2024-07-18",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        -512,
-        128
+        240,
+        340
       ],
-      "id": "fb9b8235-b0fa-4051-91f7-2024e8601f21",
       "name": "Azure OpenAI Chat Model",
       "credentials": {
         "azureOpenAiApi": {
@@ -107,16 +135,15 @@
     },
     {
       "parameters": {
-        "model": "gpt-oss:20b-cloud",
+        "model": "gemma4:e2b",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        -688,
-        128
+        420,
+        340
       ],
-      "id": "227dc361-7ba9-4766-9644-020e0a802764",
       "name": "Ollama Chat Model",
       "credentials": {
         "ollamaApi": {
@@ -127,106 +154,129 @@
     },
     {
       "parameters": {
-        "content": "LLM Mmodels",
-        "height": 176,
-        "width": 608,
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        600,
+        340
+      ],
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jQWvIJNDs6CeSDiN",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        780,
+        340
+      ],
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-4-5-20250929",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        960,
+        340
+      ],
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "AnthropicCred001",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 🛡 Reputation Service — via MCP Gateway\n\nSame agent as the direct Reputation Service demo, but every MCP call rides through the **Docker MCP Gateway** — ONE endpoint (`mcp-gateway:8080/mcp`), **Bearer auth**, aggregating **all** Check Point MCP servers.\n\n👉 The point to show: one credential + one endpoint fronts the whole CP MCP fleet (rate-limiting, auth, and audit in one place).",
+        "width": 480,
+        "height": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -620,
+        -60
+      ],
+      "name": "Sticky 78584"
+    },
+    {
+      "parameters": {
+        "content": "### 💬 Try these\n\n- What's the reputation of 1.2.3.4?\n- Is example-download.com safe?",
+        "width": 480,
+        "height": 240,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -620,
+        380
+      ],
+      "name": "Sticky 76818"
+    },
+    {
+      "parameters": {
+        "content": "### 🧠 Models\n\n**Azure OpenAI** is wired as the default. To demo another provider, connect its node to the agent's *Chat Model* port instead — Ollama (local, no API key), Gemini, OpenAI, or Anthropic.\n\nKeys come from the deployment `.env`; a red node just means that provider's key wasn't supplied.",
+        "width": 560,
+        "height": 220,
         "color": 5
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        -800,
-        80
-      ],
       "typeVersion": 1,
-      "id": "b62bdec4-4f7a-4dd6-b90b-a0d6f2cc8d42",
-      "name": "Sticky Note"
+      "position": [
+        -100,
+        420
+      ],
+      "name": "Sticky 62902"
     },
     {
       "parameters": {
-        "connectionType": "http"
-      },
-      "type": "n8n-nodes-mcp.mcpClientTool",
-      "typeVersion": 1,
-      "position": [
-        176,
-        112
-      ],
-      "id": "06cf673f-fea1-4f14-9b57-189b43dbcab1",
-      "name": "List-CP-MCP-Client",
-      "credentials": {
-        "mcpClientHttpApi": {
-          "id": "McpGatewayCred01",
-          "name": "CP MCP Gateway Docker"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "connectionType": "http",
-        "uriOverride": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Uri_Override', ``, 'string') }}",
-        "operation": "executeTool",
-        "toolName": "={{ $fromAI('Tool_Name') }}",
-        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
-      },
-      "type": "n8n-nodes-mcp.mcpClientTool",
-      "typeVersion": 1,
-      "position": [
-        336,
-        112
-      ],
-      "id": "c0062265-cedf-4754-9065-5f0a690da23c",
-      "name": "Execute-CP-MCP-Client",
-      "credentials": {
-        "mcpClientHttpApi": {
-          "id": "McpGatewayCred01",
-          "name": "CP MCP Gateway Docker"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "content": "MCP",
-        "height": 176,
-        "width": 352,
+        "content": "### 🔌 MCP\n\n`CP MCP Gateway` is n8n's **native MCP Client Tool** node (Bearer auth → the gateway token).\nAll tools the server exposes become agent tools automatically.",
+        "width": 460,
+        "height": 220,
         "color": 6
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        112,
-        96
-      ],
       "typeVersion": 1,
-      "id": "8e830c84-bdaf-4e04-8dc7-62b5e48845d6",
-      "name": "Sticky Note1"
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "={{ $json.chatInput }}",
-        "options": {
-          "systemMessage": "You are a smart AI assistant. Always follow these rules:\n\n1. Start every run by calling \"List-CP-MCP-Client\" tools. Do not execute yet.\n2. Show the available tool names.\n3. Use the best available tool name and parameters from step 1 in the tool \"Execute-CP-MCP-Client\".\n4. summarize the results.\n\n(Connection note: this agent reaches its tools through the shared Docker MCP Gateway at http://mcp-gateway:8080/mcp \u2014 the same tools as the direct agent, one hop further. The direct twin connects straight to the MCP server instead.)"
-        }
-      },
-      "id": "63ae7368-9206-4c3c-9b6b-a7e184addff5",
-      "name": "CP Reputation Service AI Agent",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1.6,
       "position": [
-        -160,
-        -176
+        500,
+        420
       ],
-      "onError": "continueErrorOutput"
-    },
-    {
-      "parameters": {},
-      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
-      "typeVersion": 1.3,
-      "position": [
-        -64,
-        80
-      ],
-      "id": "2c5835bd-2ed8-40b0-b9a6-97628163a2ee",
-      "name": "Simple Memory"
+      "name": "Sticky 99122"
     }
   ],
   "pinData": {},
@@ -235,14 +285,25 @@
       "main": [
         [
           {
-            "node": "Edit Fields",
+            "node": "Normalize input",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Edit Fields": {
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "CP Reputation Service AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize input": {
       "main": [
         [
           {
@@ -253,7 +314,7 @@
         ]
       ]
     },
-    "OpenAI Chat Model": {
+    "Azure OpenAI Chat Model": {
       "ai_languageModel": [
         [
           {
@@ -264,7 +325,7 @@
         ]
       ]
     },
-    "List-CP-MCP-Client": {
+    "CP MCP Gateway": {
       "ai_tool": [
         [
           {
@@ -275,28 +336,13 @@
         ]
       ]
     },
-    "Execute-CP-MCP-Client": {
-      "ai_tool": [
+    "CP Reputation Service AI Agent": {
+      "main": [
+        [],
         [
           {
-            "node": "CP Reputation Service AI Agent",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Azure OpenAI Chat Model": {
-      "ai_languageModel": [
-        []
-      ]
-    },
-    "Simple Memory": {
-      "ai_memory": [
-        [
-          {
-            "node": "CP Reputation Service AI Agent",
-            "type": "ai_memory",
+            "node": "Friendly error",
+            "type": "main",
             "index": 0
           }
         ]
@@ -312,5 +358,6 @@
     "templateCredsSetupCompleted": true,
     "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec"
   },
-  "id": "GwReputationSvcWf1"
+  "id": "GwReputationSvcWf1",
+  "tags": []
 }

@@ -10,41 +10,102 @@
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
-        768,
-        -80
+        -60,
+        112
       ],
       "webhookId": "414009d6-7ae2-471c-9f11-f3590bc2e024"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are the **Check Point Gaia OS** assistant. You work over MCP against the Gaia REST API of gateways / management servers: read and, when authorized, change OS-level configuration.\n\n== WHAT YOU CAN DO ==\n- Read interfaces, routes, DNS, NTP, hostname, time zone, and general system info.\n- Diagnose connectivity/OS issues from the Gaia view (interface state, routing table).\n- Apply OS configuration changes (interfaces, static routes, DNS/NTP) when asked.\n\n== HOW TO WORK ==\n- Use ONLY the MCP tools exposed to you. Never invent tool names or parameters; if no tool fits, say so.\n- Start with read-only tools (show/list/get) to gather facts before answering.\n- If a tool call fails, show the error in one short line and suggest the next step.\n- You have conversation memory: use prior turns for context instead of re-asking.\n\n== CHANGE SAFETY ==\n- Before ANY change (add/set/delete), state exactly what you are about to change and ask the user to confirm.\n- NEVER publish or install policy unless the user explicitly asks for it in this conversation.\n- After a change, report precisely what was modified (object names, rule numbers, UIDs).\n\n== OUTPUT STYLE ==\n- Answer in concise Markdown: short paragraphs, bullets, and small tables for object/rule lists.\n- Summarize tool results faithfully. Do NOT paste raw JSON unless the user explicitly asks for raw output; \"verbatim\" means faithful to the data, not raw JSON.\n- For long lists show the 15 most relevant items and say how many more exist.\n- End multi-step work with a one-line summary of what was done."
+        }
+      },
+      "id": "e59d38fb-2b32-4d6c-834f-3065a2eaaf34",
+      "name": "CP Gaia AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        560,
+        112
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        780,
+        340
+      ],
+      "id": "c956e47f-0004-4e28-a4ba-cbcb9a7ce709",
+      "name": "Simple Memory"
     },
     {
       "parameters": {
         "assignments": {
           "assignments": [
             {
-              "id": "75ebfdef-c8e2-4c3e-b716-1479d0cc2a73",
+              "id": "a1",
               "name": "chatInput",
               "value": "={{ $json?.chatInput || $json.body.chatInput }}",
               "type": "string"
             },
             {
-              "id": "59b7a20f-0626-4861-93e2-015d430c266e",
+              "id": "a2",
               "name": "sessionId",
-              "value": "={{ $json?.sessionId || $json.body.sessionId}}",
+              "value": "={{ $json?.sessionId || $json.body.sessionId }}",
               "type": "string"
             }
           ]
         },
-        "includeOtherFields": true,
-        "include": "selected",
         "options": {}
       },
-      "id": "b4673889-2751-4a3f-ad21-a2392d484539",
-      "name": "Edit Fields",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        976,
-        -80
-      ]
+        240,
+        112
+      ],
+      "name": "Normalize input"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1",
+              "name": "output",
+              "value": "=⚠️ I hit an error and made **no changes**.\n\n```\n{{ ($json.error && $json.error.message) || $json.error || $json.message || 'Unknown error' }}\n```\nPlease retry, or rephrase the request.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        860,
+        260
+      ],
+      "name": "Friendly error"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://quantum-gaia-mcp:3011/mcp",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        1000,
+        320
+      ],
+      "name": "Gaia OS MCP"
     },
     {
       "parameters": {
@@ -54,10 +115,9 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        928,
-        160
+        240,
+        340
       ],
-      "id": "f5ba3ba5-18f6-4566-b3a2-c831caebd485",
       "name": "Azure OpenAI Chat Model",
       "credentials": {
         "azureOpenAiApi": {
@@ -68,16 +128,15 @@
     },
     {
       "parameters": {
-        "model": "gpt-oss:20b-cloud",
+        "model": "gemma4:e2b",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        768,
-        160
+        420,
+        340
       ],
-      "id": "c6c5ef55-b84a-4fdd-b097-9f3c40577a8b",
       "name": "Ollama Chat Model",
       "credentials": {
         "ollamaApi": {
@@ -88,60 +147,29 @@
     },
     {
       "parameters": {
-        "content": "MCP",
-        "height": 176,
-        "width": 352,
-        "color": 6
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
       },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        1504,
-        112
-      ],
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
-      "id": "9a4972a1-1bc4-4ac0-bf75-02267cfd2821",
-      "name": "Sticky Note2"
-    },
-    {
-      "parameters": {
-        "content": "LLM Models",
-        "height": 176,
-        "width": 560,
-        "color": 5
-      },
-      "type": "n8n-nodes-base.stickyNote",
       "position": [
-        656,
-        112
+        600,
+        340
       ],
-      "typeVersion": 1,
-      "id": "6034af8a-31bf-4a96-8c1a-1c6c83dabbc5",
-      "name": "Sticky Note3"
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "={{ $json.chatInput }}",
-        "options": {
-          "systemMessage": "You are a smart AI assistant. Always follow these rules:\n\n1. Start every run by calling \"List CP MCP Client\" tools. Do not execute yet.\n2. Show the available tool names.\n3. Use the best available 'Tool_Name' and parameters to by calling \"Execute CP MCP Client\".\n4. summarize the results."
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jQWvIJNDs6CeSDiN",
+          "name": "Google Gemini(PaLM) Api account"
         }
-      },
-      "id": "e59d38fb-2b32-4d6c-834f-3065a2eaaf34",
-      "name": "CP Gaia AI Agent",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1.6,
-      "position": [
-        1216,
-        -80
-      ],
-      "onError": "continueErrorOutput"
+      }
     },
     {
       "parameters": {
         "model": {
           "__rl": true,
-          "value": "gpt-4o-mini",
           "mode": "list",
+          "value": "gpt-4o-mini",
           "cachedResultName": "gpt-4o-mini"
         },
         "options": {}
@@ -149,10 +177,9 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        1104,
-        160
+        780,
+        340
       ],
-      "id": "c8841499-2a32-4b5c-b4f6-1794b9dfe5d9",
       "name": "OpenAI Chat Model",
       "credentials": {
         "openAiApi": {
@@ -163,71 +190,86 @@
     },
     {
       "parameters": {
-        "connectionType": "http"
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-4-5-20250929",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {}
       },
-      "type": "n8n-nodes-mcp.mcpClientTool",
-      "typeVersion": 1,
-      "position": [
-        1552,
-        144
-      ],
-      "id": "64ea796a-e9b5-409a-9dbb-5224ac51fc0c",
-      "name": "List CP MCP Client",
-      "credentials": {
-        "mcpClientHttpApi": {
-          "id": "E2KEIsNznFcetHLU",
-          "name": "CP Gaia MCP Client Docker"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "connectionType": "http",
-        "uriOverride": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Uri_Override', ``, 'string') }}",
-        "operation": "executeTool",
-        "toolName": "={{ $fromAI('Tool_Name') }}",
-        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
-      },
-      "type": "n8n-nodes-mcp.mcpClientTool",
-      "typeVersion": 1,
-      "position": [
-        1728,
-        144
-      ],
-      "id": "fc7269a3-d7aa-478b-81a3-a061f15497b5",
-      "name": "Execute CP MCP Client",
-      "credentials": {
-        "mcpClientHttpApi": {
-          "id": "E2KEIsNznFcetHLU",
-          "name": "CP Gaia MCP Client Docker"
-        }
-      }
-    },
-    {
-      "parameters": {},
-      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        1312,
-        160
+        960,
+        340
       ],
-      "id": "c956e47f-0004-4e28-a4ba-cbcb9a7ce709",
-      "name": "Simple Memory"
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "AnthropicCred001",
+          "name": "Anthropic account"
+        }
+      }
     },
     {
       "parameters": {
-        "content": "show me all the interfaes on 10.1.1.111",
-        "height": 80,
+        "content": "## 🛡 Gaia OS — Direct MCP\n\nAn AI agent driving the **Gaia OS MCP server** directly over HTTP-streamable MCP (`http://quantum-gaia-mcp:3011/mcp`).\n\n👉 The point to show: n8n's **native MCP Client Tool** node auto-discovers every tool the server exposes — no glue code, the agent just uses them.",
+        "width": 480,
+        "height": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -620,
+        -60
+      ],
+      "name": "Sticky 53065"
+    },
+    {
+      "parameters": {
+        "content": "### 💬 Try these\n\n- Show the interfaces and their IPs\n- What are the static routes?\n- Check the DNS and NTP configuration",
+        "width": 480,
+        "height": 240,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -620,
+        380
+      ],
+      "name": "Sticky 96693"
+    },
+    {
+      "parameters": {
+        "content": "### 🧠 Models\n\n**Azure OpenAI** is wired as the default. To demo another provider, connect its node to the agent's *Chat Model* port instead — Ollama (local, no API key), Gemini, OpenAI, or Anthropic.\n\nKeys come from the deployment `.env`; a red node just means that provider's key wasn't supplied.",
+        "width": 560,
+        "height": 220,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -100,
+        420
+      ],
+      "name": "Sticky 62902"
+    },
+    {
+      "parameters": {
+        "content": "### 🔌 MCP\n\n`Gaia OS MCP` is n8n's **native MCP Client Tool** node (no auth needed on the internal Docker network).\nAll tools the server exposes become agent tools automatically.",
+        "width": 460,
+        "height": 220,
         "color": 6
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        400,
-        64
-      ],
       "typeVersion": 1,
-      "id": "903dd6ce-fb6d-4b72-a778-66c31157156a",
-      "name": "Sticky Note"
+      "position": [
+        500,
+        420
+      ],
+      "name": "Sticky 14973"
     }
   ],
   "pinData": {},
@@ -236,14 +278,25 @@
       "main": [
         [
           {
-            "node": "Edit Fields",
+            "node": "Normalize input",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Edit Fields": {
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "CP Gaia AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize input": {
       "main": [
         [
           {
@@ -265,7 +318,7 @@
         ]
       ]
     },
-    "List CP MCP Client": {
+    "Gaia OS MCP": {
       "ai_tool": [
         [
           {
@@ -276,31 +329,16 @@
         ]
       ]
     },
-    "Execute CP MCP Client": {
-      "ai_tool": [
+    "CP Gaia AI Agent": {
+      "main": [
+        [],
         [
           {
-            "node": "CP Gaia AI Agent",
-            "type": "ai_tool",
+            "node": "Friendly error",
+            "type": "main",
             "index": 0
           }
         ]
-      ]
-    },
-    "Simple Memory": {
-      "ai_memory": [
-        [
-          {
-            "node": "CP Gaia AI Agent",
-            "type": "ai_memory",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenAI Chat Model": {
-      "ai_languageModel": [
-        []
       ]
     }
   },

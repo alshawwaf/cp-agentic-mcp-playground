@@ -1,0 +1,11 @@
+{
+  "createdAt": "2026-07-08T00:00:00.000Z",
+  "updatedAt": "2026-07-08T00:00:00.000Z",
+  "id": "AnthropicCred001",
+  "name": "Anthropic account",
+  "data": {
+    "apiKey": "__ANTHROPIC_API_KEY__"
+  },
+  "type": "anthropicApi",
+  "isManaged": false
+}

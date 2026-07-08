@@ -15,7 +15,9 @@ OWNER_FIRST="${N8N_ADMIN_FIRST_NAME:-Owner}"
 OWNER_LAST="${N8N_ADMIN_LAST_NAME:-User}"
 OWNER_PASS="${N8N_ADMIN_PASSWORD:-changeme}"
 
-PKG="${N8N_COMMUNITY_PACKAGE:-n8n-nodes-mcp}"
+# No community package by default — the workflows use n8n's NATIVE MCP Client
+# Tool node. Set N8N_COMMUNITY_PACKAGE in the compose env to install one again.
+PKG="${N8N_COMMUNITY_PACKAGE:-}"
 
 echo "== n8n-provision start =="
 echo "container will call: ${N8N_URL}"
@@ -110,8 +112,12 @@ while :; do
 done
 
 ###############################################################################
-# 3) install community package
+# 3) install community package (skipped when none is requested)
 ###############################################################################
+if [ -z "$PKG" ]; then
+  echo "3) no community package requested — skipping (workflows use n8n's native MCP Client Tool node)."
+  exit 0
+fi
 echo "3) /rest/community-packages install ${PKG} ..."
 pkg_tries=0
 while :; do

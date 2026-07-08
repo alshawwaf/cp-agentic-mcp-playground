@@ -12,130 +12,17 @@
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
-        576,
-        176
+        -60,
+        112
       ],
       "webhookId": "dac0e01a-cbec-41fd-8de0-c9fa951c1369"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "75ebfdef-c8e2-4c3e-b716-1479d0cc2a73",
-              "name": "chatInput",
-              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
-              "type": "string"
-            },
-            {
-              "id": "59b7a20f-0626-4861-93e2-015d430c266e",
-              "name": "sessionId",
-              "value": "={{ $json?.sessionId || $json.body.sessionId}}",
-              "type": "string"
-            }
-          ]
-        },
-        "includeOtherFields": true,
-        "options": {}
-      },
-      "id": "a4eadc95-f9e5-49f4-8070-e8da6624f30c",
-      "name": "Edit Fields",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        752,
-        176
-      ]
-    },
-    {
-      "parameters": {
-        "connectionType": "http"
-      },
-      "type": "n8n-nodes-mcp.mcpClientTool",
-      "typeVersion": 1,
-      "position": [
-        1264,
-        416
-      ],
-      "id": "79bea42f-c0ae-4290-8c3c-e1b9edb670bc",
-      "name": "List-CP-MCP-Tools",
-      "credentials": {
-        "mcpClientHttpApi": {
-          "id": "9HpQUV1bsIxy2VbC",
-          "name": "CP Threat Emulation MCP Client Docker"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "connectionType": "http",
-        "uriOverride": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Uri_Override', ``, 'string') }}",
-        "operation": "executeTool",
-        "toolName": "={{ $fromAI('Tool_Name') }}",
-        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
-      },
-      "type": "n8n-nodes-mcp.mcpClientTool",
-      "typeVersion": 1,
-      "position": [
-        1424,
-        416
-      ],
-      "id": "a20c76a0-07b1-4e38-98ea-5e581675e571",
-      "name": "CP-MCP-Client",
-      "credentials": {
-        "mcpClientHttpApi": {
-          "id": "9HpQUV1bsIxy2VbC",
-          "name": "CP Threat Emulation MCP Client Docker"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "content": "is this sha-256 hash malicious?\n\n059840cd8398c039fec8cb538d76dada72c76f5392f64f7df962db3fdcb53514",
-        "height": 96,
-        "width": 288,
-        "color": 5
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        240,
-        176
-      ],
-      "typeVersion": 1,
-      "id": "040157d1-9215-4cc6-bd71-368f27f1cf71",
-      "name": "Sticky Note"
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "gpt-4o-mini",
-          "mode": "list",
-          "cachedResultName": "gpt-4o-mini"
-        },
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        656,
-        480
-      ],
-      "id": "ded3ec63-5c85-4c1e-9927-3541b73bfc04",
-      "name": "OpenAI Chat Model",
-      "credentials": {
-        "openAiApi": {
-          "id": "6oZqD0UJampaYWCy",
-          "name": "OpenAi account"
-        }
-      }
     },
     {
       "parameters": {
         "promptType": "define",
         "text": "={{ $json.chatInput }}",
         "options": {
-          "systemMessage": "You are a smart AI assistant. Always follow these rules:\n\n1. Start every run by calling \"List-CP-MCP-Tools\". Do not execute yet.\n2. Show the available tool names.\n3. Use the best available tool name from step 1 in the tool CP-MCP-Client.\n4. summarize the results."
+          "systemMessage": "You are the **Check Point Threat Emulation (sandbox)** assistant. You submit files and query emulation verdicts over MCP.\n\n== WHAT YOU CAN DO ==\n- Submit files/hashes for emulation and fetch verdicts and reports.\n- Explain a verdict: what behavior was seen, severity, confidence.\n\n== HOW TO WORK ==\n- Use ONLY the MCP tools exposed to you. Never invent tool names or parameters; if no tool fits, say so.\n- Start with read-only tools (show/list/get) to gather facts before answering.\n- If a tool call fails, show the error in one short line and suggest the next step.\n- You have conversation memory: use prior turns for context instead of re-asking.\n\n== OUTPUT STYLE ==\n- Answer in concise Markdown: short paragraphs, bullets, and small tables for object/rule lists.\n- Summarize tool results faithfully. Do NOT paste raw JSON unless the user explicitly asks for raw output; \"verbatim\" means faithful to the data, not raw JSON.\n- For long lists show the 15 most relevant items and say how many more exist.\n- End multi-step work with a one-line summary of what was done."
         }
       },
       "id": "df3897ce-6af1-4dcd-acc8-0a6232fc9b78",
@@ -143,61 +30,84 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.6,
       "position": [
-        1008,
-        176
+        560,
+        112
       ],
       "onError": "continueErrorOutput"
     },
     {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        780,
+        340
+      ],
+      "id": "598e5fa9-de73-4670-996d-bca53599f666",
+      "name": "Simple Memory"
+    },
+    {
       "parameters": {
-        "model": "gpt-oss:20b-cloud",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "chatInput",
+              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "sessionId",
+              "value": "={{ $json?.sessionId || $json.body.sessionId }}",
+              "type": "string"
+            }
+          ]
+        },
         "options": {}
       },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
-      "typeVersion": 1,
-      "position": [
-        336,
-        480
-      ],
-      "id": "4c6eb393-f466-4eaa-8205-b5f3f1cba4eb",
-      "name": "Ollama Chat Model",
-      "credentials": {
-        "ollamaApi": {
-          "id": "i8fXatxwj12xOABO",
-          "name": "Ollama account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "content": "LLM Models",
-        "height": 192,
-        "width": 544,
-        "color": 5
-      },
-      "type": "n8n-nodes-base.stickyNote",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
       "position": [
         240,
-        416
+        112
       ],
-      "typeVersion": 1,
-      "id": "61b77954-56b8-4ae8-98eb-553c7971a08c",
-      "name": "Sticky Note1"
+      "name": "Normalize input"
     },
     {
       "parameters": {
-        "content": "MCP",
-        "width": 368,
-        "color": 7
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1",
+              "name": "output",
+              "value": "=⚠️ I hit an error and made **no changes**.\n\n```\n{{ ($json.error && $json.error.message) || $json.error || $json.message || 'Unknown error' }}\n```\nPlease retry, or rephrase the request.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
       },
-      "type": "n8n-nodes-base.stickyNote",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
       "position": [
-        1184,
-        384
+        860,
+        260
       ],
-      "typeVersion": 1,
-      "id": "c9d822f5-2b08-4bd7-86bd-4a920ad630db",
-      "name": "Sticky Note2"
+      "name": "Friendly error"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://threat-emulation-mcp:3004",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        1000,
+        320
+      ],
+      "name": "Threat Emulation MCP"
     },
     {
       "parameters": {
@@ -207,10 +117,9 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        496,
-        480
+        240,
+        340
       ],
-      "id": "f52ef39e-d5cc-40ba-be4f-8ece1dd6fa1a",
       "name": "Azure OpenAI Chat Model",
       "credentials": {
         "azureOpenAiApi": {
@@ -221,30 +130,148 @@
     },
     {
       "parameters": {
-        "content": "check if this file is malicious:  /data/shared/npp.8.8.8.Installer.x64.exe",
-        "height": 80,
-        "width": 288,
+        "model": "gemma4:e2b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        420,
+        340
+      ],
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "i8fXatxwj12xOABO",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        600,
+        340
+      ],
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jQWvIJNDs6CeSDiN",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        780,
+        340
+      ],
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-4-5-20250929",
+          "cachedResultName": "Claude Sonnet 4.5"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        960,
+        340
+      ],
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "AnthropicCred001",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 🛡 Threat Emulation — Direct MCP\n\nAn AI agent driving the **Threat Emulation MCP server** directly over HTTP-streamable MCP (`http://threat-emulation-mcp:3004`).\n\n👉 The point to show: n8n's **native MCP Client Tool** node auto-discovers every tool the server exposes — no glue code, the agent just uses them.",
+        "width": 480,
+        "height": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -620,
+        -60
+      ],
+      "name": "Sticky 14788"
+    },
+    {
+      "parameters": {
+        "content": "### 💬 Try these\n\n- Check this hash for a verdict: <sha256>\n- What file types can you emulate?",
+        "width": 480,
+        "height": 240,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -620,
+        380
+      ],
+      "name": "Sticky 56921"
+    },
+    {
+      "parameters": {
+        "content": "### 🧠 Models\n\n**Azure OpenAI** is wired as the default. To demo another provider, connect its node to the agent's *Chat Model* port instead — Ollama (local, no API key), Gemini, OpenAI, or Anthropic.\n\nKeys come from the deployment `.env`; a red node just means that provider's key wasn't supplied.",
+        "width": 560,
+        "height": 220,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -100,
+        420
+      ],
+      "name": "Sticky 62902"
+    },
+    {
+      "parameters": {
+        "content": "### 🔌 MCP\n\n`Threat Emulation MCP` is n8n's **native MCP Client Tool** node (no auth needed on the internal Docker network).\nAll tools the server exposes become agent tools automatically.",
+        "width": 460,
+        "height": 220,
         "color": 6
       },
       "type": "n8n-nodes-base.stickyNote",
-      "position": [
-        240,
-        304
-      ],
       "typeVersion": 1,
-      "id": "6c4b44b4-d3da-4409-a789-62e6a9065f6f",
-      "name": "Sticky Note3"
-    },
-    {
-      "parameters": {},
-      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
-      "typeVersion": 1.3,
       "position": [
-        1024,
-        384
+        500,
+        420
       ],
-      "id": "598e5fa9-de73-4670-996d-bca53599f666",
-      "name": "Simple Memory"
+      "name": "Sticky 64773"
     }
   ],
   "pinData": {},
@@ -253,14 +280,37 @@
       "main": [
         [
           {
-            "node": "Edit Fields",
+            "node": "Normalize input",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Edit Fields": {
+    "Threat Emulation AI Agent": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Friendly error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Threat Emulation AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize input": {
       "main": [
         [
           {
@@ -271,29 +321,7 @@
         ]
       ]
     },
-    "List-CP-MCP-Tools": {
-      "ai_tool": [
-        [
-          {
-            "node": "Threat Emulation AI Agent",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "CP-MCP-Client": {
-      "ai_tool": [
-        [
-          {
-            "node": "Threat Emulation AI Agent",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenAI Chat Model": {
+    "Azure OpenAI Chat Model": {
       "ai_languageModel": [
         [
           {
@@ -304,28 +332,12 @@
         ]
       ]
     },
-    "Threat Emulation AI Agent": {
-      "main": [
-        [],
-        []
-      ]
-    },
-    "Ollama Chat Model": {
-      "ai_languageModel": [
-        []
-      ]
-    },
-    "Azure OpenAI Chat Model": {
-      "ai_languageModel": [
-        []
-      ]
-    },
-    "Simple Memory": {
-      "ai_memory": [
+    "Threat Emulation MCP": {
+      "ai_tool": [
         [
           {
             "node": "Threat Emulation AI Agent",
-            "type": "ai_memory",
+            "type": "ai_tool",
             "index": 0
           }
         ]

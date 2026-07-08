@@ -66,10 +66,12 @@ x-n8n: &service-n8n
     - WEBHOOK_URL=${WEBHOOK_URL}
     - N8N_EDITOR_BASE_URL=${N8N_EDITOR_BASE_URL}
     - N8N_PUSH_BACKEND=${N8N_PUSH_BACKEND}
-    # allow community packages
-    - N8N_COMMUNITY_PACKAGES_ENABLED=true
-    - N8N_UNVERIFIED_PACKAGES_ENABLED=true
-    - N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
+    # allow community packages — no longer needed: every workflow now uses the
+    # NATIVE MCP Client Tool node that ships with n8n. Re-enable only if a
+    # future workflow needs a community node again.
+    # - N8N_COMMUNITY_PACKAGES_ENABLED=true
+    # - N8N_UNVERIFIED_PACKAGES_ENABLED=true
+    # - N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
 
 # ──────────────── Ollama Base ────────────────
 
@@ -265,8 +267,9 @@ services:
       - N8N_ADMIN_FIRST_NAME=${N8N_ADMIN_FIRST_NAME}
       - N8N_ADMIN_LAST_NAME=${N8N_ADMIN_LAST_NAME}
       - N8N_ADMIN_PASSWORD=${N8N_ADMIN_PASSWORD}
-      # package to install
-      - N8N_COMMUNITY_PACKAGE=n8n-nodes-mcp
+      # package to install — none by default: the workflows use n8n's native
+      # MCP Client Tool node. Uncomment to install a community package again.
+      # - N8N_COMMUNITY_PACKAGE=n8n-nodes-mcp
       # must match n8n basic auth above
       - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
       - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
@@ -323,6 +326,30 @@ services:
           rm -f /tmp/import/credentials_public/devhub-bearer.json
         fi
 
+        # MCP Gateway bearer (native MCP Client Tool auth for the *-via-gateway
+        # agents). MCP_GATEWAY_TOKEN always has a compose default, so this
+        # substitution always lands.
+        ESCAPED_GW=$$(printf '%s' "$$MCP_GATEWAY_TOKEN" | sed -e 's/[\/&|]/\\&/g')
+        sed -i "s|__MCP_GATEWAY_TOKEN__|$$ESCAPED_GW|g" /tmp/import/credentials_public/gateway-bearer.json
+
+        # LLM provider keys (bring-your-own). Substitute each placeholder when
+        # the key is supplied; otherwise keep the credential importable with its
+        # placeholder and warn — the operator fills it in the n8n UI later. The
+        # credential is NOT dropped because every agent workflow references it.
+        subst_llm_key() {
+          VAR_NAME="$$1"; VAR_VALUE="$$2"; CRED_FILE="$$3"
+          if [ -n "$$VAR_VALUE" ]; then
+            ESCAPED=$$(printf '%s' "$$VAR_VALUE" | sed -e 's/[\/&|]/\\&/g')
+            sed -i "s|__$${VAR_NAME}__|$$ESCAPED|g" "/tmp/import/credentials_public/$$CRED_FILE"
+          else
+            echo "WARNING: $$VAR_NAME is empty — the matching n8n credential imports with a placeholder key; set it in the n8n UI (or .env + re-import) to use that model."
+          fi
+        }
+        subst_llm_key OPENAI_API_KEY "$$OPENAI_API_KEY" "openai.json"
+        subst_llm_key AZURE_OPENAI_API_KEY "$$AZURE_OPENAI_API_KEY" "azure-OpenAI.json"
+        subst_llm_key GEMINI_API_KEY "$$GEMINI_API_KEY" "Google Gemini(PaLM) Api account.json"
+        subst_llm_key ANTHROPIC_API_KEY "$$ANTHROPIC_API_KEY" "anthropic.json"
+
         # Rewrite the domain placeholder in the agent workflows to the real
         # deployment domain, so each MCP endpoint URL (policypilot.<domain>/mcp,
         # hub.<domain>/api/mcp) is correct on a fresh deploy. Prefer an explicit
@@ -368,6 +395,14 @@ services:
       # (n8n.<domain>) when unset.
       - PILOT_MCP_TOKEN=${PILOT_MCP_TOKEN:-}
       - DEVHUB_MCP_TOKEN=${DEVHUB_MCP_TOKEN:-}
+      # gateway bearer for the *-via-gateway agents (native MCP node auth)
+      - MCP_GATEWAY_TOKEN=${MCP_GATEWAY_TOKEN:-cp-mcp-gateway-training-token}
+      # bring-your-own LLM keys — land in the imported n8n credentials so the
+      # model row works on a fresh deploy without hand-editing credentials
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - DOMAIN=${DOMAIN:-}
       - N8N_HOST=${N8N_HOST}
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
