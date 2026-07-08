@@ -34,8 +34,8 @@
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
-        -160,
-        120
+        -140,
+        60
       ],
       "webhookId": "df6e86fa-f71a-4dce-bf1f-86b8b8a01a49"
     },
@@ -52,8 +52,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.6,
       "position": [
-        400,
-        100
+        420,
+        40
       ],
       "retryOnFail": true,
       "onError": "continueErrorOutput"
@@ -81,8 +81,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        80,
-        120
+        140,
+        60
       ],
       "name": "Normalize input",
       "id": "ec96af08-51bf-53a1-8c3e-66b1b373e260"
@@ -104,8 +104,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        860,
-        260
+        920,
+        160
       ],
       "name": "Friendly error",
       "id": "74979caf-da71-5329-a7b3-cf2d82e6ea8f"
@@ -118,8 +118,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        720,
-        400
+        640,
+        320
       ],
       "name": "HTTPS Inspection MCP",
       "id": "b7fcade2-ec8e-5d86-bc07-60ec3844f2cd"
@@ -132,8 +132,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        -160,
-        620
+        -140,
+        480
       ],
       "name": "Azure OpenAI (default)",
       "credentials": {
@@ -152,8 +152,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        60,
-        620
+        80,
+        480
       ],
       "name": "Ollama — local qwen3.5",
       "credentials": {
@@ -166,16 +166,16 @@
     },
     {
       "parameters": {
-        "modelName": "models/gemini-2.5-flash",
+        "modelName": "models/gemini-2.5-pro",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        280,
-        620
+        300,
+        480
       ],
-      "name": "Gemini 2.5 Flash",
+      "name": "Gemini 2.5 Pro",
       "credentials": {
         "googlePalmApi": {
           "id": "jQWvIJNDs6CeSDiN",
@@ -189,18 +189,18 @@
         "model": {
           "__rl": true,
           "mode": "list",
-          "value": "gpt-4o-mini",
-          "cachedResultName": "gpt-4o-mini"
+          "value": "gpt-5.1",
+          "cachedResultName": "gpt-5.1"
         },
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        500,
-        620
+        520,
+        480
       ],
-      "name": "OpenAI gpt-4o-mini",
+      "name": "OpenAI gpt-5.1",
       "credentials": {
         "openAiApi": {
           "id": "6oZqD0UJampaYWCy",
@@ -214,18 +214,18 @@
         "model": {
           "__rl": true,
           "mode": "list",
-          "value": "claude-sonnet-5",
-          "cachedResultName": "Claude Sonnet 5"
+          "value": "claude-opus-4-8",
+          "cachedResultName": "Claude Opus 4.8"
         },
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        720,
-        620
+        740,
+        480
       ],
-      "name": "Claude Sonnet 5",
+      "name": "Claude Opus 4.8",
       "credentials": {
         "anthropicApi": {
           "id": "AnthropicCred001",
@@ -236,19 +236,35 @@
     },
     {
       "parameters": {
-        "content": "## 🛡️ Check Point HTTPS Inspection\n#### AI Agent over MCP\n\nReads and changes the HTTPS-inspection rulebase, bypass rules and exceptions.\n\n**How it works:** n8n's **native MCP Client Tool** node pointed straight at the server — every tool auto-discovered, zero glue.\n\n**💬 Try these:**\n- Show the HTTPS inspection rules\n- Which categories are bypassed today?\n\n**🧠 Models:** Azure OpenAI `gpt-5.4` is wired as default — swap by connecting Ollama (local, no key), Gemini, OpenAI or Claude to the *Chat Model* port.",
-        "width": 500,
-        "height": 640,
+        "content": "## 🛡️ Check Point HTTPS Inspection — AI Agent · direct MCP\n**Reads and changes the HTTPS-inspection rulebase, bypass rules and exceptions.**",
+        "width": 1360,
+        "height": 120,
         "color": 4
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -760,
-        -100
+        -140,
+        -160
       ],
-      "name": "About this demo",
-      "id": "0582afab-2191-5cc6-9e4f-ec38ef601ae4"
+      "name": "Banner",
+      "id": "97b620f2-56e8-5dc4-81e0-dce93e99f863"
+    },
+    {
+      "parameters": {
+        "content": "### 💬 Try these\n- Show the HTTPS inspection rules\n- Which categories are bypassed today?\n\n### ⚙️ How it works\n**Zero glue.** n8n's native MCP Client Tool talks straight to the server — every tool it exposes becomes an agent tool automatically.\n\n### 🧠 Models\nAzure OpenAI **gpt-5.4** wired as default — Ollama (local, no key), Gemini 2.5 Pro, GPT-5.1 and Claude Opus 4.8 are one click away.",
+        "width": 460,
+        "height": 620,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -660,
+        -160
+      ],
+      "name": "Guide",
+      "id": "b4deb8c5-e951-5eb4-9dff-0193e5a7ef17"
     }
   ],
   "pinData": {},

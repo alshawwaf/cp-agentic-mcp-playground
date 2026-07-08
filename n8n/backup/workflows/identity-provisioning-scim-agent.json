@@ -155,9 +155,9 @@
       "parameters": {
         "model": {
           "__rl": true,
-          "value": "gpt-4o-mini",
           "mode": "list",
-          "cachedResultName": "gpt-4o-mini"
+          "value": "gpt-5.1",
+          "cachedResultName": "gpt-5.1"
         },
         "options": {}
       },
@@ -168,7 +168,7 @@
         532
       ],
       "id": "63a6b741-edfe-4594-8172-3e86e1112b27",
-      "name": "OpenAI gpt-4o-mini",
+      "name": "OpenAI gpt-5.1",
       "credentials": {
         "openAiApi": {
           "id": "6oZqD0UJampaYWCy",
@@ -248,7 +248,7 @@
     },
     {
       "parameters": {
-        "modelName": "models/gemini-2.5-flash",
+        "modelName": "models/gemini-2.5-pro",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
@@ -257,7 +257,7 @@
         1084,
         532
       ],
-      "name": "Gemini 2.5 Flash",
+      "name": "Gemini 2.5 Pro",
       "credentials": {
         "googlePalmApi": {
           "id": "jQWvIJNDs6CeSDiN",
@@ -271,8 +271,8 @@
         "model": {
           "__rl": true,
           "mode": "list",
-          "value": "claude-sonnet-5",
-          "cachedResultName": "Claude Sonnet 5"
+          "value": "claude-opus-4-8",
+          "cachedResultName": "Claude Opus 4.8"
         },
         "options": {}
       },
@@ -282,7 +282,7 @@
         1304,
         532
       ],
-      "name": "Claude Sonnet 5",
+      "name": "Claude Opus 4.8",
       "credentials": {
         "anthropicApi": {
           "id": "AnthropicCred001",
@@ -365,7 +365,7 @@
         ]
       ]
     },
-    "OpenAI gpt-4o-mini": {
+    "OpenAI gpt-5.1": {
       "ai_languageModel": [
         []
       ]

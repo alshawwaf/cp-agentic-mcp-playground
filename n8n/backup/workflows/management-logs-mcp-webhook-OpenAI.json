@@ -8,8 +8,8 @@
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "typeVersion": 1.1,
       "position": [
-        480,
-        400
+        420,
+        320
       ],
       "credentials": {
         "postgres": {
@@ -34,8 +34,8 @@
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
-        -160,
-        120
+        -140,
+        60
       ],
       "webhookId": "35bcabf8-caf6-4033-b66d-4658abbaa057"
     },
@@ -52,8 +52,8 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
       "position": [
-        760,
-        -100
+        780,
+        -140
       ],
       "id": "f8a5439e-8915-4e4b-a7e2-6e411d4f2547",
       "name": "Generate audio",
@@ -75,8 +75,8 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        -160,
-        -100
+        -140,
+        -140
       ],
       "id": "b39a40f9-eede-4074-9e45-9f1bfc98f5c8",
       "name": "Webhook",
@@ -90,8 +90,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        1020,
-        -100
+        1040,
+        -140
       ],
       "id": "17e62fc9-a32e-431f-a28b-805e3467614b",
       "name": "Respond to Webhook"
@@ -109,8 +109,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.6,
       "position": [
-        400,
-        100
+        420,
+        40
       ],
       "retryOnFail": true,
       "onError": "continueErrorOutput"
@@ -138,8 +138,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        80,
-        120
+        140,
+        60
       ],
       "name": "Normalize input",
       "id": "37a3509e-c252-533d-bd2f-1b8617e6b4dc"
@@ -161,8 +161,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        860,
-        260
+        920,
+        160
       ],
       "name": "Friendly error",
       "id": "2b54140d-0ce7-55de-8861-a3a7c6bfcde6"
@@ -175,8 +175,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        720,
-        400
+        640,
+        320
       ],
       "name": "Management Logs MCP",
       "id": "fd681087-ea05-58f0-a9f1-ecf9d85fe046"
@@ -189,8 +189,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        -160,
-        620
+        -140,
+        480
       ],
       "name": "Azure OpenAI (default)",
       "credentials": {
@@ -209,8 +209,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        60,
-        620
+        80,
+        480
       ],
       "name": "Ollama — local qwen3.5",
       "credentials": {
@@ -223,16 +223,16 @@
     },
     {
       "parameters": {
-        "modelName": "models/gemini-2.5-flash",
+        "modelName": "models/gemini-2.5-pro",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        280,
-        620
+        300,
+        480
       ],
-      "name": "Gemini 2.5 Flash",
+      "name": "Gemini 2.5 Pro",
       "credentials": {
         "googlePalmApi": {
           "id": "jQWvIJNDs6CeSDiN",
@@ -246,18 +246,18 @@
         "model": {
           "__rl": true,
           "mode": "list",
-          "value": "gpt-4o-mini",
-          "cachedResultName": "gpt-4o-mini"
+          "value": "gpt-5.1",
+          "cachedResultName": "gpt-5.1"
         },
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        500,
-        620
+        520,
+        480
       ],
-      "name": "OpenAI gpt-4o-mini",
+      "name": "OpenAI gpt-5.1",
       "credentials": {
         "openAiApi": {
           "id": "6oZqD0UJampaYWCy",
@@ -271,18 +271,18 @@
         "model": {
           "__rl": true,
           "mode": "list",
-          "value": "claude-sonnet-5",
-          "cachedResultName": "Claude Sonnet 5"
+          "value": "claude-opus-4-8",
+          "cachedResultName": "Claude Opus 4.8"
         },
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        720,
-        620
+        740,
+        480
       ],
-      "name": "Claude Sonnet 5",
+      "name": "Claude Opus 4.8",
       "credentials": {
         "anthropicApi": {
           "id": "AnthropicCred001",
@@ -293,19 +293,35 @@
     },
     {
       "parameters": {
-        "content": "## 🛡️ Check Point Logs\n#### AI Agent over MCP\n\nQueries security and audit logs and turns them into clear findings — top sources, preventions, who-changed-what.\n\n**How it works:** n8n's **native MCP Client Tool** node pointed straight at the server — every tool auto-discovered, zero glue.\n\n🔊 Also callable as a **REST webhook** — the answer comes back as **spoken audio** (OpenAI TTS).\n\n**💬 Try these:**\n- Show the last 10 dropped connections\n- Any preventions in the past 24 hours? Summarize by blade\n- Who published policy changes this week?\n\n**🧠 Models:** Azure OpenAI `gpt-5.4` is wired as default — swap by connecting Ollama (local, no key), Gemini, OpenAI or Claude to the *Chat Model* port.",
-        "width": 500,
-        "height": 640,
+        "content": "## 🛡️ Check Point Logs — AI Agent · direct MCP\n**Queries security and audit logs and turns them into clear findings — top sources, preventions, who-changed-what.**",
+        "width": 1360,
+        "height": 120,
         "color": 4
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -760,
-        -100
+        -140,
+        -300
       ],
-      "name": "About this demo",
-      "id": "6a9dd960-2c92-517d-9890-822a06c09246"
+      "name": "Banner",
+      "id": "d0260756-1b9f-5e7a-87f9-85e0cc25054f"
+    },
+    {
+      "parameters": {
+        "content": "### 💬 Try these\n- Show the last 10 dropped connections\n- Any preventions in the past 24 hours? Summarize by blade\n- Who published policy changes this week?\n\n### ⚙️ How it works\n**Zero glue.** n8n's native MCP Client Tool talks straight to the server — every tool it exposes becomes an agent tool automatically.\n\n**🔊 Bonus:** call it as a REST webhook and the answer comes back as spoken audio (OpenAI TTS).\n\n### 🧠 Models\nAzure OpenAI **gpt-5.4** wired as default — Ollama (local, no key), Gemini 2.5 Pro, GPT-5.1 and Claude Opus 4.8 are one click away.",
+        "width": 460,
+        "height": 620,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -660,
+        -300
+      ],
+      "name": "Guide",
+      "id": "767c328e-0457-5db5-9d99-3ad849a759ee"
     }
   ],
   "pinData": {},
