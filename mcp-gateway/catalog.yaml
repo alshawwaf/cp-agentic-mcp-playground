@@ -22,3 +22,91 @@ registry:
     metadata:
       category: "checkpoint"
       tags: ["management", "quantum"]
+
+  cpinfo-analysis:
+    description: "Check Point CPInfo bundle analysis MCP"
+    title: "CP CPInfo Analysis"
+    type: "remote"
+    remote:
+      url: "http://cpinfo-analysis-mcp:3012"
+      transport_type: "streamable"
+    metadata:
+      category: "checkpoint"
+      tags: ["cpinfo", "diagnostics"]
+
+  https-inspection:
+    description: "Check Point HTTPS Inspection MCP"
+    title: "CP HTTPS Inspection"
+    type: "remote"
+    remote:
+      url: "http://mcp-https-inspection:3001"
+      transport_type: "streamable"
+    metadata:
+      category: "checkpoint"
+      tags: ["https-inspection"]
+
+  management-logs:
+    description: "Check Point management/log query MCP"
+    title: "CP Management Logs"
+    type: "remote"
+    remote:
+      url: "http://mcp-management-logs:3003"
+      transport_type: "streamable"
+    metadata:
+      category: "checkpoint"
+      tags: ["logs", "management"]
+
+  gaia:
+    description: "Check Point Gaia OS MCP"
+    title: "CP Gaia"
+    type: "remote"
+    remote:
+      url: "http://quantum-gaia-mcp:3011/mcp"
+      transport_type: "streamable"
+    metadata:
+      category: "checkpoint"
+      tags: ["gaia", "os"]
+
+  gw-cli:
+    description: "Check Point gateway CLI (clish/expert) MCP"
+    title: "CP Gateway CLI"
+    type: "remote"
+    remote:
+      url: "http://quantum-gw-cli-mcp:3009"
+      transport_type: "streamable"
+    metadata:
+      category: "checkpoint"
+      tags: ["gateway", "cli"]
+
+  reputation-service:
+    description: "Check Point reputation/IoC lookup MCP"
+    title: "CP Reputation Service"
+    type: "remote"
+    remote:
+      url: "http://reputation-service-mcp:3007"
+      transport_type: "streamable"
+    metadata:
+      category: "checkpoint"
+      tags: ["reputation", "ioc"]
+
+  threat-emulation:
+    description: "Check Point Threat Emulation (sandbox) MCP"
+    title: "CP Threat Emulation"
+    type: "remote"
+    remote:
+      url: "http://threat-emulation-mcp:3004"
+      transport_type: "streamable"
+    metadata:
+      category: "checkpoint"
+      tags: ["threat-emulation", "sandbox"]
+
+  threat-prevention:
+    description: "Check Point Threat Prevention MCP"
+    title: "CP Threat Prevention"
+    type: "remote"
+    remote:
+      url: "http://threat-prevention-mcp:3005"
+      transport_type: "streamable"
+    metadata:
+      category: "checkpoint"
+      tags: ["threat-prevention"]

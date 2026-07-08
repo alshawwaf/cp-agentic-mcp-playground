@@ -749,7 +749,7 @@ services:
       # catalog must live under ~/.docker/mcp/catalogs/ and be referenced by name
       - "--catalog=checkpoint-mcp.yaml"
       # a custom catalog does not auto-enable its servers; list them explicitly
-      - "--servers=documentation,quantum-management"
+      - "--servers=documentation,quantum-management,cpinfo-analysis,https-inspection,management-logs,gaia,gw-cli,reputation-service,threat-emulation,threat-prevention"
     environment:
       # required when running outside Docker Desktop (Dokploy / Docker CE)
       - DOCKER_MCP_IN_CONTAINER=1
