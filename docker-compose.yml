@@ -351,6 +351,13 @@ services:
         subst_llm_key GEMINI_API_KEY "$$GEMINI_API_KEY" "Google Gemini(PaLM) Api account.json"
         subst_llm_key ANTHROPIC_API_KEY "$$ANTHROPIC_API_KEY" "anthropic.json"
 
+        # Integration credentials — same pattern: set the env once (answers.env /
+        # .env, persisted across redeploys) and every deploy injects it into the
+        # imported n8n credential; never hand-edit creds in the n8n UI.
+        subst_llm_key LAKERA_API_KEY "$$LAKERA_API_KEY" "Lakera.json"
+        subst_llm_key SCIM_IDP_TOKEN "$$SCIM_IDP_TOKEN" "CP-SCIM-IdP-Token.json"
+        subst_llm_key QDRANT_API_KEY "$$QDRANT_API_KEY" "quadrant.json"
+
         # Rewrite the domain placeholder in the agent workflows to the real
         # deployment domain, so each MCP endpoint URL (policypilot.<domain>/mcp,
         # hub.<domain>/api/mcp) is correct on a fresh deploy. Prefer an explicit
@@ -405,6 +412,10 @@ services:
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      # integration creds (set once, injected every deploy)
+      - LAKERA_API_KEY=${LAKERA_API_KEY:-}
+      - SCIM_IDP_TOKEN=${SCIM_IDP_TOKEN:-}
+      - QDRANT_API_KEY=${QDRANT_API_KEY:-}
       - DOMAIN=${DOMAIN:-}
       - N8N_HOST=${N8N_HOST}
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}

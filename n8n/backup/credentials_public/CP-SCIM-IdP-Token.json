@@ -1,12 +1,12 @@
 {
-    "createdAt": "2026-07-03T12:00:00.000Z",
-    "updatedAt": "2026-07-03T12:00:00.000Z",
-    "id": "ScimIdpTokenCred1",
-    "name": "CP SCIM IdP Token",
-    "data": {
-        "name": "Authorization",
-        "value": "Bearer CHANGE_ME_SCIM_INBOUND_TOKEN"
-    },
-    "type": "httpHeaderAuth",
-    "isManaged": false
+  "createdAt": "2026-07-03T12:00:00.000Z",
+  "updatedAt": "2026-07-03T12:00:00.000Z",
+  "id": "ScimIdpTokenCred1",
+  "name": "CP SCIM IdP Token",
+  "data": {
+    "name": "Authorization",
+    "value": "Bearer __SCIM_IDP_TOKEN__"
+  },
+  "type": "httpHeaderAuth",
+  "isManaged": false
 }

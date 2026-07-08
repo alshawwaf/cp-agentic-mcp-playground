@@ -4,7 +4,7 @@
   "id": "hsWhgXyxb7NQNxdM",
   "name": "QdrantApi account",
   "data": {
-    "apiKey": "CHANGE_ME",
+    "apiKey": "__QDRANT_API_KEY__",
     "qdrantUrl": "http://qdrant:6333"
   },
   "type": "qdrantApi",
