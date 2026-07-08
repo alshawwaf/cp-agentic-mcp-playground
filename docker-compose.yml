@@ -305,6 +305,48 @@ services:
         ESCAPED_PG=$$(printf '%s' "$$POSTGRES_PASSWORD" | sed -e 's/[\/&|]/\\&/g')
         sed -i "s|__POSTGRES_PASSWORD__|$$ESCAPED_PG|g" /tmp/import/credentials_public/postgres.json
 
+        # PolicyPilot + DevHub agent MCP bearer tokens (same placeholder pattern).
+        # If a token env is empty, DROP that credential file so a broken (still
+        # placeholder) credential is never imported, and warn instead.
+        if [ -n "$$PILOT_MCP_TOKEN" ]; then
+          ESCAPED_PILOT=$$(printf '%s' "$$PILOT_MCP_TOKEN" | sed -e 's/[\/&|]/\\&/g')
+          sed -i "s|__PILOT_MCP_TOKEN__|$$ESCAPED_PILOT|g" /tmp/import/credentials_public/policypilot-bearer.json
+        else
+          echo "WARNING: PILOT_MCP_TOKEN is empty — skipping the PolicyPilot bearer credential (the PolicyPilot agent won't authenticate until an mcp key is set)."
+          rm -f /tmp/import/credentials_public/policypilot-bearer.json
+        fi
+        if [ -n "$$DEVHUB_MCP_TOKEN" ]; then
+          ESCAPED_DEVHUB=$$(printf '%s' "$$DEVHUB_MCP_TOKEN" | sed -e 's/[\/&|]/\\&/g')
+          sed -i "s|__DEVHUB_MCP_TOKEN__|$$ESCAPED_DEVHUB|g" /tmp/import/credentials_public/devhub-bearer.json
+        else
+          echo "WARNING: DEVHUB_MCP_TOKEN is empty — skipping the DevHub bearer credential (the DevHub agent won't authenticate until an API key is set)."
+          rm -f /tmp/import/credentials_public/devhub-bearer.json
+        fi
+
+        # Rewrite the domain placeholder in the agent workflows to the real
+        # deployment domain, so each MCP endpoint URL (policypilot.<domain>/mcp,
+        # hub.<domain>/api/mcp) is correct on a fresh deploy. Prefer an explicit
+        # DOMAIN; otherwise derive it from N8N_HOST (n8n.<domain> -> <domain>).
+        DOMAIN_VALUE="$$DOMAIN"
+        if [ -z "$$DOMAIN_VALUE" ]; then
+          DOMAIN_VALUE=$$(printf '%s' "$$N8N_HOST" | sed -e 's/^n8n\.//')
+        fi
+        # Assemble the double-brace DOMAIN token from parts so this compose file
+        # never contains the literal token — the deploy-time templating that fills
+        # the Traefik domain labels would otherwise rewrite this pattern too. The
+        # mounted workflow JSONs are not compose text, so they keep the placeholder
+        # until this step resolves it.
+        OB='{'; CB='}'
+        DOMAIN_PH="$${OB}$${OB}DOMAIN$${CB}$${CB}"
+        if [ -n "$$DOMAIN_VALUE" ]; then
+          ESCAPED_DOMAIN=$$(printf '%s' "$$DOMAIN_VALUE" | sed -e 's/[\/&|]/\\&/g')
+          for wf in policypilot-management-agent policypilot-dynamic-layer-agent devhub-agent; do
+            sed -i "s|$$DOMAIN_PH|$$ESCAPED_DOMAIN|g" /tmp/import/workflows/$$wf.json
+          done
+        else
+          echo "WARNING: neither DOMAIN nor N8N_HOST is set — agent MCP endpoint URLs keep the unresolved domain placeholder."
+        fi
+
         echo "Importing n8n credentials & workflows..."
         n8n import:credentials --separate --input=/tmp/import/credentials_public && \
         n8n import:workflow --separate --input=/tmp/import/workflows
@@ -319,6 +361,15 @@ services:
       - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
       # available to the credential-injection step in command: above
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      # agent MCP bearer tokens + the deployment domain, consumed by the
+      # credential-injection / workflow-domain step in command: above. Empty is
+      # tolerated (the step warns and skips), so this stays a no-op until the
+      # installer bootstrap provides the tokens. DOMAIN falls back to N8N_HOST
+      # (n8n.<domain>) when unset.
+      - PILOT_MCP_TOKEN=${PILOT_MCP_TOKEN:-}
+      - DEVHUB_MCP_TOKEN=${DEVHUB_MCP_TOKEN:-}
+      - DOMAIN=${DOMAIN:-}
+      - N8N_HOST=${N8N_HOST}
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
       - N8N_BASIC_AUTH_ACTIVE=true
       - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}

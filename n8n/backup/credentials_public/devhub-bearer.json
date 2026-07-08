@@ -1,0 +1,11 @@
+{
+  "createdAt": "2026-07-07T12:00:00.000Z",
+  "updatedAt": "2026-07-07T12:00:00.000Z",
+  "id": "DevHubBearerCred01",
+  "name": "DevHub Bearer Auth",
+  "data": {
+    "token": "__DEVHUB_MCP_TOKEN__"
+  },
+  "type": "httpBearerAuth",
+  "isManaged": false
+}

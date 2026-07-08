@@ -1,0 +1,247 @@
+{
+  "name": "PolicyPilot — Dynamic Layers Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🚀 PolicyPilot — Dynamic Layers agent\n\nEdit a dynamic layer (an access rulebase) and **push it straight to a gateway** via the Gaia API (`set-dynamic-content`) — out-of-band of SmartConsole — from one sentence.\n\n### Setup\n1. **MCP endpoint** — on the *PolicyPilot MCP* node, set the URL to `https://<your-host>/mcp/`.\n2. **Bearer credential** — an **mcp-scope API key** (mint it on `/mcp-guide`) in the node's HTTP Bearer Auth credential.\n3. **Real-gateway push** — to let the agent apply to a LIVE gateway (not just dry-run / the demo target), enable *Settings → MCP / agent → Let the MCP agent push dynamic layers to gateways* (a separate gate from SMS publishing).\n\nSame MCP endpoint as the management agent — it just focuses on the dynamic-layer tools.",
+        "height": 340,
+        "width": 460,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -40
+      ],
+      "id": "note-header",
+      "name": "README"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "🚀 I'm **PolicyPilot — Dynamic Layers**. I edit a Check Point dynamic layer and push it to a gateway (Gaia `set-dynamic-content`) from one sentence.\n\n**Try one of these:**\n• List the dynamic layers\n• Add a rule allowing 10.1.2.50 to 10.1.2.60 on ssh in the DMZ layer and push it\n• Block 10.1.9.9 from anywhere in the DMZ layer (dry run)\n• Remove the web-ssh rule from the DMZ layer and push to GW1\n• Show the rules in the DMZ layer",
+        "options": {
+          "responseMode": "lastNode",
+          "title": "PolicyPilot — Dynamic Layers",
+          "subtitle": "Edit a dynamic layer and push it to a gateway, in one sentence.",
+          "inputPlaceholder": "e.g. Add a rule allowing 10.1.2.50 to win_server on rdp in the DMZ layer and push it"
+        }
+      },
+      "id": "trigger",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -60,
+        112
+      ],
+      "webhookId": "c96e2702-92bc-4ab9-bbfa-f280573a16c1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "chatInput",
+              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "sessionId",
+              "value": "={{ $json?.sessionId || $json.body.sessionId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalize",
+      "name": "Normalize input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.4",
+          "mode": "list",
+          "cachedResultName": "gpt-5.4"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        360
+      ],
+      "id": "model",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        620,
+        360
+      ],
+      "id": "memory",
+      "name": "Conversation Memory"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://policypilot.{{DOMAIN}}/mcp/",
+        "authentication": "bearerAuth",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        800,
+        360
+      ],
+      "id": "mcp",
+      "name": "PolicyPilot MCP",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "UrHg2PD1KfXIgKK6",
+          "name": "PolicyPilot Bearer Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are **PolicyPilot — Dynamic Layers**, an agent that manages a Check Point DYNAMIC LAYER from plain language. A dynamic layer is an access rulebase pushed straight to a gateway via the Gaia API (set-dynamic-content), out-of-band of SmartConsole. You have conversation memory — use it.\n\n== TOOLS (dynamic-layer rail) ==\n- list_gateways — the saved Gaia gateways you can push to (id / name / host).\n- list_dynamic_layers — the dynamic layers (id / name / rule count).\n- get_dynamic_layer(layer) — read a layer's current rulebase (the PORTAL copy).\n- fetch_dynamic_layer(gateway, layer_name?) — pull the LIVE rulebase currently ON a gateway, incl. policy pushed via the API outside this portal. Read-only.\n- import_dynamic_layer(gateway, layer_name?, into_layer?) — pull the live layer INTO a portal layer so you can safely append to it. Writes the portal only (not the gateway).\n- add_dynamic_rule(layer, source, destination, service, action, name?, position?) — add a rule. EDIT ONLY.\n- remove_dynamic_rule(layer, rule) — remove a rule by name (a layer must keep at least one rule). EDIT ONLY.\n- push_dynamic_layer(layer, gateway?, dry_run?) — apply the layer to a gateway via set-dynamic-content.\n(The management access-automation tools are also reachable, but THIS agent is for dynamic layers — stay on them unless the user clearly asks about the SMS policy.)\n\n== HARD RULES ==\n1. Rely on memory; never re-run a call that already succeeded; never re-list the same thing — repeating calls causes loops.\n2. Never guess a layer or gateway — resolve it first (list_dynamic_layers / list_gateways). If the user names it, use that directly. If it's unstated and several exist, PRESENT them and ask which, then STOP and wait.\n3. Report exactly what each tool returns (ok, rule, rules, status, summary, task_id, error) VERBATIM. Never fabricate a result, rule, or task id. On ok:false or any error, STOP and report it — no retries.\n4. add_dynamic_rule / remove_dynamic_rule only EDIT the layer in the portal — they do NOT apply anything. The change takes effect only when you push_dynamic_layer.\n5. push_dynamic_layer: dry_run=true validates without applying (always allowed). A REAL-gateway push (dry_run=false to a named gateway) is an admin-gated COMMIT — it needs the 'Let the MCP agent push dynamic layers to gateways' setting (a SEPARATE gate from the SMS publish toggle). If it's refused, say so plainly and offer a dry-run, or push to gateway='mock' (the built-in demo target, always allowed). Leave gateway blank or 'mock' for the demo target.\n6. A real gateway's dynamic layer may ALREADY hold policy pushed outside this portal, and push_dynamic_layer REPLACES the whole layer — so a blind push wipes anything you didn't author here. To safely ADD to such a layer: import_dynamic_layer(gateway) first (pulls the live layer into the portal), THEN add_dynamic_rule, THEN push — the push now replaces with the live rules PLUS your additions, wiping nothing. Use fetch_dynamic_layer when you only need to read the live state. If you're about to push the portal copy to a gateway you didn't import from, fetch first and confirm with the user.\n\n== PLACE THE TARGET ==\n- source / destination: an IP (10.1.2.50), a CIDR (10.0.0.0/24), the name of an existing object, or 'any'. A bare IP/CIDR is turned into an inline host/network object automatically.\n- service: a service name (https, ssh, dns, rdp) or 'any'.\n- action: Accept | Drop | Reject | Ask | Inform.\n\n== ORDER (skip a step whose value is already known) ==\n1 resolve the layer. 2 resolve the gateway (only when pushing to a real one). 3 add_dynamic_rule / remove_dynamic_rule to edit. 4 push_dynamic_layer to apply — if the user said push / apply / publish, go edit -> push in the SAME turn (dry-run first if you're not authorized for a real push; a real push if you are). Report the change summary.\n\n== RESPOND LIKE A PRO ==\nReply in concise markdown: a one-line headline (✅ Rule added · 🗑 Rule removed · 🚀 Pushed · ✓ Validated (dry-run) · ⛔ Push gated), then the layer + rule + the target gateway, then the change summary (rules / objects). If a real push is gated, say what's needed and that you validated (dry-run) or used the demo target instead. Transparency is the product — never hide the reasoning, never invent.\n\n== EXAMPLES ==\n- \"What's actually on GW1's dynamic layer right now?\" -> fetch_dynamic_layer(GW1) (live, read-only) -> report the rules.\n- \"Add a rule for 10.1.2.50 to the DMZ layer on GW1 WITHOUT removing what's already there\" -> import_dynamic_layer(GW1) -> add_dynamic_rule(<imported layer>, ...) -> push_dynamic_layer(<layer>, GW1) (replaces with live + your rule).\n- \"Add a rule allowing 10.1.2.50 to 10.1.2.60 on ssh in the DMZ layer and push it\" -> add_dynamic_rule(layer=DMZ, source=10.1.2.50, destination=10.1.2.60, service=ssh, action=Accept) -> push_dynamic_layer(DMZ, <gateway>).\n- \"Block 10.1.9.9 from anywhere in the DMZ layer, dry run\" -> add_dynamic_rule(action=Drop) -> push_dynamic_layer(DMZ, dry_run=true).\n- \"Remove the web-ssh rule from DMZ and push to GW1\" -> remove_dynamic_rule(DMZ, web-ssh) -> push_dynamic_layer(DMZ, GW1).\n\n== OUTPUT STYLE (every reply) ==\nAnswer in concise, human markdown — NEVER paste raw JSON or a \"Tool result verbatim\" block. \"Report verbatim / exactly what the tool returns\" means be FAITHFUL to the tool's facts (never invent a rule name, count, layer, or outcome) — it does NOT mean printing the raw payload.\n- READ / LIST (layers, rules, changes, coverage, analyze, summarize): a one-line answer, then a short bullet list or small table of the key fields. E.g. \"SMS-SBT has 5 access layers: DNS_Layer, Network, Application, URLF, Threat_Prevention.\"\n- WRITE (apply / remove / revert): the ✅ / ↔ / ✓ / 🗑 / ⏪ headline (and PUBLISHED vs dry-run), the rule name + where it was placed, then the one-line WHY.\n- Any ok:false / error: relay the message plainly and stop."
+        }
+      },
+      "id": "agent",
+      "name": "Dynamic Layers Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        560,
+        112
+      ],
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1",
+              "name": "output",
+              "value": "=⚠️ I hit an error and made **no changes**.\n\n```\n{{ ($json.error && $json.error.message) || $json.error || $json.message || 'Unknown error' }}\n```\nPlease retry, or rephrase the request.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "errreply",
+      "name": "Friendly error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        820,
+        240
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Normalize input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize input": {
+      "main": [
+        [
+          {
+            "node": "Dynamic Layers Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Dynamic Layers Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Dynamic Layers Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PolicyPilot MCP": {
+      "ai_tool": [
+        [
+          {
+            "node": "Dynamic Layers Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dynamic Layers Agent": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Friendly error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "PPilotDynLayerWf01"
+}

@@ -1,0 +1,279 @@
+{
+  "name": "DevHub — Operations Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## DevHub — Operations Agent\n\nChat-drives the DevHub board over MCP (https://hub.{{DOMAIN}}/api/mcp).\n\n**Setup**\n1. Credential “DevHub Bearer Auth” carries a devhub_ API key (Admin → API keys, scopes read+write).\n2. OpenAI credential powers the model.\n\n**Tools**: list/get/probe/status + create/update/delete app + power start/stop/restart.",
+        "height": 360,
+        "width": 460,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -40
+      ],
+      "id": "note-header",
+      "name": "README"
+    },
+    {
+      "parameters": {
+        "content": "## Try these\n\n- what apps are on the board?\n- probe the n8n app — can the hub embed it?\n- status of policypilot\n- rename the card “AI Guardrails Demo” to “AI Guardrails Playground”\n- restart openclaw (it will ask you to confirm)",
+        "height": 360,
+        "width": 360,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        360
+      ],
+      "id": "note-examples",
+      "name": "Demo script"
+    },
+    {
+      "parameters": {
+        "content": "## Next level\n\n- Add an admin-scope key to manage users.\n- Chain with the PolicyPilot agent: open access for an app you just created.\n- Wire probe_app into a scheduled health-report workflow.",
+        "height": 260,
+        "width": 380,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1080,
+        -40
+      ],
+      "id": "note-next",
+      "name": "Next level"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "Hi — I manage the DevHub board. Ask me what's running, probe an app, or change a card.",
+        "options": {
+          "responseMode": "lastNode",
+          "title": "DevHub Ops",
+          "subtitle": "Manage the DevHub app board in plain language",
+          "inputPlaceholder": "e.g. Allow 10.1.1.50 to the DNS servers and publish"
+        }
+      },
+      "id": "trigger",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -60,
+        112
+      ],
+      "webhookId": "c96e2702-92bc-4ab9-bbfa-f280573a16c0"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "chatInput",
+              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "sessionId",
+              "value": "={{ $json?.sessionId || $json.body.sessionId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "normalize",
+      "name": "Normalize input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5.4",
+          "mode": "list",
+          "cachedResultName": "gpt-5.4"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        360
+      ],
+      "id": "model",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 20
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        620,
+        360
+      ],
+      "id": "memory",
+      "name": "Conversation Memory"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://hub.{{DOMAIN}}/api/mcp",
+        "authentication": "bearerAuth",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        800,
+        360
+      ],
+      "id": "mcp",
+      "name": "DevHub MCP",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "DevHubBearerCred01",
+          "name": "DevHub Bearer Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are **DevHub Ops** — the operations agent for the DevHub application board, working over MCP. You manage the catalogue of apps that appear on the DevHub desktop and their runtime state. You have conversation memory — use it.\n\n== TOOLS ==\n- list_apps — every app on the board (name, url, category, live/embeddable flags).\n- get_app {ident} — one app by id or name.\n- probe_app {ident} — reachability + can-it-be-framed verdict for an app's URL.\n- app_status {ident} — runtime/deployment status.\n- create_app {name, url, ...} — add a new app card to the board.\n- update_app {ident, ...fields} — change a card (name, url, description, category, icon, is_live, embeddable).\n- delete_app {ident} — remove a card from the board.\n- power_action {ident, action} — start | stop | restart the app's deployment.\n\n== RULES ==\n1. READ freely: answer questions by calling list_apps/get_app/probe_app/app_status first — never guess an app's state or URL.\n2. Resolve names loosely: if the user says \"the chat app\", find the best match via list_apps and confirm your pick by naming it in the answer.\n3. WRITE with care: for create_app/update_app, apply immediately when the user's sentence contains the needed fields; ask one short question only if a required field is missing.\n4. DESTRUCTIVE actions (delete_app, power_action stop/restart): restate exactly what will happen and ask for an explicit yes first — unless the user's message already contains the explicit instruction (e.g. \"yes, delete X\", \"restart n8n now\").\n5. If a tool errors, report the error text plainly and suggest the next step — never invent success.\n6. Answer compactly: a short confirmation line plus the key facts (app name, URL, status). Use bullet lists for multiple apps."
+        }
+      },
+      "id": "agent",
+      "name": "DevHub Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        560,
+        112
+      ],
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1",
+              "name": "output",
+              "value": "=⚠️ I hit an error and made **no changes** to your policy.\n\n```\n{{ ($json.error && $json.error.message) || $json.error || $json.message || 'Unknown error' }}\n```\nPlease retry, or rephrase the request.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "errreply",
+      "name": "Friendly error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        820,
+        240
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Normalize input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize input": {
+      "main": [
+        [
+          {
+            "node": "DevHub Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "DevHub Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "DevHub Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DevHub MCP": {
+      "ai_tool": [
+        [
+          {
+            "node": "DevHub Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DevHub Agent": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Friendly error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "DevHubOpsAgentWf01"
+}
