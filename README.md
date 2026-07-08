@@ -25,7 +25,7 @@ A **multi-service Docker Compose stack** that brings up a full AI + Check Point 
 
 - **n8n** – workflow automation + MCP tools orchestrator
 - **PostgreSQL** – n8n backend database
-- **Auto-provisioner** – creates the n8n instance owner **and** installs `n8n-nodes-mcp`
+- **Auto-provisioner** – creates the n8n instance owner (no community node needed — the agents use n8n's **native** MCP Client Tool)
 - **Ollama** – local LLMs; CPU **or** NVIDIA GPU; auto model pull
 - **Open WebUI** – chat UI for Ollama / LLMs (with an n8n pipe)
 - **Langflow** – visual AI flow builder
@@ -36,7 +36,7 @@ A **multi-service Docker Compose stack** that brings up a full AI + Check Point 
 The goal is a **single lab stack** for building, testing, and demoing AI + Check Point workflows:
 
 - Instance owner is **auto-configured**
-- `n8n-nodes-mcp` is **pre-installed**
+- Agents use n8n's **native** `@n8n/n8n-nodes-langchain.mcpClientTool` node (no community package to install)
 - MCP servers are reachable as **HTTP tools** from inside n8n
 
 > **Deployment model.** This repo is deployed on the lab's bare-metal Ubuntu + [Dokploy](https://dokploy.com) host, where **Traefik** provides ingress and **Let's Encrypt** provides TLS. The web UIs are published as subdomains (e.g. `chat.<domain>`, `langflow.<domain>`, `flowise.<domain>`, `aig.<domain>`) via the external `dokploy-network`, **not** on host ports. You can still run it standalone with `docker compose up`, but no service ports are bound to the host by default — see [URLs & Access](#-urls--access).
@@ -106,7 +106,7 @@ The goal is a **single lab stack** for building, testing, and demoing AI + Check
 4. Wait 30–60 seconds for:
    - Postgres
    - n8n
-   - Provisioner (owner + `n8n-nodes-mcp`)
+   - Provisioner (owner setup)
    - Optional `n8n-import` (workflows/credentials)
 
 5. Browse to **n8n**:

@@ -107,7 +107,7 @@ x-init-ollama: &init-ollama
         sleep 3
       done
       # Model list comes from OLLAMA_MODELS in the env (comma-separated).
-      MODELS="${OLLAMA_MODELS:-gemma4:e2b}"
+      MODELS="${OLLAMA_MODELS:-gemma4:e2b,qwen3.5:4b}"
       echo "Ollama is ready. Pulling: $${MODELS}"
       for m in $$(echo "$${MODELS}" | tr ',' ' '); do
         echo ">> pulling $${m}"
@@ -203,7 +203,7 @@ services:
           sleep 3
         done
         # Model list comes from OLLAMA_MODELS in the env (comma-separated).
-        MODELS="${OLLAMA_MODELS:-gemma4:e2b}"
+        MODELS="${OLLAMA_MODELS:-gemma4:e2b,qwen3.5:4b}"
         echo "Ollama is up. Pulling: $${MODELS}"
         for m in $$(echo "$${MODELS}" | tr ',' ' '); do
           echo ">> pulling $${m}"
