@@ -37,7 +37,7 @@
         -180,
         120
       ],
-      "webhookId": "35bcabf8-caf6-4033-b66d-4658abbaa057"
+      "webhookId": "947f4a60-c2b5-5d51-90af-30286dc57997"
     },
     {
       "parameters": {
@@ -68,7 +68,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "n8n-pipe",
+        "path": "n8n-pipe-gateway",
         "responseMode": "responseNode",
         "options": {}
       },
@@ -80,7 +80,7 @@
       ],
       "id": "b39a40f9-eede-4074-9e45-9f1bfc98f5c8",
       "name": "Webhook",
-      "webhookId": "365d1a31-e08a-4763-85d6-832151ad5c92"
+      "webhookId": "1cfc0c22-3212-5f34-aec5-9f1f85c741b8"
     },
     {
       "parameters": {
