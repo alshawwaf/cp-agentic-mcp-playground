@@ -64,7 +64,7 @@
     },
     {
       "parameters": {
-        "toolDescription": "Create (provision) a user in the SAML/SCIM Identity Provider. Call this once you know the person's email, first name and last name.",
+        "toolDescription": "Create (provision) a user in the KhalIDP Identity Provider (SCIM). Call this once you know the person's email, first name and last name.",
         "method": "POST",
         "url": "https://YOUR-IDP-DOMAIN/scim/v2/Users",
         "authentication": "genericCredentialType",
@@ -201,7 +201,7 @@
         "promptType": "define",
         "text": "={{ $json.chatInput }}",
         "options": {
-          "systemMessage": "You are an identity-provisioning assistant for a Check Point SAML/SCIM Identity Provider. When a user asks to onboard / create / add a person, extract their email, first name and last name from the request, then call the SCIM-Create-User tool to provision them. If the email or name is missing, ask for it first. After creating the user, confirm with the userName that was created. Never invent an email address."
+          "systemMessage": "You are an identity-provisioning assistant for a Check Point KhalIDP Identity Provider (SCIM). When a user asks to onboard / create / add a person, extract their email, first name and last name from the request, then call the SCIM-Create-User tool to provision them. If the email or name is missing, ask for it first. After creating the user, confirm with the userName that was created. Never invent an email address."
         }
       },
       "id": "d4e631b3-c0e3-4c54-abcc-6585a468be83",
