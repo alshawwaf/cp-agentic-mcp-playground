@@ -384,13 +384,10 @@ services:
           echo "WARNING: neither DOMAIN nor N8N_HOST is set — agent MCP endpoint URLs keep the unresolved domain placeholder."
         fi
 
-        # Resolve the Lakera project id in the guard workflows (project-scoped key).
-        # Defaults to the demo project when unset; set LAKERA_PROJECT_ID to your own.
-        LPID="$${LAKERA_PROJECT_ID:-project-2503364587}"
-        ESCAPED_LPID=$$(printf '%s' "$$LPID" | sed -e 's/[\/&|]/\\&/g')
-        for wf in /tmp/import/workflows/*.json; do
-          sed -i "s|__LAKERA_PROJECT_ID__|$$ESCAPED_LPID|g" "$$wf"
-        done
+        # (Lakera project id is intentionally NOT sent by the guard workflows —
+        # the Lakera key is project-scoped, so Guard uses the key's own project.
+        # LAKERA_PROJECT_ID is still passed to apps that need it, e.g. the
+        # AI Guardrails demo.)
 
         echo "Importing n8n credentials & workflows..."
         n8n import:credentials --separate --input=/tmp/import/credentials_public && \
