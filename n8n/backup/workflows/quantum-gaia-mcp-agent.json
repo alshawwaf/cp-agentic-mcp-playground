@@ -18,7 +18,7 @@
       "typeVersion": 1.1,
       "position": [
         -140,
-        60
+        80
       ],
       "webhookId": "414009d6-7ae2-471c-9f11-f3590bc2e024"
     },
@@ -35,8 +35,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.6,
       "position": [
-        420,
-        40
+        480,
+        60
       ],
       "onError": "continueErrorOutput"
     },
@@ -46,7 +46,7 @@
       "typeVersion": 1.3,
       "position": [
         420,
-        320
+        380
       ],
       "id": "c956e47f-0004-4e28-a4ba-cbcb9a7ce709",
       "name": "Conversation Memory"
@@ -74,8 +74,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        140,
-        60
+        160,
+        80
       ],
       "name": "Normalize input",
       "id": "e10be0d1-3164-5a12-9984-a9e973632cee"
@@ -97,8 +97,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        920,
-        160
+        940,
+        180
       ],
       "name": "Friendly error",
       "id": "4d2aa9f3-27d7-5f25-b239-2a2c4feed54f"
@@ -111,8 +111,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        640,
-        320
+        700,
+        380
       ],
       "name": "Gaia OS MCP",
       "id": "3656b58e-cdf4-5370-bc06-6d41075f48c8"
@@ -125,8 +125,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        -140,
-        480
+        240,
+        600
       ],
       "name": "Azure OpenAI (default)",
       "credentials": {
@@ -145,8 +145,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        80,
-        480
+        460,
+        600
       ],
       "name": "Ollama — local qwen3.5",
       "credentials": {
@@ -165,8 +165,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        300,
-        480
+        680,
+        600
       ],
       "name": "Gemini 2.5 Pro",
       "credentials": {
@@ -190,8 +190,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        520,
-        480
+        900,
+        600
       ],
       "name": "OpenAI gpt-5.1",
       "credentials": {
@@ -215,8 +215,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        740,
-        480
+        1120,
+        600
       ],
       "name": "Claude Opus 4.8",
       "credentials": {
@@ -230,7 +230,7 @@
     {
       "parameters": {
         "content": "## 🛡️ Check Point Gaia OS — AI Agent · direct MCP\n**Inspects and configures the Gaia OS of your gateways — interfaces, routes, DNS, NTP.**",
-        "width": 1360,
+        "width": 1320,
         "height": 120,
         "color": 4
       },
@@ -238,7 +238,7 @@
       "typeVersion": 1,
       "position": [
         -140,
-        -160
+        -240
       ],
       "name": "Banner",
       "id": "3a2f1948-8dba-5b20-8b81-7c57aeb083a0"
@@ -246,15 +246,15 @@
     {
       "parameters": {
         "content": "### 💬 Try these\n- Show the interfaces and their IPs\n- What are the static routes?\n- Check the DNS and NTP configuration\n\n### ⚙️ How it works\n**Zero glue.** n8n's native MCP Client Tool talks straight to the server — every tool it exposes becomes an agent tool automatically.\n\n### 🧠 Models\nAzure OpenAI **gpt-5.4** wired as default — Ollama (local, no key), Gemini 2.5 Pro, GPT-5.1 and Claude Opus 4.8 are one click away.",
-        "width": 460,
+        "width": 520,
         "height": 620,
         "color": 7
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -660,
-        -160
+        -720,
+        60
       ],
       "name": "Guide",
       "id": "4196d77c-4297-5ae3-b62c-8487262ef3b6"

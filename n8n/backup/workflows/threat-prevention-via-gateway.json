@@ -18,7 +18,7 @@
       "typeVersion": 1.1,
       "position": [
         -140,
-        60
+        80
       ],
       "webhookId": "abf348ac-e83f-51d1-89f0-f04119d6fc16"
     },
@@ -35,8 +35,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.6,
       "position": [
-        420,
-        40
+        480,
+        60
       ],
       "onError": "continueErrorOutput"
     },
@@ -46,7 +46,7 @@
       "typeVersion": 1.3,
       "position": [
         420,
-        320
+        380
       ],
       "id": "0c991f56-af4a-49df-b2e1-41d72747369d",
       "name": "Conversation Memory"
@@ -74,8 +74,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        140,
-        60
+        160,
+        80
       ],
       "name": "Normalize input",
       "id": "28ebc6d8-2917-581c-94df-91c1b008772a"
@@ -97,8 +97,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        920,
-        160
+        940,
+        180
       ],
       "name": "Friendly error",
       "id": "fa7f440b-396e-57d7-8fa6-904979cfa6f5"
@@ -138,8 +138,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        640,
-        320
+        700,
+        380
       ],
       "name": "CP MCP Gateway",
       "credentials": {
@@ -158,8 +158,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        -140,
-        480
+        240,
+        600
       ],
       "name": "Azure OpenAI (default)",
       "credentials": {
@@ -178,8 +178,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        80,
-        480
+        460,
+        600
       ],
       "name": "Ollama — local qwen3.5",
       "credentials": {
@@ -198,8 +198,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        300,
-        480
+        680,
+        600
       ],
       "name": "Gemini 2.5 Pro",
       "credentials": {
@@ -223,8 +223,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        520,
-        480
+        900,
+        600
       ],
       "name": "OpenAI gpt-5.1",
       "credentials": {
@@ -248,8 +248,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        740,
-        480
+        1120,
+        600
       ],
       "name": "Claude Opus 4.8",
       "credentials": {
@@ -263,7 +263,7 @@
     {
       "parameters": {
         "content": "## 🛡️ Check Point Threat Prevention — AI Agent · via MCP Gateway\n**Manages Threat Prevention policy — profiles, IPS protections, exceptions, indicators.**",
-        "width": 1360,
+        "width": 1320,
         "height": 120,
         "color": 6
       },
@@ -271,7 +271,7 @@
       "typeVersion": 1,
       "position": [
         -140,
-        -160
+        -240
       ],
       "name": "Banner",
       "id": "5f0893d9-0646-5811-b5fd-97b9283267f3"
@@ -279,15 +279,15 @@
     {
       "parameters": {
         "content": "### 💬 Try these\n- List the Threat Prevention profiles\n- Which profile is strictest and what does it activate?\n- Search IPS protections related to log4j\n\n### ⚙️ How it works\n**One endpoint. Every CP tool.** Calls ride the Docker MCP Gateway (`mcp-gateway:8080/mcp`, Bearer auth) which aggregates the entire Check Point MCP fleet.\n\n### 🧠 Models\nAzure OpenAI **gpt-5.4** wired as default — Ollama (local, no key), Gemini 2.5 Pro, GPT-5.1 and Claude Opus 4.8 are one click away.",
-        "width": 460,
+        "width": 520,
         "height": 620,
         "color": 7
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -660,
-        -160
+        -720,
+        60
       ],
       "name": "Guide",
       "id": "06ac1a13-208b-5947-b40f-cf8bb4d5d59e"

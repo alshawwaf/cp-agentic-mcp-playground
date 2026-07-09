@@ -4,15 +4,15 @@
     {
       "parameters": {
         "content": "## DevHub — Operations Agent\n\nChat-drives the DevHub board over MCP (https://hub.{{DOMAIN}}/api/mcp).\n\n**Setup**\n1. Credential “DevHub Bearer Auth” carries a devhub_ API key (Admin → API keys, scopes read+write).\n2. OpenAI credential powers the model.\n\n**Tools**: list/get/probe/status + create/update/delete app + power start/stop/restart.",
-        "height": 360,
-        "width": 460,
+        "height": 120,
+        "width": 1320,
         "color": 4
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -560,
-        -40
+        -140,
+        -240
       ],
       "id": "note-header",
       "name": "README"
@@ -20,15 +20,15 @@
     {
       "parameters": {
         "content": "## Try these\n\n- what apps are on the board?\n- probe the n8n app — can the hub embed it?\n- status of policypilot\n- rename the card “AI Guardrails Demo” to “AI Guardrails Playground”\n- restart openclaw (it will ask you to confirm)",
-        "height": 360,
-        "width": 360,
+        "height": 620,
+        "width": 520,
         "color": 5
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -60,
-        360
+        -720,
+        60
       ],
       "id": "note-examples",
       "name": "Demo script"
@@ -36,15 +36,15 @@
     {
       "parameters": {
         "content": "## Next level\n\n- Add an admin-scope key to manage users.\n- Chain with the PolicyPilot agent: open access for an app you just created.\n- Wire probe_app into a scheduled health-report workflow.",
-        "height": 260,
-        "width": 380,
+        "height": 120,
+        "width": 1320,
         "color": 6
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1080,
-        -40
+        -140,
+        -240
       ],
       "id": "note-next",
       "name": "Next level"
@@ -65,8 +65,8 @@
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
-        -60,
-        112
+        -140,
+        80
       ],
       "webhookId": "28ff8b80-8c36-57c3-bc85-36b83d418e7e"
     },
@@ -95,8 +95,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        240,
-        112
+        160,
+        80
       ]
     },
     {
@@ -112,8 +112,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        340,
-        532
+        900,
+        600
       ],
       "id": "model",
       "name": "OpenAI gpt-5.1",
@@ -131,8 +131,8 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        620,
-        360
+        420,
+        380
       ],
       "id": "memory",
       "name": "Conversation Memory"
@@ -146,8 +146,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        800,
-        360
+        700,
+        380
       ],
       "id": "mcp",
       "name": "DevHub MCP",
@@ -171,8 +171,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.6,
       "position": [
-        560,
-        112
+        480,
+        60
       ],
       "retryOnFail": true,
       "onError": "continueErrorOutput"
@@ -196,8 +196,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        820,
-        240
+        940,
+        180
       ]
     },
     {
@@ -208,8 +208,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        120,
-        532
+        240,
+        600
       ],
       "name": "Azure OpenAI (default)",
       "credentials": {
@@ -228,8 +228,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        560,
-        532
+        460,
+        600
       ],
       "name": "Ollama — local qwen3.5",
       "credentials": {
@@ -248,8 +248,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        780,
-        532
+        680,
+        600
       ],
       "name": "Gemini 2.5 Pro",
       "credentials": {
@@ -273,8 +273,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        1000,
-        532
+        1120,
+        600
       ],
       "name": "Claude Opus 4.8",
       "credentials": {
@@ -288,15 +288,15 @@
     {
       "parameters": {
         "content": "### 🧠 Model gallery\n\n**Azure OpenAI** is the wired default — swap by connecting another model to the agent's *Chat Model* port. Local **Ollama** needs no API key.",
-        "width": 1200,
-        "height": 260,
+        "width": 520,
+        "height": 620,
         "color": 7
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        60,
-        472
+        -720,
+        60
       ],
       "name": "Zone Models",
       "id": "8d05ad25-17d0-5055-bc03-a39cc434cd31"

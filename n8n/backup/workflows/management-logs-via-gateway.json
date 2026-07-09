@@ -9,7 +9,7 @@
       "typeVersion": 1.1,
       "position": [
         420,
-        320
+        380
       ],
       "credentials": {
         "postgres": {
@@ -35,7 +35,7 @@
       "typeVersion": 1.1,
       "position": [
         -140,
-        60
+        80
       ],
       "webhookId": "947f4a60-c2b5-5d51-90af-30286dc57997"
     },
@@ -52,8 +52,8 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
       "position": [
-        780,
-        -140
+        940,
+        -120
       ],
       "id": "f8a5439e-8915-4e4b-a7e2-6e411d4f2547",
       "name": "Generate audio",
@@ -76,7 +76,7 @@
       "typeVersion": 2.1,
       "position": [
         -140,
-        -140
+        -120
       ],
       "id": "b39a40f9-eede-4074-9e45-9f1bfc98f5c8",
       "name": "Webhook",
@@ -90,8 +90,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.4,
       "position": [
-        1040,
-        -140
+        1180,
+        -120
       ],
       "id": "17e62fc9-a32e-431f-a28b-805e3467614b",
       "name": "Respond to Webhook"
@@ -109,8 +109,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.6,
       "position": [
-        420,
-        40
+        480,
+        60
       ],
       "retryOnFail": true,
       "onError": "continueErrorOutput"
@@ -138,8 +138,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        140,
-        60
+        160,
+        80
       ],
       "name": "Normalize input",
       "id": "f90e0dad-a829-539f-b707-67ce1d085440"
@@ -161,8 +161,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        920,
-        160
+        940,
+        180
       ],
       "name": "Friendly error",
       "id": "320519f5-23c7-5694-8ca1-6b7da822065f"
@@ -186,8 +186,8 @@
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        640,
-        320
+        700,
+        380
       ],
       "name": "CP MCP Gateway",
       "credentials": {
@@ -206,8 +206,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
       "typeVersion": 1,
       "position": [
-        -140,
-        480
+        240,
+        600
       ],
       "name": "Azure OpenAI (default)",
       "credentials": {
@@ -226,8 +226,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        80,
-        480
+        460,
+        600
       ],
       "name": "Ollama — local qwen3.5",
       "credentials": {
@@ -246,8 +246,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
       "typeVersion": 1,
       "position": [
-        300,
-        480
+        680,
+        600
       ],
       "name": "Gemini 2.5 Pro",
       "credentials": {
@@ -271,8 +271,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        520,
-        480
+        900,
+        600
       ],
       "name": "OpenAI gpt-5.1",
       "credentials": {
@@ -296,8 +296,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
       "position": [
-        740,
-        480
+        1120,
+        600
       ],
       "name": "Claude Opus 4.8",
       "credentials": {
@@ -311,7 +311,7 @@
     {
       "parameters": {
         "content": "## 🛡️ Check Point Logs — AI Agent · via MCP Gateway\n**Queries security and audit logs and turns them into clear findings — top sources, preventions, who-changed-what.**",
-        "width": 1360,
+        "width": 1320,
         "height": 120,
         "color": 6
       },
@@ -319,7 +319,7 @@
       "typeVersion": 1,
       "position": [
         -140,
-        -300
+        -240
       ],
       "name": "Banner",
       "id": "18594148-5ff9-5096-9f2e-1d228bef51aa"
@@ -327,15 +327,15 @@
     {
       "parameters": {
         "content": "### 💬 Try these\n- Show the last 10 dropped connections\n- Any preventions in the past 24 hours? Summarize by blade\n- Who published policy changes this week?\n\n### ⚙️ How it works\n**One endpoint. Every CP tool.** Calls ride the Docker MCP Gateway (`mcp-gateway:8080/mcp`, Bearer auth) which aggregates the entire Check Point MCP fleet.\n\n**🔊 Bonus:** call it as a REST webhook and the answer comes back as spoken audio (OpenAI TTS).\n\n### 🧠 Models\nAzure OpenAI **gpt-5.4** wired as default — Ollama (local, no key), Gemini 2.5 Pro, GPT-5.1 and Claude Opus 4.8 are one click away.",
-        "width": 460,
+        "width": 520,
         "height": 620,
         "color": 7
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -660,
-        -300
+        -720,
+        60
       ],
       "name": "Guide",
       "id": "b374be11-4fd5-52af-bb6c-c5a09cfa7ef2"
