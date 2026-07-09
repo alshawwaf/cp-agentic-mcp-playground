@@ -5,7 +5,7 @@
   "name": "CP SCIM IdP Token",
   "data": {
     "name": "Authorization",
-    "value": "Bearer __SCIM_IDP_TOKEN__"
+    "value": "Bearer __IDP_SCIM_TOKEN__"
   },
   "type": "httpHeaderAuth",
   "isManaged": false
