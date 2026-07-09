@@ -86,7 +86,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "={{ $json.chatInput }}",
+        "text": "={{ $('Normalize input').item.json.chatInput }}",
         "options": {
           "systemMessage": "You are a Check Point **log hunter**. Use the logs tools over the MCP gateway to find the SINGLE most active DROPPED source IP in roughly the last 24 hours. Return ONLY a compact JSON object: {\"ip\":\"<addr>\",\"drop_count\":<n>,\"note\":\"<one line>\"}. No prose."
         }
