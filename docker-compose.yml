@@ -791,6 +791,35 @@ services:
       - ./n8n/shared:/data/cpinfo
     restart: unless-stopped
 
+  # Official Policy Insights MCP (@chkp/policy-insights-mcp) — AI policy-tightening suggestions
+  # (zero-hit / over-permissive / disabled rules) from Infinity Cloud Services. Pairs with
+  # mcp-quantum-management (resolve layer/rule names) and with PolicyPilot's cleanup rail.
+  # Needs Management API v2.1 (R82.10+) and Policy Insights enabled on the SMS.
+  policy-insights-mcp:
+    image: custom-mcp-n8n:custom
+    container_name: policy-insights-mcp
+    networks: [ "demo" ]
+    depends_on:
+      - n8n
+    entrypoint: [ "/usr/local/bin/policy-insights-mcp" ]
+    environment:
+      - MANAGEMENT_HOST=${MANAGEMENT_HOST}
+      - API_KEY=${MANAGEMENT_API_KEY}
+    command:
+      - "--transport"
+      - "http"
+      - "--transport-port"
+      - "3013"
+    # Registered in the gateway catalog: the gateway enumerates tools once at startup, so it must
+    # only start after this server accepts connections (see the gateway's depends_on).
+    healthcheck:
+      test: [ "CMD", "node", "-e", "require('net').connect(3013,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))" ]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 20s
+    restart: unless-stopped
+
   # ──────────────── AI-Infra-Guard (AI Red Teaming Platform) ────────────────
   # Tencent Zhuque Lab - AI infrastructure vuln scanning, MCP security
   # analysis, and jailbreak evaluation. Web UI at port 8088.
@@ -888,6 +917,8 @@ services:
       mcp-documentation:
         condition: service_healthy
       mcp-quantum-management:
+        condition: service_healthy
+      policy-insights-mcp:
         condition: service_healthy
     # Surfaces a wedged gateway (e.g. it came up before a sidecar and enumerated
     # 0 tools) as 'unhealthy' in `docker ps`. The gateway image is a minimal Go
