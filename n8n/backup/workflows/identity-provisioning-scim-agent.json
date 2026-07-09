@@ -66,7 +66,7 @@
       "parameters": {
         "toolDescription": "Create (provision) a user in the KhalIDP Identity Provider (SCIM). Call this once you know the person's email, first name and last name.",
         "method": "POST",
-        "url": "https://YOUR-IDP-DOMAIN/scim/v2/Users",
+        "url": "https://idp.{{DOMAIN}}/scim/v2/Users",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,

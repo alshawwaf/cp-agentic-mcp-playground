@@ -375,8 +375,10 @@ services:
         DOMAIN_PH="$${OB}$${OB}DOMAIN$${CB}$${CB}"
         if [ -n "$$DOMAIN_VALUE" ]; then
           ESCAPED_DOMAIN=$$(printf '%s' "$$DOMAIN_VALUE" | sed -e 's/[\/&|]/\\&/g')
-          for wf in policypilot-management-agent policypilot-dynamic-layer-agent devhub-agent; do
-            sed -i "s|$$DOMAIN_PH|$$ESCAPED_DOMAIN|g" /tmp/import/workflows/$$wf.json
+          # Resolve {{DOMAIN}} in EVERY workflow (PolicyPilot/DevHub MCP endpoints,
+          # the KhalIDP SCIM URL, and anything added later) — not just a hand-listed few.
+          for wf in /tmp/import/workflows/*.json; do
+            sed -i "s|$$DOMAIN_PH|$$ESCAPED_DOMAIN|g" "$$wf"
           done
         else
           echo "WARNING: neither DOMAIN nor N8N_HOST is set — agent MCP endpoint URLs keep the unresolved domain placeholder."
