@@ -41,63 +41,6 @@
     },
     {
       "parameters": {
-        "resource": "audio",
-        "input": "={{ $json.output }}",
-        "voice": "echo",
-        "options": {
-          "response_format": "mp3",
-          "speed": 1
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.openAi",
-      "typeVersion": 1.8,
-      "position": [
-        940,
-        -120
-      ],
-      "id": "f8a5439e-8915-4e4b-a7e2-6e411d4f2547",
-      "name": "Generate audio",
-      "credentials": {
-        "openAiApi": {
-          "id": "6oZqD0UJampaYWCy",
-          "name": "OpenAi account"
-        }
-      },
-      "disabled": true
-    },
-    {
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "n8n-pipe",
-        "responseMode": "responseNode",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2.1,
-      "position": [
-        -140,
-        -120
-      ],
-      "id": "b39a40f9-eede-4074-9e45-9f1bfc98f5c8",
-      "name": "Webhook",
-      "webhookId": "365d1a31-e08a-4763-85d6-832151ad5c92"
-    },
-    {
-      "parameters": {
-        "respondWith": "allIncomingItems",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.4,
-      "position": [
-        1180,
-        -120
-      ],
-      "id": "17e62fc9-a32e-431f-a28b-805e3467614b",
-      "name": "Respond to Webhook"
-    },
-    {
-      "parameters": {
         "promptType": "define",
         "text": "={{ $json.chatInput }}",
         "options": {
@@ -348,42 +291,9 @@
         ]
       ]
     },
-    "Generate audio": {
-      "main": [
-        [
-          {
-            "node": "Respond to Webhook",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Webhook": {
-      "main": [
-        [
-          {
-            "node": "Normalize input",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Check Point Logs AI Agent": {
       "main": [
-        [
-          {
-            "node": "Generate audio",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Respond to Webhook",
-            "type": "main",
-            "index": 0
-          }
-        ],
+        [],
         [
           {
             "node": "Friendly error",
