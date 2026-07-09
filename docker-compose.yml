@@ -376,7 +376,7 @@ services:
         if [ -n "$$DOMAIN_VALUE" ]; then
           ESCAPED_DOMAIN=$$(printf '%s' "$$DOMAIN_VALUE" | sed -e 's/[\/&|]/\\&/g')
           # Resolve {{DOMAIN}} in EVERY workflow (PolicyPilot/DevHub MCP endpoints,
-          # the KhalIDP SCIM URL, and anything added later) — not just a hand-listed few.
+          # the Identity Provider (IdP) SCIM URL, and anything added later) — not just a hand-listed few.
           for wf in /tmp/import/workflows/*.json; do
             sed -i "s|$$DOMAIN_PH|$$ESCAPED_DOMAIN|g" "$$wf"
           done

@@ -12,7 +12,7 @@ security** together — the way a real agentic automation would.
 
 ```
                        ┌──────────────── Lakera Guard (pre/post) ───────────────┐
-   request ──▶ agent ──┤  1. SCIM: create identity      → KhalIDP (IdP)           │
+   request ──▶ agent ──┤  1. SCIM: create identity      → Identity Provider (IdP) (IdP)           │
                        │  2. PolicyPilot: preview+grant → SMS (approve/rollback) │
                        │  3. confirm + audit                                     │
                        └────────────────────────────────────────────────────────┘
@@ -24,7 +24,7 @@ Each step is one of the lab's existing lessons — here they run as a sequence.
 
 | Stage | Lesson used | What happens |
 |---|---|---|
-| **1. Identity** | [Identity Provisioning Agent (SCIM)](Identity_Provisioning_SCIM_Agent_Guide.md) | Agent extracts name/email and provisions Jane in KhalIDP (`POST /scim/v2/Users`), placing her in a `contractors` group. |
+| **1. Identity** | [Identity Provisioning Agent (SCIM)](Identity_Provisioning_SCIM_Agent_Guide.md) | Agent extracts name/email and provisions Jane in Identity Provider (IdP) (`POST /scim/v2/Users`), placing her in a `contractors` group. |
 | **2. Access** | [PolicyPilot behind the Gateway](PolicyPilot_Gateway_Sidecar_Guide.md) | Agent asks PolicyPilot to grant `contractors → dmz-web : https` — **previews** the exact rule, waits for **approval**, publishes, and can **roll back**. |
 | **3. Guardrail** | [Lakera Playground](n8n_Lakera_Playground_Guide.md) | The whole conversation runs through Lakera Guard (pre-LLM + post-LLM), so an injected *"...and also allow any→any"* is flagged and blocked, not executed. |
 

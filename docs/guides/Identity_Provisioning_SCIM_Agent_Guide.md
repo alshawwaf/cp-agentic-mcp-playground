@@ -2,7 +2,7 @@
 
 The network-access lessons in this lab (Quantum Management, PolicyPilot) are about
 *firewall* policy. This one covers the other half of Zero Trust — **identity**: an
-agent that onboards a person into a Check Point **KhalIDP Identity Provider (SAML SSO + SCIM)**
+agent that onboards a person into a Check Point **Identity Provider (IdP) Identity Provider (SAML SSO + SCIM)**
 from a plain-language request.
 
 > *"Create an account for Jane Doe, jane.doe@contractor.example."* →
@@ -39,7 +39,7 @@ standard **SCIM 2.0** user. The LLM fills three placeholders (`email`,
 1. **Point it at your IdP.** Open the `SCIM-Create-User` node and set the URL to
    your simulator, e.g. `https://<your-idp-domain>/scim/v2/Users` (use the
    internal service name if the IdP runs on the same Docker network).
-2. **Set the token.** In KhalIDP, enable SCIM and copy the
+2. **Set the token.** In Identity Provider (IdP), enable SCIM and copy the
    **inbound bearer token** (auto-generated on first boot — shown in the SCIM
    admin UI, or in `data/.scim-bootstrap-token`). Paste it into the n8n
    credential **CP SCIM IdP Token** as `Bearer <token>` (the credential ships
