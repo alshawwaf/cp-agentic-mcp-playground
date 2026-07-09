@@ -820,6 +820,40 @@ services:
       start_period: 20s
     restart: unless-stopped
 
+  # ──────────────── Agent-builder import (Flowise + Langflow) ────────────────
+  # One-shot importer, parity with n8n-import: every deploy seeds the committed
+  # integrations/ flows into the RUNNING builders, idempotently (a same-named
+  # flow is never imported twice; an unparseable flow list refuses to import
+  # rather than duplicate). No manual API keys needed: Flowise authenticates
+  # with the stack admin account (its first-setup account uses the same creds)
+  # and Langflow with its provisioned superuser — set FLOWISE_API_KEY /
+  # LANGFLOW_API_KEY in .env only to override. The script waits for each
+  # builder itself, so plain start-order dependencies are enough.
+  builders-import:
+    image: python:3.12-alpine
+    container_name: builders-import
+    networks: [ "demo" ]
+    depends_on:
+      - flowise
+      - langflow
+    volumes:
+      - ./integrations:/integrations:ro
+    environment:
+      - FLOWISE_URL=http://flowise:${FLOWISE_PORT:-3020}
+      - LANGFLOW_URL=http://langflow:7860
+      - ADMIN_EMAIL=${N8N_ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${N8N_ADMIN_PASSWORD}
+      - FLOWISE_API_KEY=${FLOWISE_API_KEY:-}
+      - LANGFLOW_API_KEY=${LANGFLOW_API_KEY:-}
+      # Same default as the mcp-gateway service, so the imported agent authenticates out of the box.
+      - MCP_GATEWAY_TOKEN=${MCP_GATEWAY_TOKEN:-cp-mcp-gateway-training-token}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
+      - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT:-}
+    entrypoint: [ "python3", "/integrations/seed_builders.py" ]
+    restart: "no"
+
   # ──────────────── AI-Infra-Guard (AI Red Teaming Platform) ────────────────
   # Tencent Zhuque Lab - AI infrastructure vuln scanning, MCP security
   # analysis, and jailbreak evaluation. Web UI at port 8088.

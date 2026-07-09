@@ -62,46 +62,40 @@ The JSONs ship with placeholder tokens that the seeder replaces from the environ
 Flowise reads the model key from a Flowise **credential**, so no OpenAI/Azure placeholder is
 needed in the Flowise JSON — only `__MCP_GATEWAY_TOKEN__`.
 
-## Running the seeder
+## Importing — automatic on every deploy
+
+The **`builders-import`** one-shot compose service (parity with `n8n-import`) runs
+`seed_builders.py` on every `docker compose up`: it waits for Flowise + Langflow, substitutes the
+placeholders from the environment, and imports each flow **idempotently** — a flow named
+**"CP MCP Gateway Agent"** is never imported twice, and a flow list that can't be positively parsed
+refuses to import rather than risk a duplicate.
+
+**No manual API keys are required.** Authentication, in order:
+
+| Builder  | Default (no keys)                                                            | Override |
+|----------|------------------------------------------------------------------------------|----------|
+| Flowise  | Login with the stack admin account (`N8N_ADMIN_EMAIL` / `N8N_ADMIN_PASSWORD` — the same creds used at Flowise first-setup). Session cookies are replayed with the `x-request-from: internal` header (Flowise only honours cookie-JWT auth for "internal" requests). | `FLOWISE_API_KEY` (Bearer) |
+| Langflow | Login as the provisioned superuser (same stack admin creds) → JWT Bearer.    | `LANGFLOW_API_KEY` (x-api-key) |
+
+Implementation notes (learned the hard way, kept for posterity):
+- Langflow gzips `GET /api/v1/flows/` regardless of `Accept-Encoding` — the seeder decompresses by
+  magic bytes before parsing, otherwise the idempotency check silently sees an empty list.
+- Langflow's create endpoint rejects the export's slug `id` (wants a UUID) — the seeder strips it.
+- Flowise import: `POST /api/v1/chatflows`, body
+  `{"name","type":"CHATFLOW","deployed":true,"flowData":"<stringified graph>"}`.
+- Langflow import: `POST /api/v1/flows/` with the flow JSON (sans `id`).
+
+## Running the seeder manually
+
+Same code path as the deploy (the `.sh` is a thin wrapper around `seed_builders.py`):
 
 ```sh
-export MCP_GATEWAY_TOKEN=...            # bearer for the Docker MCP Gateway
-export OPENAI_API_KEY=...               # OpenAI / OpenAI-compatible key (Langflow)
-export FLOWISE_API_KEY=...              # Flowise REST API key
-export LANGFLOW_API_KEY=...             # Langflow REST API key
-# optional Azure (Langflow AzureOpenAIModel):
-#   AZURE_OPENAI_API_KEY / AZURE_OPENAI_ENDPOINT / AZURE_OPENAI_DEPLOYMENT
-# optional overrides:
-#   FLOWISE_URL  (default http://flowise:3001)
-#   LANGFLOW_URL (default http://langflow:7860)
-
-sh integrations/seed_builders.sh
+cd /path/to/repo && set -a && . ./.env && set +a
+ADMIN_EMAIL="$N8N_ADMIN_EMAIL" ADMIN_PASSWORD="$N8N_ADMIN_PASSWORD" \
+  sh integrations/seed_builders.sh
 ```
 
-The seeder:
-- skips a builder when its API key is unset,
-- is idempotent-ish (skips if a flow named **"CP MCP Gateway Agent"** already exists),
-- substitutes placeholders into **temp copies only** — the repo files are never modified,
-- never prints secrets.
+Or just re-run the compose service: `docker compose up builders-import`.
 
-Flowise import: `POST /api/v1/chatflows` (Bearer `FLOWISE_API_KEY`), body
-`{"name","type":"CHATFLOW","deployed":true,"flowData":"<stringified graph>"}`.
-Langflow import: `POST /api/v1/flows/` (`x-api-key: LANGFLOW_API_KEY`), the flow JSON as-is.
-
-> Note: the seeder defaults Flowise to `http://flowise:3001` because `docker-compose.yml` sets
-> `FLOWISE_PORT=3001`. Override with `FLOWISE_URL` if your instance differs.
-
-## Caveat — one UI round-trip may be needed
-
-These JSONs are built from the authoritative component sources for the targeted versions, but a
-few node templates are only fully hydrated by the builder itself. After seeding, **open each
-flow and Save once**:
-
-- **Flowise `customMCP`** — click **Refresh** on *Available Actions* so the bound tool names
-  match exactly what the live gateway exposes. `mcpActions` ships with a representative
-  read-first list (`show_hosts`, `show_networks`, `show_access_rulebase`, …); if a name does not
-  match, that tool silently won't bind. The list must be **non-empty** or zero tools bind.
-- **Langflow `MCPTools` / `OpenAIModel` / `AzureOpenAIModel`** — these components are not present
-  in any bundled starter project, so their templates were assembled from the 1.10.1 component
-  sources (embedded in each node's `code` field). Opening + saving lets Langflow re-render them
-  from the registered component definition.
+The seeder substitutes placeholders into **in-memory copies only** (repo files are never modified)
+and never prints secrets.
