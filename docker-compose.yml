@@ -475,10 +475,18 @@ services:
       # framing middleware. (Add a flowise-hubframe like n8n's only if a future
       # version starts sending X-Frame-Options.)
       - "traefik.enable=true"
-      - "traefik.http.routers.flowise.rule=Host(`flowise.{{DOMAIN}}`)"
-      - "traefik.http.routers.flowise.entrypoints=web,websecure"
-      - "traefik.http.routers.flowise.tls.certresolver=letsencrypt"
-      - "traefik.http.services.flowise.loadbalancer.server.port=${FLOWISE_PORT}"
+      # Two explicit routers (same pattern as PolicyPilot): the Cloudflare tunnel fronts every
+      # host to entrypoint web (:80), and a router carrying TLS config never matches plain HTTP —
+      # Traefik 3.6 splits a web,websecure router and propagates certresolver onto BOTH, so the
+      # single-router form 404s through the tunnel.
+      - "traefik.http.routers.flowise-web.rule=Host(`flowise.{{DOMAIN}}`)"
+      - "traefik.http.routers.flowise-web.entrypoints=web"
+      - "traefik.http.routers.flowise-web.service=flowise-svc"
+      - "traefik.http.routers.flowise-websecure.rule=Host(`flowise.{{DOMAIN}}`)"
+      - "traefik.http.routers.flowise-websecure.entrypoints=websecure"
+      - "traefik.http.routers.flowise-websecure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.flowise-websecure.service=flowise-svc"
+      - "traefik.http.services.flowise-svc.loadbalancer.server.port=${FLOWISE_PORT}"
       - "traefik.docker.network=dokploy-network"
 
   # ──────────────── Open WebUI ────────────────
@@ -501,10 +509,18 @@ services:
 
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.open-webui.rule=Host(`chat.{{DOMAIN}}`)"
-      - "traefik.http.routers.open-webui.entrypoints=web,websecure"
-      - "traefik.http.routers.open-webui.tls.certresolver=letsencrypt"
-      - "traefik.http.services.open-webui.loadbalancer.server.port=8080"
+      # Two explicit routers (same pattern as PolicyPilot): the Cloudflare tunnel fronts every
+      # host to entrypoint web (:80), and a router carrying TLS config never matches plain HTTP —
+      # Traefik 3.6 splits a web,websecure router and propagates certresolver onto BOTH, so the
+      # single-router form 404s through the tunnel.
+      - "traefik.http.routers.open-webui-web.rule=Host(`chat.{{DOMAIN}}`)"
+      - "traefik.http.routers.open-webui-web.entrypoints=web"
+      - "traefik.http.routers.open-webui-web.service=open-webui-svc"
+      - "traefik.http.routers.open-webui-websecure.rule=Host(`chat.{{DOMAIN}}`)"
+      - "traefik.http.routers.open-webui-websecure.entrypoints=websecure"
+      - "traefik.http.routers.open-webui-websecure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.open-webui-websecure.service=open-webui-svc"
+      - "traefik.http.services.open-webui-svc.loadbalancer.server.port=8080"
       - "traefik.docker.network=dokploy-network"
 
     depends_on:
@@ -535,10 +551,18 @@ services:
       - ollama-pull-models-cpu
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.langflow.rule=Host(`langflow.{{DOMAIN}}`)"
-      - "traefik.http.routers.langflow.entrypoints=web,websecure"
-      - "traefik.http.routers.langflow.tls.certresolver=letsencrypt"
-      - "traefik.http.services.langflow.loadbalancer.server.port=7860"
+      # Two explicit routers (same pattern as PolicyPilot): the Cloudflare tunnel fronts every
+      # host to entrypoint web (:80), and a router carrying TLS config never matches plain HTTP —
+      # Traefik 3.6 splits a web,websecure router and propagates certresolver onto BOTH, so the
+      # single-router form 404s through the tunnel.
+      - "traefik.http.routers.langflow-web.rule=Host(`langflow.{{DOMAIN}}`)"
+      - "traefik.http.routers.langflow-web.entrypoints=web"
+      - "traefik.http.routers.langflow-web.service=langflow-svc"
+      - "traefik.http.routers.langflow-websecure.rule=Host(`langflow.{{DOMAIN}}`)"
+      - "traefik.http.routers.langflow-websecure.entrypoints=websecure"
+      - "traefik.http.routers.langflow-websecure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.langflow-websecure.service=langflow-svc"
+      - "traefik.http.services.langflow-svc.loadbalancer.server.port=7860"
       - "traefik.docker.network=dokploy-network"
       # Let the dev-hub desktop embed Langflow in an iframe (strip X-Frame-Options,
       # allow the hub in frame-ancestors).
@@ -882,10 +906,18 @@ services:
       retries: 3
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.aig.rule=Host(`aig.{{DOMAIN}}`)"
-      - "traefik.http.routers.aig.entrypoints=web,websecure"
-      - "traefik.http.routers.aig.tls.certresolver=letsencrypt"
-      - "traefik.http.services.aig.loadbalancer.server.port=8088"
+      # Two explicit routers (same pattern as PolicyPilot): the Cloudflare tunnel fronts every
+      # host to entrypoint web (:80), and a router carrying TLS config never matches plain HTTP —
+      # Traefik 3.6 splits a web,websecure router and propagates certresolver onto BOTH, so the
+      # single-router form 404s through the tunnel.
+      - "traefik.http.routers.aig-web.rule=Host(`aig.{{DOMAIN}}`)"
+      - "traefik.http.routers.aig-web.entrypoints=web"
+      - "traefik.http.routers.aig-web.service=aig-svc"
+      - "traefik.http.routers.aig-websecure.rule=Host(`aig.{{DOMAIN}}`)"
+      - "traefik.http.routers.aig-websecure.entrypoints=websecure"
+      - "traefik.http.routers.aig-websecure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.aig-websecure.service=aig-svc"
+      - "traefik.http.services.aig-svc.loadbalancer.server.port=8088"
       - "traefik.docker.network=dokploy-network"
 
   aig-agent:
