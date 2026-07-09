@@ -476,7 +476,7 @@ services:
       # version starts sending X-Frame-Options.)
       - "traefik.enable=true"
       - "traefik.http.routers.flowise.rule=Host(`flowise.{{DOMAIN}}`)"
-      - "traefik.http.routers.flowise.entrypoints=websecure"
+      - "traefik.http.routers.flowise.entrypoints=web,websecure"
       - "traefik.http.routers.flowise.tls.certresolver=letsencrypt"
       - "traefik.http.services.flowise.loadbalancer.server.port=${FLOWISE_PORT}"
       - "traefik.docker.network=dokploy-network"
@@ -502,7 +502,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.open-webui.rule=Host(`chat.{{DOMAIN}}`)"
-      - "traefik.http.routers.open-webui.entrypoints=websecure"
+      - "traefik.http.routers.open-webui.entrypoints=web,websecure"
       - "traefik.http.routers.open-webui.tls.certresolver=letsencrypt"
       - "traefik.http.services.open-webui.loadbalancer.server.port=8080"
       - "traefik.docker.network=dokploy-network"
@@ -536,7 +536,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.langflow.rule=Host(`langflow.{{DOMAIN}}`)"
-      - "traefik.http.routers.langflow.entrypoints=websecure"
+      - "traefik.http.routers.langflow.entrypoints=web,websecure"
       - "traefik.http.routers.langflow.tls.certresolver=letsencrypt"
       - "traefik.http.services.langflow.loadbalancer.server.port=7860"
       - "traefik.docker.network=dokploy-network"
@@ -883,7 +883,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.aig.rule=Host(`aig.{{DOMAIN}}`)"
-      - "traefik.http.routers.aig.entrypoints=websecure"
+      - "traefik.http.routers.aig.entrypoints=web,websecure"
       - "traefik.http.routers.aig.tls.certresolver=letsencrypt"
       - "traefik.http.services.aig.loadbalancer.server.port=8088"
       - "traefik.docker.network=dokploy-network"
