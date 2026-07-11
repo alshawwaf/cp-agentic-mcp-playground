@@ -1,0 +1,82 @@
+{
+  "umbrella": "CP MCP Gateway Agent",
+  "agents": [
+    {
+      "slug": "cpinfo-analysis",
+      "name": "CP CPinfo Analysis — AI Agent (Gateway)",
+      "flowise": "flowise/cpinfo-analysis.flowdata.json",
+      "langflow": "langflow/cpinfo-analysis.flow.json",
+      "tools": 12
+    },
+    {
+      "slug": "documentation",
+      "name": "CP Documentation — AI Agent (Gateway)",
+      "flowise": "flowise/documentation.flowdata.json",
+      "langflow": "langflow/documentation.flow.json",
+      "tools": 1
+    },
+    {
+      "slug": "https-inspection",
+      "name": "CP HTTPS Inspection — AI Agent (Gateway)",
+      "flowise": "flowise/https-inspection.flowdata.json",
+      "langflow": "langflow/https-inspection.flow.json",
+      "tools": 9
+    },
+    {
+      "slug": "management-logs",
+      "name": "CP Logs — AI Agent (Gateway)",
+      "flowise": "flowise/management-logs.flowdata.json",
+      "langflow": "langflow/management-logs.flow.json",
+      "tools": 7
+    },
+    {
+      "slug": "policy-insights",
+      "name": "CP Policy Insights — AI Agent (Gateway)",
+      "flowise": "flowise/policy-insights.flowdata.json",
+      "langflow": "langflow/policy-insights.flow.json",
+      "tools": 15
+    },
+    {
+      "slug": "quantum-gaia",
+      "name": "CP Gaia OS — AI Agent (Gateway)",
+      "flowise": "flowise/quantum-gaia.flowdata.json",
+      "langflow": "langflow/quantum-gaia.flow.json",
+      "tools": 30
+    },
+    {
+      "slug": "quantum-gw-cli",
+      "name": "CP Gateway CLI — AI Agent (Gateway)",
+      "flowise": "flowise/quantum-gw-cli.flowdata.json",
+      "langflow": "langflow/quantum-gw-cli.flow.json",
+      "tools": 37
+    },
+    {
+      "slug": "quantum-management",
+      "name": "CP Quantum Management — AI Agent (Gateway)",
+      "flowise": "flowise/quantum-management.flowdata.json",
+      "langflow": "langflow/quantum-management.flow.json",
+      "tools": 51
+    },
+    {
+      "slug": "reputation-service",
+      "name": "CP Reputation — AI Agent (Gateway)",
+      "flowise": "flowise/reputation-service.flowdata.json",
+      "langflow": "langflow/reputation-service.flow.json",
+      "tools": 5
+    },
+    {
+      "slug": "threat-emulation",
+      "name": "CP Threat Emulation — AI Agent (Gateway)",
+      "flowise": "flowise/threat-emulation.flowdata.json",
+      "langflow": "langflow/threat-emulation.flow.json",
+      "tools": 5
+    },
+    {
+      "slug": "threat-prevention",
+      "name": "CP Threat Prevention — AI Agent (Gateway)",
+      "flowise": "flowise/threat-prevention.flowdata.json",
+      "langflow": "langflow/threat-prevention.flow.json",
+      "tools": 23
+    }
+  ]
+}
