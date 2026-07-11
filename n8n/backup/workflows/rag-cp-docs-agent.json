@@ -1,0 +1,371 @@
+{
+  "name": "CP Docs — Visible RAG Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "👋 I'm the **Check Point Visible RAG** agent. I answer from a small vector-indexed corpus of Check Point concept snippets and **cite my sources**.\n\n🔎 Each turn: your question is **embedded** (Ollama `nomic-embed-text`), searched against the **Qdrant** `cp_docs` collection, and the top snippets are handed to the model to answer + cite.\n\n**Try one of these:**\n• How do I enable Identity Awareness?\n• What is a Threat Prevention profile and which one should I start with?\n• Difference between Publish and Install Policy?",
+        "options": {
+          "responseMode": "lastNode",
+          "title": "CP Docs — Visible RAG Agent",
+          "subtitle": "Embed → retrieve from Qdrant → answer with citations.",
+          "inputPlaceholder": "e.g. How do I enable Identity Awareness?"
+        }
+      },
+      "id": "39e63a3d-55af-41be-97bb-7a0daa5cf2b6",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -140,
+        80
+      ],
+      "webhookId": "b18e89c8-901a-4620-936e-bbcda2684fbf"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "chatInput",
+              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "sessionId",
+              "value": "={{ $json?.sessionId || $json.body.sessionId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        160,
+        80
+      ],
+      "name": "Normalize input",
+      "id": "a4a9b5e1-70b5-4dc1-a5df-e1d5a66aa6fd"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are the **Check Point Documentation RAG assistant**. You answer questions about Check Point using ONLY a small vector-indexed corpus of Check Point concept snippets (Identity Awareness, Threat Prevention profiles, the Gaia API, HTTPS Inspection, access layers, SmartConsole, and more).\n\n== HOW TO WORK ==\n- For EVERY substantive question, FIRST call the `search_cp_docs` tool with a focused query to retrieve relevant snippets.\n- Answer strictly from what the tool returns. If the snippets do not contain the answer, say so plainly — do NOT fall back to your own prior knowledge or invent details.\n- ALWAYS cite the `source` filename(s) of the snippet(s) you used, e.g. *(source: identity-awareness.md)*. If you used several, cite each.\n- You may call the tool more than once to refine the query.\n\n== OUTPUT STYLE ==\n- Concise Markdown: short paragraphs and bullets.\n- End with a **Sources:** line listing the filenames you cited.\n- The corpus is clearly-marked DEMO content, not official documentation — if asked, say so."
+        }
+      },
+      "id": "5296bf83-7cfb-4705-b46a-42b1805b8547",
+      "name": "CP Docs RAG Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        480,
+        60
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        420,
+        380
+      ],
+      "id": "e17ac25c-094d-4eb8-aa77-e8c50db27255",
+      "name": "Conversation Memory"
+    },
+    {
+      "parameters": {
+        "name": "search_cp_docs",
+        "description": "Retrieve the most relevant Check Point documentation snippets for a question. Input: a natural-language query string. Returns the top snippets, each with its `source` filename so you can cite it. Call this before answering any Check Point question.",
+        "workflowId": {
+          "__rl": true,
+          "value": "RagCpDocsRetrieverWf1",
+          "mode": "list",
+          "cachedResultName": "RAG · CP Docs Retriever (embed + Qdrant search)"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "query": "={{ $fromAI('query', 'the Check Point question to search the docs corpus for', 'string') }}"
+          },
+          "matchingColumns": [
+            "query"
+          ],
+          "schema": [
+            {
+              "id": "query",
+              "displayName": "query",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        700,
+        380
+      ],
+      "id": "8f326bc6-0c9f-4f1f-ba88-21bc8368e2af",
+      "name": "search_cp_docs (RAG retriever)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1",
+              "name": "output",
+              "value": "=⚠️ I hit an error and could not complete the retrieval.\n\n```\n{{ ($json.error && $json.error.message) || $json.error || $json.message || 'Unknown error' }}\n```\nCheck that the `rag-ingest` job has populated the `cp_docs` Qdrant collection, then retry.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        940,
+        180
+      ],
+      "name": "Friendly error",
+      "id": "e3bbbf02-50b4-4873-8afd-2ce4fca00b65"
+    },
+    {
+      "parameters": {
+        "model": "gpt-5.4-2026-03-05",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        240,
+        600
+      ],
+      "name": "Azure OpenAI (default)",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "nmUI0INbLO2IrroY",
+          "name": "Azure Open AI account"
+        }
+      },
+      "id": "a81a7506-2d2f-49d5-af42-b1677a5906c1"
+    },
+    {
+      "parameters": {
+        "model": "qwen3.5:4b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        460,
+        600
+      ],
+      "name": "Ollama — local qwen3.5",
+      "credentials": {
+        "ollamaApi": {
+          "id": "i8fXatxwj12xOABO",
+          "name": "Ollama account"
+        }
+      },
+      "id": "8723e9b2-06f2-4ca0-bd81-55528d7fa600"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        680,
+        600
+      ],
+      "name": "Gemini 2.5 Pro",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jQWvIJNDs6CeSDiN",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "id": "d4963425-e465-4de1-abb1-8f495fabd573"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5.1",
+          "cachedResultName": "gpt-5.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        900,
+        600
+      ],
+      "name": "OpenAI gpt-5.1",
+      "credentials": {
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "OpenAi account"
+        }
+      },
+      "id": "0c6521e4-6c4d-42f4-9a42-1a0a67ed347a"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-opus-4-8",
+          "cachedResultName": "Claude Opus 4.8"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        1120,
+        600
+      ],
+      "name": "Claude Opus 4.8",
+      "credentials": {
+        "anthropicApi": {
+          "id": "AnthropicCred001",
+          "name": "Anthropic account"
+        }
+      },
+      "id": "6b8223b8-a314-4d59-8a6a-30d13d185f38"
+    },
+    {
+      "parameters": {
+        "content": "## 🧠 Check Point — Visible RAG Agent\n**Embed → retrieve from Qdrant `cp_docs` → answer with citations.** A live, inspectable Retrieval-Augmented-Generation demo over a small Check Point concept corpus.",
+        "width": 1320,
+        "height": 120,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -140,
+        -240
+      ],
+      "name": "Banner",
+      "id": "3fca35ba-0de9-49ed-8382-a870bbea80ec"
+    },
+    {
+      "parameters": {
+        "content": "### 💬 Try these\n- How do I enable Identity Awareness?\n- What is a Threat Prevention profile?\n- Publish vs. Install Policy?\n\n### ⚙️ How it works\n1. **Ingest** — `rag-ingest` embeds `integrations/rag-cp-docs/corpus/*.md` into Qdrant (`cp_docs`).\n2. **Retrieve** — the `search_cp_docs` tool embeds your question (Ollama `nomic-embed-text`) and searches Qdrant for the top matches.\n3. **Answer + cite** — the model answers ONLY from the retrieved snippets and cites each `source` filename.\n\n### 🧩 Prereqs\n- Run the **rag-ingest** one-shot (see `integrations/rag-cp-docs/INTEGRATION.md`).\n- The **RAG · CP Docs Retriever** sub-workflow must be imported (it is the tool).\n\n### 🧠 Models\nAzure OpenAI wired as default — Ollama (local, no key), Gemini, GPT and Claude are one click away.",
+        "width": 520,
+        "height": 640,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        60
+      ],
+      "name": "Guide",
+      "id": "55ab351c-e19d-4860-a830-ee63522a1127"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Normalize input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "CP Docs RAG Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize input": {
+      "main": [
+        [
+          {
+            "node": "CP Docs RAG Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Azure OpenAI (default)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "CP Docs RAG Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "search_cp_docs (RAG retriever)": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP Docs RAG Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CP Docs RAG Agent": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Friendly error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "26f39fde-963c-4416-a2eb-47f1ea589ba2",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "RagCpDocsAgentWf1",
+  "tags": []
+}
