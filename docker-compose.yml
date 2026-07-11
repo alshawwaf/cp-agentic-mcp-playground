@@ -891,6 +891,16 @@ services:
     environment:
       - MANAGEMENT_HOST=${MANAGEMENT_HOST}
       - API_KEY=${MANAGEMENT_API_KEY}
+      # Gaia connects to a GATEWAY's Gaia REST API (not the management server) and upstream
+      # prompts for its host/user/password via an interactive browser dialog — impossible in
+      # this headless sidecar. These bring-your-own vars are the env-credential fallback (see
+      # packages/gaia/src/gaia-auth.ts): set them to a reachable gateway and the Gaia agent
+      # works with no UI. Leave blank to keep the tools inert (they error clearly instead of
+      # hanging). GAIA_GATEWAY_IP may be an IP or hostname; port defaults to 443.
+      - GAIA_GATEWAY_IP=${GAIA_GATEWAY_IP:-}
+      - GAIA_GATEWAY_PORT=${GAIA_GATEWAY_PORT:-443}
+      - GAIA_USERNAME=${GAIA_USERNAME:-}
+      - GAIA_PASSWORD=${GAIA_PASSWORD:-}
     command:
       - "--transport"
       - "http"
