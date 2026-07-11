@@ -401,6 +401,16 @@ services:
         n8n import:credentials --separate --input=/tmp/import/credentials_public && \
         n8n import:workflow --separate --input=/tmp/import/workflows
 
+        # import:workflow leaves every workflow INACTIVE, so the chat/webhook agents have
+        # no registered webhook after a deploy (they 404 until published). Publish them all
+        # so the DB is active; the n8n container registers active webhooks on its next start
+        # (a Dokploy redeploy recreates n8n, so this converges automatically). The RAG
+        # retriever sub-workflow also REQUIRES active to be callable via toolWorkflow.
+        echo "Publishing (activating) all workflows so their webhooks register on n8n start..."
+        for wid in $$(n8n list:workflow --onlyId 2>/dev/null); do
+          n8n publish:workflow --id="$$wid" >/dev/null 2>&1 && echo "  published $$wid" || echo "  (skip $$wid)"
+        done
+
         echo "N8N Import completed!!!"
 
     environment:
