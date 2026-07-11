@@ -33,8 +33,9 @@ prevention, reputation, etc.
 - `customMCP` (Custom MCP Tool v1.1) — `mcpServerConfig` points at the gateway with the Bearer
   header; `mcpActions` is pre-seeded with a representative read-first tool list.
 - `chatOpenAI` (v8.2) — OpenAI-compatible; set `basepath` for a non‑OpenAI endpoint. The model
-  **API key is a Flowise credential** (`openAIApi`), set in the UI — it does not live in the
-  flow JSON, so it is not one of the substituted placeholders.
+  **API key is a Flowise credential** (`openAIApi`). The seeder now AUTO-CREATES this credential
+  from `OPENAI_API_KEY` (via `POST /api/v1/credentials`) and attaches it to the node, so the
+  imported agent has a working model with no UI step — parity with Langflow (inline) and n8n.
 - `bufferMemory` (v2).
 
 ### Langflow graph
