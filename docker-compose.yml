@@ -346,9 +346,12 @@ services:
             echo "WARNING: $$VAR_NAME is empty — the matching n8n credential imports with a placeholder key; set it in the n8n UI (or .env + re-import) to use that model."
           fi
         }
-        subst_llm_key OPENAI_API_KEY "$$OPENAI_API_KEY" "openai.json"
-        subst_llm_key AZURE_OPENAI_API_KEY "$$AZURE_OPENAI_API_KEY" "azure-OpenAI.json"
-        subst_llm_key AZURE_OPENAI_ENDPOINT "$$AZURE_OPENAI_ENDPOINT" "azure-OpenAI.json"
+        # The OpenAI + Azure credentials point at the internal LiteLLM proxy
+        # (http://litellm:4000) so every n8n LLM call is traced to Langfuse;
+        # LiteLLM holds the real provider keys server-side. Only the proxy's
+        # master key is substituted here — it always has a compose default.
+        subst_llm_key LITELLM_MASTER_KEY "$$LITELLM_MASTER_KEY" "openai.json"
+        subst_llm_key LITELLM_MASTER_KEY "$$LITELLM_MASTER_KEY" "azure-OpenAI.json"
         subst_llm_key GEMINI_API_KEY "$$GEMINI_API_KEY" "Google Gemini(PaLM) Api account.json"
         subst_llm_key ANTHROPIC_API_KEY "$$ANTHROPIC_API_KEY" "anthropic.json"
 
@@ -414,7 +417,10 @@ services:
       # gateway bearer for the *-via-gateway agents (native MCP node auth)
       - MCP_GATEWAY_TOKEN=${MCP_GATEWAY_TOKEN:-cp-mcp-gateway-training-token}
       # bring-your-own LLM keys — land in the imported n8n credentials so the
-      # model row works on a fresh deploy without hand-editing credentials
+      # model row works on a fresh deploy without hand-editing credentials.
+      # (OpenAI + Azure route via the LiteLLM proxy — see litellm service — so
+      # those two credentials carry the proxy master key, not provider keys.)
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-sk-cp-litellm-training-key}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
@@ -968,8 +974,50 @@ services:
       - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
       - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT:-}
+      # Credential catalogue + Langfuse analytics + LiteLLM-routed Langflow flows:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - LANGFUSE_HOST=${LANGFUSE_HOST:-http://langfuse:3000}
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-sk-cp-litellm-training-key}
+      # External MCP agents (DevHub / PolicyPilot): endpoint domain + bearer tokens.
+      # DOMAIN falls back to N8N_HOST minus the n8n. prefix inside the script.
+      - DOMAIN=${DOMAIN:-}
+      - N8N_HOST=${N8N_HOST:-}
+      - DEVHUB_MCP_TOKEN=${DEVHUB_MCP_TOKEN:-}
+      - PILOT_MCP_TOKEN=${PILOT_MCP_TOKEN:-}
     entrypoint: [ "python3", "/integrations/seed_builders.py" ]
     restart: "no"
+
+  # ──────────────── LiteLLM proxy (n8n + Langflow → Langfuse tracing) ────────────────
+  # Internal-only OpenAI-compatible proxy (demo network, no host port). n8n's
+  # OpenAI/Azure credentials and every Langflow flow's OpenAI model point here;
+  # LiteLLM forwards to the real provider with the server-side keys below and
+  # logs every request/response pair to Langfuse. This is what makes n8n and
+  # Langflow visible in Langfuse — neither has a native callback that works
+  # against the lean Langfuse v2 server (Langflow 1.10 bundles langfuse SDK v3,
+  # which requires a v3 server). Flowise traces natively instead (per-chatflow
+  # analytics, richer agent spans) and does NOT route through this proxy.
+  # Auth: clients send LITELLM_MASTER_KEY; the training default mirrors the
+  # MCP_GATEWAY_TOKEN pattern and is overridden by the installer bootstrap.
+  litellm:
+    image: ghcr.io/berriai/litellm:main-v1.66.0-stable
+    pull_policy: missing
+    container_name: litellm
+    networks: [ "demo" ]
+    volumes:
+      - ./integrations/observability/litellm_config.yaml:/etc/litellm/config.yaml:ro
+    command: [ "--config", "/etc/litellm/config.yaml", "--port", "4000" ]
+    environment:
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - LANGFUSE_HOST=${LANGFUSE_HOST:-http://langfuse:3000}
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-sk-cp-litellm-training-key}
+    restart: unless-stopped
 
   # ──────────────── Qdrant (vector DB for RAG) ────────────────
   qdrant:

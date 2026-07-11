@@ -64,13 +64,20 @@ account you created on first boot. Pick the project (default **Agents**), then o
 > service, the `.env` keys, and how each builder is pointed at Langfuse. This guide
 > is about *using* it.
 
-Which builders show up automatically:
+Which builders show up automatically — all three, via two different paths:
 
-| Builder | Traced out of the box? | How |
-|---|---|---|
-| **Langflow** | **Yes** | Three `LANGFUSE_*` env vars on the service; every flow run traces. |
-| **Flowise** | **Yes, per chatflow** | Enable Langfuse in the chatflow's **Analyse Chatflow** settings. |
-| **n8n** | **Partial** | No native callback. You trace the *model calls* via a Langfuse-aware proxy, or emit spans by hand from a Code node. Don't expect the full tool graph. |
+| Builder | Traced out of the box? | How | What you see |
+|---|---|---|---|
+| **Flowise** | **Yes — every chatflow** | `builders-import` creates a `CP Langfuse (auto)` credential and switches **Analyse Chatflow → Langfuse ON** for every flow it seeds (and re-asserts it on existing ones). | The **full agent tree**: prompts, MCP tool calls with arguments/results, tokens, latency. The richest traces in the stack — use Flowise runs for the section-4 walkthrough. |
+| **n8n** | **Yes — every agent** | The imported **OpenAI** and **Azure OpenAI** credentials point at the internal **LiteLLM proxy** (`http://litellm:4000`), which forwards to the real provider and logs each call to Langfuse. | One `litellm-acompletion` trace **per model call** (prompt, completion, tokens, cost, latency). Tool calls appear as tool-use messages inside the prompts, not as separate spans. |
+| **Langflow** | **Yes — model calls** | Every committed flow's OpenAI model routes through the same **LiteLLM proxy**. Native Langfuse is off: Langflow 1.10 bundles langfuse **SDK v3**, which cannot talk to the lean Langfuse **v2** server this stack runs (v3 needs ClickHouse/Redis/MinIO). | Same `litellm-acompletion` shape as n8n. |
+
+Two wiring gotchas worth knowing (both already handled by the committed flows):
+- Flowise's Langfuse credential fields are capital-F — `langFusePublicKey` / `langFuseSecretKey` / `langFuseEndpoint`.
+- Langflow **ignores template fields with `show: false` at build time** — the OpenAI
+  model's `openai_api_base` only takes effect because the committed flows ship it
+  with `show: true`. If you clone a flow by hand and the base URL seems ignored,
+  check that flag first.
 
 (Details for all three are in INTEGRATION.md sections 4a–4c.)
 
@@ -125,9 +132,11 @@ INTEGRATION.md section 7.)
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| No traces after a Langflow run | keys wrong, or host misset | Confirm `LANGFUSE_PUBLIC_KEY`/`SECRET_KEY` match the project and `LANGFUSE_HOST=http://langfuse:3000` (the **internal** name, not `trace.<domain>`). Restart Langflow. |
-| Flowise flow not traced | Analytics off for that chatflow | Re-open **Analyse Chatflow**, toggle Langfuse **ON**, Save. It's per-flow. |
-| n8n runs never appear | expected — no native callback | See INTEGRATION.md 4c; use the proxy path or the Code-node span. |
+| No traces after an n8n / Langflow run | LiteLLM proxy down or keys unset | `docker logs litellm`; confirm `LANGFUSE_PUBLIC_KEY`/`SECRET_KEY` are in `.env` and `LANGFUSE_HOST=http://langfuse:3000` (the **internal** name, not `trace.<domain>`). |
+| n8n agent errors `401` on every model call | credential/master-key mismatch | The OpenAI + Azure n8n credentials must carry `LITELLM_MASTER_KEY` (compose default `sk-cp-litellm-training-key`) — re-run `n8n-import` after changing it. |
+| Langflow model ignores the LiteLLM base URL | `openai_api_base` hidden | Langflow 1.10 drops `show: false` template fields at build; set `show: true` on the field (the committed flows already do). |
+| Langflow log: `Cannot connect to Langfuse … ParsingModel[Projects]` | langfuse SDK v3 vs server v2 | Expected — native Langflow tracing needs a Langfuse v3 server. Harmless; the LiteLLM path covers Langflow. |
+| Flowise flow not traced | Analytics off for that chatflow | Re-run `builders-import` (it switches Langfuse ON for every chatflow), or toggle **Analyse Chatflow → Langfuse** by hand. |
 | Can't reach `trace.<domain>` | routing / bind | Langfuse must have `HOSTNAME=0.0.0.0`; check Traefik picked up the `trace.` router. |
 | Want to prove ingestion works | — | Run `integrations/observability/langfuse_smoke_trace.py` (stdlib, sends one test trace). |
 

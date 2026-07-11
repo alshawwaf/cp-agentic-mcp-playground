@@ -4,10 +4,10 @@
   "id": "nmUI0INbLO2IrroY",
   "name": "Azure Open AI account",
   "data": {
-    "apiKey": "__AZURE_OPENAI_API_KEY__",
+    "apiKey": "__LITELLM_MASTER_KEY__",
     "resourceName": "CP-Azure-OpenAI",
     "apiVersion": "2025-04-01-preview",
-    "endpoint": "__AZURE_OPENAI_ENDPOINT__"
+    "endpoint": "http://litellm:4000"
   },
   "type": "azureOpenAiApi",
   "isManaged": false

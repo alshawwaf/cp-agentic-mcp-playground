@@ -1,13 +1,24 @@
 #!/usr/bin/env python3
-"""seed_builders.py — deploy-time import of the CP MCP agent fleet into Flowise and Langflow.
+"""seed_builders.py — deploy-time import of the CP MCP agent fleet into Flowise and Langflow,
+plus the credential/observability parity that makes both builders work out of the box:
 
-Runs as the one-shot `builders-import` compose service (parity with `n8n-import`): waits for each
-builder, then imports every agent flow — the umbrella "CP MCP Gateway Agent" plus the per-domain
-gateway agents listed in builders_agents.json (Quantum Management, Gaia, GW-CLI, Threat Prevention,
-Threat Emulation, Reputation, cpinfo, HTTPS Inspection, Logs, Documentation, Policy Insights). Each
-flow is a committed JSON with __PLACEHOLDER__ secrets substituted from the environment in memory and
-imported idempotently (skip when a flow with the same name already exists). Nothing is written back
-to the repo and no secret is ever printed.
+  * Flows      : the umbrella "CP MCP Gateway Agent" + every agent in builders_agents.json
+                 (11 via-gateway + 11 direct-sidecar twins + Lakera playground + logs webhook
+                 twin + security-lab + fleet-commander + guarded-chat + DevHub + 2x PolicyPilot)
+                 into BOTH builders, idempotently (skip when a flow with the same name exists).
+  * Credentials: Flowise credential objects for every provider key present in the environment
+                 (OpenAI, Azure OpenAI, Anthropic, Gemini) + a Langfuse credential; Langflow
+                 global variables (type Credential) for the same keys.
+  * Tracing    : Langfuse analytics switched ON for every Flowise chatflow (endpoint
+                 http://langfuse:3000). Langflow flows are committed with their OpenAI model
+                 routed through the LiteLLM proxy (http://litellm:4000/v1) because Langflow
+                 1.10 bundles langfuse SDK v3, which cannot talk to the lean Langfuse v2
+                 server — LiteLLM traces those calls instead (same path as n8n).
+
+Placeholders substituted from the environment in-memory (never written back, never printed):
+  __MCP_GATEWAY_TOKEN__  __OPENAI_API_KEY__  __AZURE_OPENAI_API_KEY__  __AZURE_OPENAI_ENDPOINT__
+  __AZURE_OPENAI_DEPLOYMENT__  __LITELLM_MASTER_KEY__  __DEVHUB_MCP_TOKEN__  __PILOT_MCP_TOKEN__
+  {{DOMAIN}} (env DOMAIN, else derived from N8N_HOST: n8n.<domain> -> <domain>)
 
 Auth (per builder, in order):
   * Flowise : FLOWISE_API_KEY (Bearer) if set; otherwise LOGIN with ADMIN_EMAIL / ADMIN_PASSWORD —
@@ -42,13 +53,27 @@ LANGFLOW_URL = os.environ.get("LANGFLOW_URL", "http://langflow:7860").rstrip("/"
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
 WAIT_SECONDS = int(os.environ.get("BUILDER_WAIT_SECONDS", "180"))
+LANGFUSE_ENDPOINT = os.environ.get("LANGFUSE_HOST", "http://langfuse:3000")
+
+
+def _domain() -> str:
+    d = os.environ.get("DOMAIN", "")
+    if d:
+        return d
+    host = os.environ.get("N8N_HOST", "")
+    return host[4:] if host.startswith("n8n.") else ""
+
 
 PLACEHOLDERS = {
-    "__MCP_GATEWAY_TOKEN__": os.environ.get("MCP_GATEWAY_TOKEN", ""),
+    "__MCP_GATEWAY_TOKEN__": os.environ.get("MCP_GATEWAY_TOKEN", "") or "cp-mcp-gateway-training-token",
     "__OPENAI_API_KEY__": os.environ.get("OPENAI_API_KEY", ""),
     "__AZURE_OPENAI_API_KEY__": os.environ.get("AZURE_OPENAI_API_KEY", ""),
     "__AZURE_OPENAI_ENDPOINT__": os.environ.get("AZURE_OPENAI_ENDPOINT", ""),
     "__AZURE_OPENAI_DEPLOYMENT__": os.environ.get("AZURE_OPENAI_DEPLOYMENT", ""),
+    "__LITELLM_MASTER_KEY__": os.environ.get("LITELLM_MASTER_KEY", "") or "sk-cp-litellm-training-key",
+    "__DEVHUB_MCP_TOKEN__": os.environ.get("DEVHUB_MCP_TOKEN", ""),
+    "__PILOT_MCP_TOKEN__": os.environ.get("PILOT_MCP_TOKEN", ""),
+    "{{DOMAIN}}": _domain(),
 }
 
 
@@ -59,7 +84,8 @@ def log(msg: str) -> None:
 def substituted(path: str) -> dict:
     data = open(path, encoding="utf-8").read()
     for token, value in PLACEHOLDERS.items():
-        data = data.replace(token, value)
+        if value:
+            data = data.replace(token, value)
     return json.loads(data)
 
 
@@ -148,30 +174,68 @@ def wait_for(opener, name: str, url: str) -> bool:
 
 # ─────────────────────────── Flowise ───────────────────────────
 
-def flowise_ensure_openai_credential(opener, headers) -> str:
-    """Flowise keeps the model API key in a CREDENTIAL object, not in the flow JSON.
-    Create one from OPENAI_API_KEY (already in our env) and return its id, so the
-    imported agents' chatOpenAI nodes have a working key with no UI step. Idempotent by
-    name. Returns "" when no key is available or creation fails (nodes then need the UI)."""
-    key = os.environ.get("OPENAI_API_KEY", "")
-    if not key:
-        log("  (no OPENAI_API_KEY — the model nodes will need their credential set in the UI)")
-        return ""
-    name = "CP OpenAI (auto)"
+def flowise_credential(opener, headers, name: str, cred_name: str, plain: dict) -> str:
+    """Create one Flowise credential idempotently (by display name). Returns the id or ''."""
     status, rows = request(opener, "GET", f"{FLOWISE_URL}/api/v1/credentials", headers=headers)
     if status == 200 and isinstance(rows, list):
         for r in rows:
             if isinstance(r, dict) and r.get("name") == name and r.get("id"):
                 log(f"  credential '{name}' already present.")
                 return r["id"]
-    body = {"name": name, "credentialName": "openAIApi", "plainDataObj": {"openAIApiKey": key}}
+    body = {"name": name, "credentialName": cred_name, "plainDataObj": plain}
     status, resp = request(opener, "POST", f"{FLOWISE_URL}/api/v1/credentials", body=body, headers=headers)
     if status in (200, 201) and isinstance(resp, dict) and resp.get("id"):
-        log(f"  created model credential '{name}' from OPENAI_API_KEY.")
+        log(f"  created credential '{name}'.")
         return resp["id"]
     detail = resp if isinstance(resp, str) else json.dumps(resp)
-    log(f"  WARNING: could not create the model credential (HTTP {status}: {detail[:160]}); set it in the UI.")
+    log(f"  WARNING: could not create credential '{name}' (HTTP {status}: {detail[:160]}).")
     return ""
+
+
+def flowise_credential_catalogue(opener, headers) -> dict:
+    """Create a credential for every provider key present in the environment + Langfuse.
+    Missing keys are skipped gracefully (that provider needs the UI later)."""
+    made: dict = {}
+    if os.environ.get("OPENAI_API_KEY"):
+        made["openai"] = flowise_credential(opener, headers, "CP OpenAI (auto)", "openAIApi",
+                                            {"openAIApiKey": os.environ["OPENAI_API_KEY"]})
+    else:
+        log("  (no OPENAI_API_KEY — the model nodes will need their credential set in the UI)")
+    az_key, az_ep = os.environ.get("AZURE_OPENAI_API_KEY", ""), os.environ.get("AZURE_OPENAI_ENDPOINT", "")
+    if az_key and az_ep:
+        instance = (urllib.parse.urlparse(az_ep).hostname or "").split(".")[0]
+        made["azure"] = flowise_credential(opener, headers, "CP Azure OpenAI (auto)", "azureOpenAIApi", {
+            "azureOpenAIApiKey": az_key,
+            "azureOpenAIApiInstanceName": instance,
+            "azureOpenAIApiDeploymentName": os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-5.4-2026-03-05"),
+            "azureOpenAIApiVersion": os.environ.get("AZURE_OPENAI_API_VERSION", "2025-04-01-preview")})
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        made["anthropic"] = flowise_credential(opener, headers, "CP Anthropic (auto)", "anthropicApi",
+                                               {"anthropicApiKey": os.environ["ANTHROPIC_API_KEY"]})
+    if os.environ.get("GEMINI_API_KEY"):
+        made["gemini"] = flowise_credential(opener, headers, "CP Gemini (auto)", "googleGenerativeAI",
+                                            {"googleGenerativeAPIKey": os.environ["GEMINI_API_KEY"]})
+    pk, sk = os.environ.get("LANGFUSE_PUBLIC_KEY", ""), os.environ.get("LANGFUSE_SECRET_KEY", "")
+    if pk and sk:
+        # NOTE the capital F in the field names — that is what Flowise's langfuseApi expects.
+        made["langfuse"] = flowise_credential(opener, headers, "CP Langfuse (auto)", "langfuseApi", {
+            "langFusePublicKey": pk, "langFuseSecretKey": sk, "langFuseEndpoint": LANGFUSE_ENDPOINT})
+    return made
+
+
+def flowise_analytics_on(opener, headers, langfuse_cred_id: str) -> None:
+    """Switch Langfuse analytics ON for EVERY chatflow (idempotent — overwrites `analytic`)."""
+    status, rows = request(opener, "GET", f"{FLOWISE_URL}/api/v1/chatflows", headers=headers)
+    if status != 200 or not isinstance(rows, list):
+        log(f"  WARNING: cannot list chatflows for analytics (HTTP {status}).")
+        return
+    analytic = json.dumps({"langFuse": {"credentialId": langfuse_cred_id, "release": "", "status": True}})
+    ok = 0
+    for r in rows:
+        status, _ = request(opener, "PUT", f"{FLOWISE_URL}/api/v1/chatflows/{r['id']}",
+                            body={"analytic": analytic}, headers=headers)
+        ok += 1 if status in (200, 201) else 0
+    log(f"  Langfuse analytics ON for {ok}/{len(rows)} chatflows.")
 
 
 def seed_flowise(entries: list) -> bool:
@@ -210,7 +274,12 @@ def seed_flowise(entries: list) -> bool:
         return False
     existing = {r.get("name") for r in rows if isinstance(r, dict)}
 
-    cred_id = flowise_ensure_openai_credential(opener, headers)
+    creds = flowise_credential_catalogue(opener, headers)
+    cred_id = creds.get("openai", "")
+    analytic = ""
+    if creds.get("langfuse"):
+        analytic = json.dumps({"langFuse": {"credentialId": creds["langfuse"], "release": "", "status": True}})
+
     ok = True
     for e in entries:
         name = e["name"]
@@ -231,6 +300,8 @@ def seed_flowise(entries: list) -> bool:
                     d["credential"] = cred_id
                     d.setdefault("inputs", {})["credential"] = cred_id
         body = {"name": name, "type": "CHATFLOW", "deployed": True, "flowData": json.dumps(graph)}
+        if analytic:
+            body["analytic"] = analytic
         status, resp = request(opener, "POST", f"{FLOWISE_URL}/api/v1/chatflows", body=body, headers=headers)
         if status in (200, 201):
             log(f"  + {name} (HTTP {status})")
@@ -238,10 +309,33 @@ def seed_flowise(entries: list) -> bool:
             detail = resp if isinstance(resp, str) else json.dumps(resp)
             log(f"  ! {name}: chatflow POST failed (HTTP {status}): {detail[:200]}")
             ok = False
+
+    # Re-assert analytics on EVERYTHING (covers flows imported before Langfuse existed).
+    if creds.get("langfuse"):
+        flowise_analytics_on(opener, headers, creds["langfuse"])
     return ok
 
 
 # ─────────────────────────── Langflow ──────────────────────────
+
+def langflow_variables(opener, headers) -> None:
+    """Global variables of type Credential for the provider keys — parity with n8n's credential
+    store and Flowise's credential objects. Idempotent by name."""
+    status, rows = request(opener, "GET", f"{LANGFLOW_URL}/api/v1/variables/", headers=headers)
+    existing = {r.get("name") for r in rows} if status == 200 and isinstance(rows, list) else set()
+    for name, value in (("OPENAI_API_KEY", os.environ.get("OPENAI_API_KEY", "")),
+                        ("ANTHROPIC_API_KEY", os.environ.get("ANTHROPIC_API_KEY", "")),
+                        ("AZURE_OPENAI_API_KEY", os.environ.get("AZURE_OPENAI_API_KEY", ""))):
+        if not value:
+            continue
+        if name in existing:
+            log(f"  variable {name}: exists")
+            continue
+        status, _ = request(opener, "POST", f"{LANGFLOW_URL}/api/v1/variables/", headers=headers,
+                            body={"name": name, "value": value, "type": "Credential",
+                                  "default_fields": ["api_key"]})
+        log(f"  variable {name}: {'created' if status in (200, 201) else f'HTTP {status}'}")
+
 
 def seed_langflow(entries: list) -> bool:
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
@@ -267,6 +361,8 @@ def seed_langflow(entries: list) -> bool:
             return False
         headers["Authorization"] = f"Bearer {token}"
         log("  auth: superuser login OK (JWT).")
+
+    langflow_variables(opener, headers)
 
     # Same fail-safe as Flowise: a list we can't positively parse means NO import (Langflow gzips this
     # endpoint — a mis-parse here once caused a duplicate "CP MCP Gateway Agent (1)" on every run).
@@ -306,8 +402,12 @@ def main() -> int:
     entries = agent_entries()
     log(f"Seeding {len(entries)} agent flows into the org's agent builders "
         f"(umbrella + {len(entries) - 1} per-domain)…")
-    if not PLACEHOLDERS["__MCP_GATEWAY_TOKEN__"]:
-        log("  (warning: MCP_GATEWAY_TOKEN is empty — the agents won't reach the gateway)")
+    if not PLACEHOLDERS["{{DOMAIN}}"]:
+        log("  (warning: DOMAIN/N8N_HOST unset — external MCP endpoints keep the {{DOMAIN}} placeholder)")
+    if not PLACEHOLDERS["__DEVHUB_MCP_TOKEN__"]:
+        log("  (warning: DEVHUB_MCP_TOKEN empty — the DevHub agent imports without a bearer)")
+    if not PLACEHOLDERS["__PILOT_MCP_TOKEN__"]:
+        log("  (warning: PILOT_MCP_TOKEN empty — the PolicyPilot agents import without a bearer)")
     ok_flowise = seed_flowise(entries)
     ok_langflow = seed_langflow(entries)
     if ok_flowise and ok_langflow:

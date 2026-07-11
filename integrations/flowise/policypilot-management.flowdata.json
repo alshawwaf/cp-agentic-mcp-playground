@@ -1,0 +1,628 @@
+{
+  "nodes": [
+    {
+      "width": 300,
+      "height": 676,
+      "id": "chatOpenAI_0",
+      "position": {
+        "x": -786.0775361034356,
+        "y": 127.24092593391106
+      },
+      "type": "customNode",
+      "data": {
+        "id": "chatOpenAI_0",
+        "label": "ChatOpenAI",
+        "version": 8.2,
+        "name": "chatOpenAI",
+        "type": "ChatOpenAI",
+        "baseClasses": [
+          "ChatOpenAI",
+          "BaseChatModel",
+          "BaseLanguageModel",
+          "Runnable"
+        ],
+        "category": "Chat Models",
+        "description": "Wrapper around OpenAI large language models that use the Chat endpoint",
+        "inputParams": [
+          {
+            "label": "Connect Credential",
+            "name": "credential",
+            "type": "credential",
+            "credentialNames": [
+              "openAIApi"
+            ],
+            "id": "chatOpenAI_0-input-credential-credential",
+            "display": true
+          },
+          {
+            "label": "Model Name",
+            "name": "modelName",
+            "type": "asyncOptions",
+            "loadMethod": "listModels",
+            "default": "gpt-4o-mini",
+            "id": "chatOpenAI_0-input-modelName-asyncOptions",
+            "display": true
+          },
+          {
+            "label": "Temperature",
+            "name": "temperature",
+            "type": "number",
+            "step": 0.1,
+            "default": 0.9,
+            "optional": true,
+            "id": "chatOpenAI_0-input-temperature-number",
+            "display": true
+          },
+          {
+            "label": "Streaming",
+            "name": "streaming",
+            "type": "boolean",
+            "default": true,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-streaming-boolean",
+            "display": true
+          },
+          {
+            "label": "Max Tokens",
+            "name": "maxTokens",
+            "type": "number",
+            "step": 1,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-maxTokens-number",
+            "display": true
+          },
+          {
+            "label": "Top Probability",
+            "name": "topP",
+            "type": "number",
+            "step": 0.1,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-topP-number",
+            "display": true
+          },
+          {
+            "label": "Frequency Penalty",
+            "name": "frequencyPenalty",
+            "type": "number",
+            "step": 0.1,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-frequencyPenalty-number",
+            "display": true
+          },
+          {
+            "label": "Presence Penalty",
+            "name": "presencePenalty",
+            "type": "number",
+            "step": 0.1,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-presencePenalty-number",
+            "display": true
+          },
+          {
+            "label": "Timeout",
+            "name": "timeout",
+            "type": "number",
+            "step": 1,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-timeout-number",
+            "display": true
+          },
+          {
+            "label": "Strict Tool Calling",
+            "name": "strictToolCalling",
+            "type": "boolean",
+            "description": "Whether the model supports the `strict` argument when passing in tools. If not specified, the `strict` argument will not be passed to OpenAI.",
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-strictToolCalling-boolean",
+            "display": true
+          },
+          {
+            "label": "Stop Sequence",
+            "name": "stopSequence",
+            "type": "string",
+            "rows": 4,
+            "optional": true,
+            "description": "List of stop words to use when generating. Use comma to separate multiple stop words.",
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-stopSequence-string",
+            "display": true
+          },
+          {
+            "label": "BasePath",
+            "name": "basepath",
+            "type": "string",
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-basepath-string",
+            "display": true
+          },
+          {
+            "label": "Proxy Url",
+            "name": "proxyUrl",
+            "type": "string",
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-proxyUrl-string",
+            "display": true
+          },
+          {
+            "label": "BaseOptions",
+            "name": "baseOptions",
+            "type": "json",
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-baseOptions-json",
+            "display": true
+          },
+          {
+            "label": "Allow Image Uploads",
+            "name": "allowImageUploads",
+            "type": "boolean",
+            "description": "Allow image input. Refer to the <a href=\"https://docs.flowiseai.com/using-flowise/uploads#image\" target=\"_blank\">docs</a> for more details.",
+            "default": false,
+            "optional": true,
+            "id": "chatOpenAI_0-input-allowImageUploads-boolean",
+            "display": true
+          },
+          {
+            "label": "Image Resolution",
+            "description": "This parameter controls the resolution in which the model views the image.",
+            "name": "imageResolution",
+            "type": "options",
+            "options": [
+              {
+                "label": "Low",
+                "name": "low"
+              },
+              {
+                "label": "High",
+                "name": "high"
+              },
+              {
+                "label": "Auto",
+                "name": "auto"
+              }
+            ],
+            "default": "low",
+            "optional": false,
+            "show": {
+              "allowImageUploads": true
+            },
+            "id": "chatOpenAI_0-input-imageResolution-options",
+            "display": false
+          },
+          {
+            "label": "Reasoning Effort",
+            "description": "Constrains effort on reasoning for reasoning models. Only applicable for o1 and o3 models.",
+            "name": "reasoningEffort",
+            "type": "options",
+            "options": [
+              {
+                "label": "Low",
+                "name": "low"
+              },
+              {
+                "label": "Medium",
+                "name": "medium"
+              },
+              {
+                "label": "High",
+                "name": "high"
+              }
+            ],
+            "default": "medium",
+            "optional": false,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-reasoningEffort-options",
+            "display": true
+          }
+        ],
+        "inputAnchors": [
+          {
+            "label": "Cache",
+            "name": "cache",
+            "type": "BaseCache",
+            "optional": true,
+            "id": "chatOpenAI_0-input-cache-BaseCache",
+            "display": true
+          }
+        ],
+        "inputs": {
+          "cache": "",
+          "modelName": "gpt-5.4",
+          "temperature": 0.2,
+          "streaming": true,
+          "maxTokens": "",
+          "topP": "",
+          "frequencyPenalty": "",
+          "presencePenalty": "",
+          "timeout": "",
+          "strictToolCalling": "",
+          "stopSequence": "",
+          "basepath": "",
+          "proxyUrl": "",
+          "baseOptions": "",
+          "allowImageUploads": false,
+          "imageResolution": "low",
+          "reasoningEffort": "",
+          "credential": ""
+        },
+        "outputAnchors": [
+          {
+            "id": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
+            "name": "chatOpenAI",
+            "label": "ChatOpenAI",
+            "description": "Wrapper around OpenAI large language models that use the Chat endpoint",
+            "type": "ChatOpenAI | BaseChatModel | BaseLanguageModel | Runnable"
+          }
+        ],
+        "outputs": {},
+        "selected": false,
+        "credential": ""
+      },
+      "selected": true,
+      "positionAbsolute": {
+        "x": -786.0775361034356,
+        "y": 127.24092593391106
+      },
+      "dragging": false
+    },
+    {
+      "width": 300,
+      "height": 259,
+      "id": "bufferMemory_1",
+      "position": {
+        "x": -417.77678571428584,
+        "y": 297.82142857142856
+      },
+      "type": "customNode",
+      "data": {
+        "id": "bufferMemory_1",
+        "label": "Buffer Memory",
+        "version": 2,
+        "name": "bufferMemory",
+        "type": "BufferMemory",
+        "baseClasses": [
+          "BufferMemory",
+          "BaseChatMemory",
+          "BaseMemory"
+        ],
+        "category": "Memory",
+        "description": "Retrieve chat messages stored in database",
+        "inputParams": [
+          {
+            "label": "Session Id",
+            "name": "sessionId",
+            "type": "string",
+            "description": "If not specified, a random id will be used. Learn <a target=\"_blank\" href=\"https://docs.flowiseai.com/memory#ui-and-embedded-chat\">more</a>",
+            "default": "",
+            "additionalParams": true,
+            "optional": true,
+            "id": "bufferMemory_1-input-sessionId-string"
+          },
+          {
+            "label": "Memory Key",
+            "name": "memoryKey",
+            "type": "string",
+            "default": "chat_history",
+            "additionalParams": true,
+            "id": "bufferMemory_1-input-memoryKey-string"
+          }
+        ],
+        "inputAnchors": [],
+        "inputs": {
+          "sessionId": "",
+          "memoryKey": "chat_history"
+        },
+        "outputAnchors": [
+          {
+            "id": "bufferMemory_1-output-bufferMemory-BufferMemory|BaseChatMemory|BaseMemory",
+            "name": "bufferMemory",
+            "label": "BufferMemory",
+            "type": "BufferMemory | BaseChatMemory | BaseMemory"
+          }
+        ],
+        "outputs": {},
+        "selected": false
+      },
+      "positionAbsolute": {
+        "x": -417.77678571428584,
+        "y": 297.82142857142856
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "customMCP_0",
+      "position": {
+        "x": -81.64583333333343,
+        "y": -314.1517857142859
+      },
+      "type": "customNode",
+      "data": {
+        "id": "customMCP_0",
+        "label": "Custom MCP",
+        "version": 1.1,
+        "name": "customMCP",
+        "type": "Custom MCP Tool",
+        "baseClasses": [
+          "Tool"
+        ],
+        "category": "Tools (MCP)",
+        "description": "Custom MCP Config",
+        "inputParams": [
+          {
+            "label": "MCP Server Config",
+            "name": "mcpServerConfig",
+            "type": "code",
+            "hideCodeExecute": true,
+            "hint": {
+              "label": "How to use",
+              "value": "Remote MCP over streamable HTTP. Bearer auth in headers."
+            },
+            "placeholder": "{\n    \"url\": \"http://host:port/mcp\"\n}",
+            "id": "customMCP_0-input-mcpServerConfig-code",
+            "display": true
+          },
+          {
+            "label": "Available Actions",
+            "name": "mcpActions",
+            "type": "asyncMultiOptions",
+            "loadMethod": "listActions",
+            "refresh": true,
+            "id": "customMCP_0-input-mcpActions-asyncMultiOptions",
+            "display": true
+          }
+        ],
+        "inputAnchors": [],
+        "inputs": {
+          "mcpServerConfig": "{\n    \"url\": \"https://policypilot.{{DOMAIN}}/mcp/\",\n    \"headers\": {\n        \"Authorization\": \"Bearer __PILOT_MCP_TOKEN__\"\n    }\n}",
+          "mcpActions": "[\"add_dynamic_rule\", \"amend_access_rule\", \"analyze_policy\", \"apply_access\", \"correlate_access_role\", \"correlate_application\", \"correlate_content\", \"correlate_gateway\", \"correlate_limit\", \"correlate_service\", \"correlate_time\", \"correlate_user_check\", \"correlate_vpn\", \"correlate_zone\", \"coverage_lookup\", \"decide_access\", \"fetch_dynamic_layer\", \"get_dynamic_layer\", \"import_dynamic_layer\", \"list_access_layers\", \"list_changes\", \"list_dynamic_layers\", \"list_gateways\", \"list_management_servers\", \"list_unused_objects\", \"packages_needing_install\", \"push_dynamic_layer\", \"remove_access\", \"remove_dynamic_rule\", \"revert_change\", \"summarize_layer\"]"
+        },
+        "outputAnchors": [
+          {
+            "id": "customMCP_0-output-customMCP-Tool",
+            "name": "customMCP",
+            "label": "Tool",
+            "description": "Custom MCP Config",
+            "type": "Tool"
+          }
+        ],
+        "outputs": {},
+        "selected": false
+      },
+      "width": 300,
+      "height": 745,
+      "selected": false,
+      "positionAbsolute": {
+        "x": -81.64583333333343,
+        "y": -314.1517857142859
+      },
+      "dragging": false
+    },
+    {
+      "id": "toolAgent_0",
+      "position": {
+        "x": 720,
+        "y": 120
+      },
+      "type": "customNode",
+      "data": {
+        "id": "toolAgent_0",
+        "label": "Tool Agent",
+        "version": 2,
+        "name": "toolAgent",
+        "type": "AgentExecutor",
+        "baseClasses": [
+          "AgentExecutor",
+          "BaseChain",
+          "Runnable"
+        ],
+        "category": "Agents",
+        "description": "Agent that uses Function Calling to pick the tools and args to call",
+        "inputParams": [
+          {
+            "label": "System Message",
+            "name": "systemMessage",
+            "type": "string",
+            "default": "You are a helpful AI assistant.",
+            "description": "If Chat Prompt Template is provided, this will be ignored",
+            "rows": 4,
+            "optional": true,
+            "additionalParams": true,
+            "id": "toolAgent_0-input-systemMessage-string",
+            "display": true
+          },
+          {
+            "label": "Max Iterations",
+            "name": "maxIterations",
+            "type": "number",
+            "optional": true,
+            "additionalParams": true,
+            "id": "toolAgent_0-input-maxIterations-number",
+            "display": true
+          },
+          {
+            "label": "Enable Detailed Streaming",
+            "name": "enableDetailedStreaming",
+            "type": "boolean",
+            "default": false,
+            "description": "Stream detailed intermediate steps during agent execution",
+            "optional": true,
+            "additionalParams": true,
+            "id": "toolAgent_0-input-enableDetailedStreaming-boolean",
+            "display": true
+          }
+        ],
+        "inputAnchors": [
+          {
+            "label": "Tools",
+            "name": "tools",
+            "type": "Tool",
+            "list": true,
+            "id": "toolAgent_0-input-tools-Tool",
+            "display": true
+          },
+          {
+            "label": "Memory",
+            "name": "memory",
+            "type": "BaseChatMemory",
+            "id": "toolAgent_0-input-memory-BaseChatMemory",
+            "display": true
+          },
+          {
+            "label": "Tool Calling Chat Model",
+            "name": "model",
+            "type": "BaseChatModel",
+            "description": "Only compatible with models that are capable of function calling: ChatOpenAI, ChatMistral, ChatAnthropic, ChatGoogleGenerativeAI, ChatVertexAI, GroqChat",
+            "id": "toolAgent_0-input-model-BaseChatModel",
+            "display": true
+          },
+          {
+            "label": "Chat Prompt Template",
+            "name": "chatPromptTemplate",
+            "type": "ChatPromptTemplate",
+            "description": "Override existing prompt with Chat Prompt Template. Human Message must includes {input} variable",
+            "optional": true,
+            "id": "toolAgent_0-input-chatPromptTemplate-ChatPromptTemplate",
+            "display": true
+          },
+          {
+            "label": "Input Moderation",
+            "description": "Detect text that could generate harmful output and prevent it from being sent to the language model",
+            "name": "inputModeration",
+            "type": "Moderation",
+            "optional": true,
+            "list": true,
+            "id": "toolAgent_0-input-inputModeration-Moderation",
+            "display": true
+          }
+        ],
+        "inputs": {
+          "tools": [
+            "{{customMCP_0.data.instance}}"
+          ],
+          "memory": "{{bufferMemory_1.data.instance}}",
+          "model": "{{chatOpenAI_0.data.instance}}",
+          "chatPromptTemplate": "",
+          "systemMessage": "You are **PolicyPilot** — a Check Point access-automation agent that works over MCP. You turn ONE plain-language sentence into the correct, first-match-safe policy change and, when authorized, APPLY and PUBLISH it to the live management server. You have conversation memory — use it.\n\n== TOOLS (pick the right one) ==\n- list_management_servers · list_access_layers — discover targets (only when needed).\n- summarize_layer · analyze_policy — understand a policy (rule counts, shadowed / overly-permissive rules).\n- correlate_service · correlate_application — resolve a protocol/port word or an app/site name to a real CP object.\n- correlate_time · correlate_content · correlate_limit — resolve a time phrase (work hours), a content/data-type phrase (SQL Queries), or a bandwidth phrase (10 Mbps upload) to the real CP object for the Time, Content, and Action-Settings (limit) columns.\n- correlate_access_role · correlate_zone — resolve an identity phrase (the finance role) to an Identity-Awareness access-role, or a zone phrase (DMZ) to a security-zone, for a ZERO-TRUST typed source/destination. Both reuse-only.\n- correlate_user_check — resolve a UserCheck phrase (the blocked message, company policy) to the real UserCheck interaction object for an Ask/Inform prompt or a Drop/Reject block page. Reuse-only.\n- correlate_gateway · correlate_vpn — resolve a gateway phrase (the perimeter gateway) to a gateway/target for install_on, or a VPN phrase to a community for the vpn column. Reuse-only.\n- coverage_lookup — Terraform/Ansible support for a CP object.\n- decide_access — READ-ONLY reasoning: returns no_op | widen | create + the first-match placement + the why.\n- apply_access — create/widen. Full columns: action = Accept | Drop | Reject | Ask | Inform | Apply Layer; plus content (data-types) + content_direction, time_objects, install_on (gateways), vpn (communities), action_limit, captive_portal, inline_layer; and UserCheck — user_check (the interaction/message object: an Ask/Inform prompt or a Drop/Reject block page), user_check_frequency (once a day | once a week | once a month | custom frequency...), user_check_confirm (per rule | per category | per application/site | per data type), and user_check_custom_every + user_check_custom_unit (hours|days|weeks|months) when the frequency is custom.\n- remove_access — revoke an access (disable an exact grant, or drop-above).\n- amend_access_rule — edit a rule's metadata only: name / comment / tags / track (logging).\n- list_changes · revert_change — the rollback journal + lifecycle. Every published change has a state: active | disabled | resolved (list_changes shows it). Verb routing: \"undo / roll back\" -> revert_change(change_id, publish=true); \"disable it instead / keep it visible\" -> add disable_instead_of_delete=true (the rule is turned OFF, not deleted -> state becomes disabled, still actionable); \"delete the disabled rule / get rid of it entirely / finalize\" -> revert_change(change_id, delete_rule=true, publish=true); \"turn it back on / re-enable\" -> revert_change(change_id, reenable=true, publish=true). An action that does not fit the entry's state is refused with an error that says what applies — relay it. After a disable-undo, OFFER the two follow-ups (finalize or re-enable).\n\n== AUTOPILOT (the headline) ==\nIf ANY tool result includes \"autopilot\": true, you are pre-authorized to run the WHOLE flow in ONE turn — decide -> apply/remove with publish=true — WITHOUT asking for confirmation. Still resolve the server/layer/service first; report results faithfully (accurate to the tool, never invented); if publish is refused because it is admin-gated, say so plainly. When \"autopilot\" is false or absent: if the user's sentence itself says apply/create/publish/commit, treat that as approval and proceed; otherwise decide, summarize the proposed change, and wait for a \"yes\" before applying.\n\n== HARD RULES (obey over everything below) ==\n1. Rely on memory. Never re-run a call that already succeeded; never re-list servers/layers or re-correlate the same name — repeating calls causes max-iteration loops.\n2. Never guess a server_id, layer, service, or application — resolve each with a tool first. server_id accepts a numeric id OR a name/host; NEVER a placeholder you invented (not localhost, not 127.0.0.1, not a made-up hostname).\n3. If the user NAMES the server (name, host, or id), use it directly — do not list or ask. If the server is UNSTATED or unclear, NEVER assume localhost / a default: call list_management_servers ONCE — if exactly one exists, use it; if several, present id + name + host and ASK which, then STOP and wait.\n4. Report exactly what each tool returns (ok, outcome, reason, target rule, errors) faithfully — accurate to the tool, never invented. Never fabricate a result, rule name, or ticket id. On ok:false or any error, STOP and report it — do not retry.\n5. publish=true ONLY when authorized (autopilot true, or the user said publish/commit). Otherwise publish=false — a dry-run that validates then discards.\n\n== PICK THE RIGHT VERB ==\n- allow -> apply_access action=Accept.\n- block / deny -> apply_access action=Drop (use Reject for an explicit reset). \"block <app>\" carves out just that app. A request needs a service: \"block all traffic\" / no port named -> pass service=Any (all ports/protocols); otherwise name the port/service to block.\n- restrict it -> apply_access with the gating column: time_objects (a time window), content (a data-type), install_on (specific gateways), vpn (a community), or a typed source/destination (security-zone, access-role). RESOLVE the NAME FIRST — correlate_time / correlate_content / correlate_limit / correlate_gateway (install_on) / correlate_vpn (like correlate_service), then pass the returned match (on candidates, present the ‘did you mean’ list and ask). A limit is a bandwidth RATE (Mbps), NOT a volume — there is no max-N-GB-total control, so map a volume request to an existing rate object or say it cannot be expressed.\n- prompt / notify the user -> action=Ask or Inform, and set the UserCheck: user_check=<message object>, plus user_check_frequency + user_check_confirm (Ask/Inform only). A block WITH a message -> action=Drop/Reject + user_check=<blocked-message object> (resolve it with correlate_user_check; no frequency/confirm). Send into a sub-policy -> action=Apply Layer (give the inline layer name).\n- revoke / remove / take away / undo an EXISTING allow -> remove_access. NEVER use remove_access to \"block\" — \"block\"/\"deny\" is CREATING a Drop rule via apply_access(action=Drop). A block that shows a message is apply_access(action=Drop, user_check=…); remove_access has no action/user_check/service=Any and cannot attach a message. Do NOT correlate \"Any\" as a service — pass service=Any directly.\n- rename / comment / tag / change logging -> amend_access_rule.\n- undo / roll back -> list_changes, then revert_change.\n- understand it first -> summarize_layer / analyze_policy / coverage_lookup.\n\n== PLACE THE TARGET RIGHT (this is where requests go wrong) ==\n- An APPLICATION (Facebook, Office365, YouTube) goes in the application field with destination=Any — NEVER in destination, and never as a domain.\n- A web SITE / domain (facebook.com, .example.com) goes in destination with destination_kind=domain.\n- A host or subnet (10.1.2.5, 10.0.0.0/24) goes in destination.\n- A port or protocol (443, https, dns, GRE) goes in service or port.\n- \"to Facebook\" = the app; \"to facebook.com\" = a domain.\n\n== ORDER (skip any step whose value is already known) ==\n1. Resolve the server (rule 3).  2. list_access_layers once; pick the meant layer (ask if unclear).  3. correlate_service / correlate_application / correlate_time / correlate_content / correlate_limit / correlate_access_role / correlate_zone for any name (service, app, time window, data-type, bandwidth limit, identity role, zone) — on candidates, present and ask, never pick silently.  4. decide_access with the resolved server, layer, source, destination, and service/port/application placed per the rules above; report outcome + reason + target rule.  5. If not already authorized, summarize and get a yes (skip under autopilot or an explicit publish).  6. apply_access / remove_access (publish per rule 5); report what actually happened.\n\n== RESPOND LIKE A PRO ==\nReply in concise markdown: a one-line headline (✅ Created / ↔ Widened / ✓ Already allowed / 🗑 Revoked / ⏪ Reverted — and whether it was PUBLISHED or a dry-run), then the rule name + where it was placed, then the WHY in one line (\"placed above 'Silent Drop' so first-match applies it\"). If the engine returned review, say what's blocking and what you need. Never hide the reasoning; never invent.\n\n== EXAMPLES ==\n- \"Allow 10.1.1.50 to the DNS servers and publish the changes\" -> correlate_service dns -> decide_access -> apply_access publish=true -> \"✅ Published…\".\n- \"Block 10.1.1.222 from Facebook and publish the changes\" -> correlate_application Facebook -> apply_access action=Drop, application=Facebook, destination=Any, publish=true.\n- \"Allow the InternalZone to reach win_server on RDP and publish the changes\" -> apply_access source typed as a security-zone, service rdp, publish=true.\n- ZERO TRUST: \"Allow the Finance_Users access role to reach 10.1.2.30 on https and publish\" -> correlate_access_role Finance_Users -> apply_access source=Finance_Users, source_kind=access-role, destination=10.1.2.30, service=https, publish=true (access follows the user identity, not an IP; the role is reused, never created).\n- USERCHECK: \"Inform users browsing to Facebook with the Company Policy message, once a day, and publish\" -> correlate_application Facebook -> apply_access action=Inform, application=Facebook, destination=Any, user_check='Company Policy', user_check_frequency='once a day', user_check_confirm='per rule', publish=true. \"Block Guest-Net from the finance servers with a blocked-message page\" -> apply_access action=Drop, user_check='Blocked Message - Access Control', publish=true.\n- \"Revoke kali_linux's access to win_server and publish the changes\" -> remove_access publish=true.\n- \"Undo my last change and publish the changes\" -> list_changes -> revert_change publish=true.\n- \"Allow 10.1.1.222 to reach 1.2.3.4 to run SQL Queries during work hours capped at 10 Mbps upload, and publish\" -> correlate_content SQL Queries -> correlate_time work hours -> correlate_limit 10 Mbps upload -> apply_access source=10.1.1.222, destination=1.2.3.4, content=[SQL Queries], content_direction=up, time_objects=[Work-Hours], action_limit=Upload_10Mbps, publish=true — a restricted request, so it CREATEs a precise rule ABOVE any broad Accept so the time/content/limit actually take effect.\n\n== OUTPUT STYLE (every reply) ==\nAnswer in concise, human markdown — NEVER paste raw JSON or a \"Tool result verbatim\" block. \"Report verbatim / exactly what the tool returns\" means be FAITHFUL to the tool's facts (never invent a rule name, count, layer, or outcome) — it does NOT mean printing the raw payload.\n- READ / LIST (layers, rules, changes, coverage, analyze, summarize): a one-line answer, then a short bullet list or small table of the key fields. E.g. \"SMS-SBT has 5 access layers: DNS_Layer, Network, Application, URLF, Threat_Prevention.\"\n- WRITE (apply / remove / revert): the ✅ / ↔ / ✓ / 🗑 / ⏪ headline (and PUBLISHED vs dry-run), the rule name + where it was placed, then the one-line WHY.\n- Any ok:false / error: relay the message plainly and stop.",
+          "inputModeration": "",
+          "maxIterations": "",
+          "enableDetailedStreaming": ""
+        },
+        "outputAnchors": [
+          {
+            "id": "toolAgent_0-output-toolAgent-AgentExecutor|BaseChain|Runnable",
+            "name": "toolAgent",
+            "label": "AgentExecutor",
+            "description": "Agent that uses Function Calling to pick the tools and args to call",
+            "type": "AgentExecutor | BaseChain | Runnable"
+          }
+        ],
+        "outputs": {},
+        "selected": false
+      },
+      "width": 300,
+      "height": 492,
+      "selected": false,
+      "positionAbsolute": {
+        "x": 720,
+        "y": 120
+      },
+      "dragging": false
+    },
+    {
+      "id": "stickyNote_0",
+      "position": {
+        "x": 1081.2351190476193,
+        "y": 124.37202380952385
+      },
+      "type": "customNode",
+      "data": {
+        "id": "stickyNote_0",
+        "label": "Sticky Note",
+        "version": 2,
+        "name": "stickyNote",
+        "type": "StickyNote",
+        "baseClasses": [
+          "StickyNote"
+        ],
+        "category": "Utilities",
+        "description": "Add a sticky note",
+        "inputParams": [
+          {
+            "label": "",
+            "name": "note",
+            "type": "string",
+            "rows": 1,
+            "placeholder": "Type something here",
+            "optional": true,
+            "id": "stickyNote_0-input-note-string",
+            "display": true
+          }
+        ],
+        "inputAnchors": [],
+        "inputs": {
+          "note": "PolicyPilot — Access Automation Agent (Pro)\n\nMCP endpoint: https://policypilot.{{DOMAIN}}/mcp/\nTools: 0 action(s)."
+        },
+        "outputAnchors": [
+          {
+            "id": "stickyNote_0-output-stickyNote-StickyNote",
+            "name": "stickyNote",
+            "label": "StickyNote",
+            "description": "Add a sticky note",
+            "type": "StickyNote"
+          }
+        ],
+        "outputs": {},
+        "selected": false
+      },
+      "width": 300,
+      "height": 484,
+      "selected": false,
+      "positionAbsolute": {
+        "x": 1081.2351190476193,
+        "y": 124.37202380952385
+      },
+      "dragging": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "customMCP_0",
+      "sourceHandle": "customMCP_0-output-customMCP-Tool",
+      "target": "toolAgent_0",
+      "targetHandle": "toolAgent_0-input-tools-Tool",
+      "type": "buttonedge",
+      "id": "customMCP_0-customMCP_0-output-customMCP-Tool-toolAgent_0-toolAgent_0-input-tools-Tool"
+    },
+    {
+      "source": "chatOpenAI_0",
+      "sourceHandle": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
+      "target": "toolAgent_0",
+      "targetHandle": "toolAgent_0-input-model-BaseChatModel",
+      "type": "buttonedge",
+      "id": "chatOpenAI_0-chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable-toolAgent_0-toolAgent_0-input-model-BaseChatModel"
+    },
+    {
+      "source": "bufferMemory_1",
+      "sourceHandle": "bufferMemory_1-output-bufferMemory-BufferMemory|BaseChatMemory|BaseMemory",
+      "target": "toolAgent_0",
+      "targetHandle": "toolAgent_0-input-memory-BaseChatMemory",
+      "type": "buttonedge",
+      "id": "bufferMemory_1-bufferMemory_1-output-bufferMemory-BufferMemory|BaseChatMemory|BaseMemory-toolAgent_0-toolAgent_0-input-memory-BaseChatMemory"
+    }
+  ],
+  "viewport": {
+    "x": 499.5255688192493,
+    "y": 176.68050485962888,
+    "zoom": 0.561710949597941
+  }
+}

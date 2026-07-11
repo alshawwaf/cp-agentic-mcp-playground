@@ -1,0 +1,628 @@
+{
+  "nodes": [
+    {
+      "width": 300,
+      "height": 676,
+      "id": "chatOpenAI_0",
+      "position": {
+        "x": -786.0775361034356,
+        "y": 127.24092593391106
+      },
+      "type": "customNode",
+      "data": {
+        "id": "chatOpenAI_0",
+        "label": "ChatOpenAI",
+        "version": 8.2,
+        "name": "chatOpenAI",
+        "type": "ChatOpenAI",
+        "baseClasses": [
+          "ChatOpenAI",
+          "BaseChatModel",
+          "BaseLanguageModel",
+          "Runnable"
+        ],
+        "category": "Chat Models",
+        "description": "Wrapper around OpenAI large language models that use the Chat endpoint",
+        "inputParams": [
+          {
+            "label": "Connect Credential",
+            "name": "credential",
+            "type": "credential",
+            "credentialNames": [
+              "openAIApi"
+            ],
+            "id": "chatOpenAI_0-input-credential-credential",
+            "display": true
+          },
+          {
+            "label": "Model Name",
+            "name": "modelName",
+            "type": "asyncOptions",
+            "loadMethod": "listModels",
+            "default": "gpt-4o-mini",
+            "id": "chatOpenAI_0-input-modelName-asyncOptions",
+            "display": true
+          },
+          {
+            "label": "Temperature",
+            "name": "temperature",
+            "type": "number",
+            "step": 0.1,
+            "default": 0.9,
+            "optional": true,
+            "id": "chatOpenAI_0-input-temperature-number",
+            "display": true
+          },
+          {
+            "label": "Streaming",
+            "name": "streaming",
+            "type": "boolean",
+            "default": true,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-streaming-boolean",
+            "display": true
+          },
+          {
+            "label": "Max Tokens",
+            "name": "maxTokens",
+            "type": "number",
+            "step": 1,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-maxTokens-number",
+            "display": true
+          },
+          {
+            "label": "Top Probability",
+            "name": "topP",
+            "type": "number",
+            "step": 0.1,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-topP-number",
+            "display": true
+          },
+          {
+            "label": "Frequency Penalty",
+            "name": "frequencyPenalty",
+            "type": "number",
+            "step": 0.1,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-frequencyPenalty-number",
+            "display": true
+          },
+          {
+            "label": "Presence Penalty",
+            "name": "presencePenalty",
+            "type": "number",
+            "step": 0.1,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-presencePenalty-number",
+            "display": true
+          },
+          {
+            "label": "Timeout",
+            "name": "timeout",
+            "type": "number",
+            "step": 1,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-timeout-number",
+            "display": true
+          },
+          {
+            "label": "Strict Tool Calling",
+            "name": "strictToolCalling",
+            "type": "boolean",
+            "description": "Whether the model supports the `strict` argument when passing in tools. If not specified, the `strict` argument will not be passed to OpenAI.",
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-strictToolCalling-boolean",
+            "display": true
+          },
+          {
+            "label": "Stop Sequence",
+            "name": "stopSequence",
+            "type": "string",
+            "rows": 4,
+            "optional": true,
+            "description": "List of stop words to use when generating. Use comma to separate multiple stop words.",
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-stopSequence-string",
+            "display": true
+          },
+          {
+            "label": "BasePath",
+            "name": "basepath",
+            "type": "string",
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-basepath-string",
+            "display": true
+          },
+          {
+            "label": "Proxy Url",
+            "name": "proxyUrl",
+            "type": "string",
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-proxyUrl-string",
+            "display": true
+          },
+          {
+            "label": "BaseOptions",
+            "name": "baseOptions",
+            "type": "json",
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-baseOptions-json",
+            "display": true
+          },
+          {
+            "label": "Allow Image Uploads",
+            "name": "allowImageUploads",
+            "type": "boolean",
+            "description": "Allow image input. Refer to the <a href=\"https://docs.flowiseai.com/using-flowise/uploads#image\" target=\"_blank\">docs</a> for more details.",
+            "default": false,
+            "optional": true,
+            "id": "chatOpenAI_0-input-allowImageUploads-boolean",
+            "display": true
+          },
+          {
+            "label": "Image Resolution",
+            "description": "This parameter controls the resolution in which the model views the image.",
+            "name": "imageResolution",
+            "type": "options",
+            "options": [
+              {
+                "label": "Low",
+                "name": "low"
+              },
+              {
+                "label": "High",
+                "name": "high"
+              },
+              {
+                "label": "Auto",
+                "name": "auto"
+              }
+            ],
+            "default": "low",
+            "optional": false,
+            "show": {
+              "allowImageUploads": true
+            },
+            "id": "chatOpenAI_0-input-imageResolution-options",
+            "display": false
+          },
+          {
+            "label": "Reasoning Effort",
+            "description": "Constrains effort on reasoning for reasoning models. Only applicable for o1 and o3 models.",
+            "name": "reasoningEffort",
+            "type": "options",
+            "options": [
+              {
+                "label": "Low",
+                "name": "low"
+              },
+              {
+                "label": "Medium",
+                "name": "medium"
+              },
+              {
+                "label": "High",
+                "name": "high"
+              }
+            ],
+            "default": "medium",
+            "optional": false,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-reasoningEffort-options",
+            "display": true
+          }
+        ],
+        "inputAnchors": [
+          {
+            "label": "Cache",
+            "name": "cache",
+            "type": "BaseCache",
+            "optional": true,
+            "id": "chatOpenAI_0-input-cache-BaseCache",
+            "display": true
+          }
+        ],
+        "inputs": {
+          "cache": "",
+          "modelName": "gpt-5.4",
+          "temperature": 0.2,
+          "streaming": true,
+          "maxTokens": "",
+          "topP": "",
+          "frequencyPenalty": "",
+          "presencePenalty": "",
+          "timeout": "",
+          "strictToolCalling": "",
+          "stopSequence": "",
+          "basepath": "",
+          "proxyUrl": "",
+          "baseOptions": "",
+          "allowImageUploads": false,
+          "imageResolution": "low",
+          "reasoningEffort": "",
+          "credential": ""
+        },
+        "outputAnchors": [
+          {
+            "id": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
+            "name": "chatOpenAI",
+            "label": "ChatOpenAI",
+            "description": "Wrapper around OpenAI large language models that use the Chat endpoint",
+            "type": "ChatOpenAI | BaseChatModel | BaseLanguageModel | Runnable"
+          }
+        ],
+        "outputs": {},
+        "selected": false,
+        "credential": ""
+      },
+      "selected": true,
+      "positionAbsolute": {
+        "x": -786.0775361034356,
+        "y": 127.24092593391106
+      },
+      "dragging": false
+    },
+    {
+      "width": 300,
+      "height": 259,
+      "id": "bufferMemory_1",
+      "position": {
+        "x": -417.77678571428584,
+        "y": 297.82142857142856
+      },
+      "type": "customNode",
+      "data": {
+        "id": "bufferMemory_1",
+        "label": "Buffer Memory",
+        "version": 2,
+        "name": "bufferMemory",
+        "type": "BufferMemory",
+        "baseClasses": [
+          "BufferMemory",
+          "BaseChatMemory",
+          "BaseMemory"
+        ],
+        "category": "Memory",
+        "description": "Retrieve chat messages stored in database",
+        "inputParams": [
+          {
+            "label": "Session Id",
+            "name": "sessionId",
+            "type": "string",
+            "description": "If not specified, a random id will be used. Learn <a target=\"_blank\" href=\"https://docs.flowiseai.com/memory#ui-and-embedded-chat\">more</a>",
+            "default": "",
+            "additionalParams": true,
+            "optional": true,
+            "id": "bufferMemory_1-input-sessionId-string"
+          },
+          {
+            "label": "Memory Key",
+            "name": "memoryKey",
+            "type": "string",
+            "default": "chat_history",
+            "additionalParams": true,
+            "id": "bufferMemory_1-input-memoryKey-string"
+          }
+        ],
+        "inputAnchors": [],
+        "inputs": {
+          "sessionId": "",
+          "memoryKey": "chat_history"
+        },
+        "outputAnchors": [
+          {
+            "id": "bufferMemory_1-output-bufferMemory-BufferMemory|BaseChatMemory|BaseMemory",
+            "name": "bufferMemory",
+            "label": "BufferMemory",
+            "type": "BufferMemory | BaseChatMemory | BaseMemory"
+          }
+        ],
+        "outputs": {},
+        "selected": false
+      },
+      "positionAbsolute": {
+        "x": -417.77678571428584,
+        "y": 297.82142857142856
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "customMCP_0",
+      "position": {
+        "x": -81.64583333333343,
+        "y": -314.1517857142859
+      },
+      "type": "customNode",
+      "data": {
+        "id": "customMCP_0",
+        "label": "Custom MCP",
+        "version": 1.1,
+        "name": "customMCP",
+        "type": "Custom MCP Tool",
+        "baseClasses": [
+          "Tool"
+        ],
+        "category": "Tools (MCP)",
+        "description": "Custom MCP Config",
+        "inputParams": [
+          {
+            "label": "MCP Server Config",
+            "name": "mcpServerConfig",
+            "type": "code",
+            "hideCodeExecute": true,
+            "hint": {
+              "label": "How to use",
+              "value": "Remote MCP over streamable HTTP. Bearer auth in headers."
+            },
+            "placeholder": "{\n    \"url\": \"http://host:port/mcp\"\n}",
+            "id": "customMCP_0-input-mcpServerConfig-code",
+            "display": true
+          },
+          {
+            "label": "Available Actions",
+            "name": "mcpActions",
+            "type": "asyncMultiOptions",
+            "loadMethod": "listActions",
+            "refresh": true,
+            "id": "customMCP_0-input-mcpActions-asyncMultiOptions",
+            "display": true
+          }
+        ],
+        "inputAnchors": [],
+        "inputs": {
+          "mcpServerConfig": "{\n    \"url\": \"https://policypilot.{{DOMAIN}}/mcp/\",\n    \"headers\": {\n        \"Authorization\": \"Bearer __PILOT_MCP_TOKEN__\"\n    }\n}",
+          "mcpActions": "[\"add_dynamic_rule\", \"amend_access_rule\", \"analyze_policy\", \"apply_access\", \"correlate_access_role\", \"correlate_application\", \"correlate_content\", \"correlate_gateway\", \"correlate_limit\", \"correlate_service\", \"correlate_time\", \"correlate_user_check\", \"correlate_vpn\", \"correlate_zone\", \"coverage_lookup\", \"decide_access\", \"fetch_dynamic_layer\", \"get_dynamic_layer\", \"import_dynamic_layer\", \"list_access_layers\", \"list_changes\", \"list_dynamic_layers\", \"list_gateways\", \"list_management_servers\", \"list_unused_objects\", \"packages_needing_install\", \"push_dynamic_layer\", \"remove_access\", \"remove_dynamic_rule\", \"revert_change\", \"summarize_layer\"]"
+        },
+        "outputAnchors": [
+          {
+            "id": "customMCP_0-output-customMCP-Tool",
+            "name": "customMCP",
+            "label": "Tool",
+            "description": "Custom MCP Config",
+            "type": "Tool"
+          }
+        ],
+        "outputs": {},
+        "selected": false
+      },
+      "width": 300,
+      "height": 745,
+      "selected": false,
+      "positionAbsolute": {
+        "x": -81.64583333333343,
+        "y": -314.1517857142859
+      },
+      "dragging": false
+    },
+    {
+      "id": "toolAgent_0",
+      "position": {
+        "x": 720,
+        "y": 120
+      },
+      "type": "customNode",
+      "data": {
+        "id": "toolAgent_0",
+        "label": "Tool Agent",
+        "version": 2,
+        "name": "toolAgent",
+        "type": "AgentExecutor",
+        "baseClasses": [
+          "AgentExecutor",
+          "BaseChain",
+          "Runnable"
+        ],
+        "category": "Agents",
+        "description": "Agent that uses Function Calling to pick the tools and args to call",
+        "inputParams": [
+          {
+            "label": "System Message",
+            "name": "systemMessage",
+            "type": "string",
+            "default": "You are a helpful AI assistant.",
+            "description": "If Chat Prompt Template is provided, this will be ignored",
+            "rows": 4,
+            "optional": true,
+            "additionalParams": true,
+            "id": "toolAgent_0-input-systemMessage-string",
+            "display": true
+          },
+          {
+            "label": "Max Iterations",
+            "name": "maxIterations",
+            "type": "number",
+            "optional": true,
+            "additionalParams": true,
+            "id": "toolAgent_0-input-maxIterations-number",
+            "display": true
+          },
+          {
+            "label": "Enable Detailed Streaming",
+            "name": "enableDetailedStreaming",
+            "type": "boolean",
+            "default": false,
+            "description": "Stream detailed intermediate steps during agent execution",
+            "optional": true,
+            "additionalParams": true,
+            "id": "toolAgent_0-input-enableDetailedStreaming-boolean",
+            "display": true
+          }
+        ],
+        "inputAnchors": [
+          {
+            "label": "Tools",
+            "name": "tools",
+            "type": "Tool",
+            "list": true,
+            "id": "toolAgent_0-input-tools-Tool",
+            "display": true
+          },
+          {
+            "label": "Memory",
+            "name": "memory",
+            "type": "BaseChatMemory",
+            "id": "toolAgent_0-input-memory-BaseChatMemory",
+            "display": true
+          },
+          {
+            "label": "Tool Calling Chat Model",
+            "name": "model",
+            "type": "BaseChatModel",
+            "description": "Only compatible with models that are capable of function calling: ChatOpenAI, ChatMistral, ChatAnthropic, ChatGoogleGenerativeAI, ChatVertexAI, GroqChat",
+            "id": "toolAgent_0-input-model-BaseChatModel",
+            "display": true
+          },
+          {
+            "label": "Chat Prompt Template",
+            "name": "chatPromptTemplate",
+            "type": "ChatPromptTemplate",
+            "description": "Override existing prompt with Chat Prompt Template. Human Message must includes {input} variable",
+            "optional": true,
+            "id": "toolAgent_0-input-chatPromptTemplate-ChatPromptTemplate",
+            "display": true
+          },
+          {
+            "label": "Input Moderation",
+            "description": "Detect text that could generate harmful output and prevent it from being sent to the language model",
+            "name": "inputModeration",
+            "type": "Moderation",
+            "optional": true,
+            "list": true,
+            "id": "toolAgent_0-input-inputModeration-Moderation",
+            "display": true
+          }
+        ],
+        "inputs": {
+          "tools": [
+            "{{customMCP_0.data.instance}}"
+          ],
+          "memory": "{{bufferMemory_1.data.instance}}",
+          "model": "{{chatOpenAI_0.data.instance}}",
+          "chatPromptTemplate": "",
+          "systemMessage": "You are **PolicyPilot — Dynamic Layers**, an agent that manages a Check Point DYNAMIC LAYER from plain language. A dynamic layer is an access rulebase pushed straight to a gateway via the Gaia API (set-dynamic-content), out-of-band of SmartConsole. You have conversation memory — use it.\n\n== TOOLS (dynamic-layer rail) ==\n- list_gateways — the saved Gaia gateways you can push to (id / name / host).\n- list_dynamic_layers — the dynamic layers (id / name / rule count).\n- get_dynamic_layer(layer) — read a layer's current rulebase (the PORTAL copy).\n- fetch_dynamic_layer(gateway, layer_name?) — pull the LIVE rulebase currently ON a gateway, incl. policy pushed via the API outside this portal. Read-only.\n- import_dynamic_layer(gateway, layer_name?, into_layer?) — pull the live layer INTO a portal layer so you can safely append to it. Writes the portal only (not the gateway).\n- add_dynamic_rule(layer, source, destination, service, action, name?, position?) — add a rule. EDIT ONLY.\n- remove_dynamic_rule(layer, rule) — remove a rule by name (a layer must keep at least one rule). EDIT ONLY.\n- push_dynamic_layer(layer, gateway?, dry_run?) — apply the layer to a gateway via set-dynamic-content.\n(The management access-automation tools are also reachable, but THIS agent is for dynamic layers — stay on them unless the user clearly asks about the SMS policy.)\n\n== HARD RULES ==\n1. Rely on memory; never re-run a call that already succeeded; never re-list the same thing — repeating calls causes loops.\n2. Never guess a layer or gateway — resolve it first (list_dynamic_layers / list_gateways). If the user names it, use that directly. If it's unstated and several exist, PRESENT them and ask which, then STOP and wait.\n3. Report exactly what each tool returns (ok, rule, rules, status, summary, task_id, error) VERBATIM. Never fabricate a result, rule, or task id. On ok:false or any error, STOP and report it — no retries.\n4. add_dynamic_rule / remove_dynamic_rule only EDIT the layer in the portal — they do NOT apply anything. The change takes effect only when you push_dynamic_layer.\n5. push_dynamic_layer: dry_run=true validates without applying (always allowed). A REAL-gateway push (dry_run=false to a named gateway) is an admin-gated COMMIT — it needs the 'Let the MCP agent push dynamic layers to gateways' setting (a SEPARATE gate from the SMS publish toggle). If it's refused, say so plainly and offer a dry-run, or push to gateway='mock' (the built-in demo target, always allowed). Leave gateway blank or 'mock' for the demo target.\n6. A real gateway's dynamic layer may ALREADY hold policy pushed outside this portal, and push_dynamic_layer REPLACES the whole layer — so a blind push wipes anything you didn't author here. To safely ADD to such a layer: import_dynamic_layer(gateway) first (pulls the live layer into the portal), THEN add_dynamic_rule, THEN push — the push now replaces with the live rules PLUS your additions, wiping nothing. Use fetch_dynamic_layer when you only need to read the live state. If you're about to push the portal copy to a gateway you didn't import from, fetch first and confirm with the user.\n\n== PLACE THE TARGET ==\n- source / destination: an IP (10.1.2.50), a CIDR (10.0.0.0/24), the name of an existing object, or 'any'. A bare IP/CIDR is turned into an inline host/network object automatically.\n- service: a service name (https, ssh, dns, rdp) or 'any'.\n- action: Accept | Drop | Reject | Ask | Inform.\n\n== ORDER (skip a step whose value is already known) ==\n1 resolve the layer. 2 resolve the gateway (only when pushing to a real one). 3 add_dynamic_rule / remove_dynamic_rule to edit. 4 push_dynamic_layer to apply — if the user said push / apply / publish, go edit -> push in the SAME turn (dry-run first if you're not authorized for a real push; a real push if you are). Report the change summary.\n\n== RESPOND LIKE A PRO ==\nReply in concise markdown: a one-line headline (✅ Rule added · 🗑 Rule removed · 🚀 Pushed · ✓ Validated (dry-run) · ⛔ Push gated), then the layer + rule + the target gateway, then the change summary (rules / objects). If a real push is gated, say what's needed and that you validated (dry-run) or used the demo target instead. Transparency is the product — never hide the reasoning, never invent.\n\n== EXAMPLES ==\n- \"What's actually on GW1's dynamic layer right now?\" -> fetch_dynamic_layer(GW1) (live, read-only) -> report the rules.\n- \"Add a rule for 10.1.2.50 to the DMZ layer on GW1 WITHOUT removing what's already there\" -> import_dynamic_layer(GW1) -> add_dynamic_rule(<imported layer>, ...) -> push_dynamic_layer(<layer>, GW1) (replaces with live + your rule).\n- \"Add a rule allowing 10.1.2.50 to 10.1.2.60 on ssh in the DMZ layer and push it\" -> add_dynamic_rule(layer=DMZ, source=10.1.2.50, destination=10.1.2.60, service=ssh, action=Accept) -> push_dynamic_layer(DMZ, <gateway>).\n- \"Block 10.1.9.9 from anywhere in the DMZ layer, dry run\" -> add_dynamic_rule(action=Drop) -> push_dynamic_layer(DMZ, dry_run=true).\n- \"Remove the web-ssh rule from DMZ and push to GW1\" -> remove_dynamic_rule(DMZ, web-ssh) -> push_dynamic_layer(DMZ, GW1).\n\n== OUTPUT STYLE (every reply) ==\nAnswer in concise, human markdown — NEVER paste raw JSON or a \"Tool result verbatim\" block. \"Report verbatim / exactly what the tool returns\" means be FAITHFUL to the tool's facts (never invent a rule name, count, layer, or outcome) — it does NOT mean printing the raw payload.\n- READ / LIST (layers, rules, changes, coverage, analyze, summarize): a one-line answer, then a short bullet list or small table of the key fields. E.g. \"SMS-SBT has 5 access layers: DNS_Layer, Network, Application, URLF, Threat_Prevention.\"\n- WRITE (apply / remove / revert): the ✅ / ↔ / ✓ / 🗑 / ⏪ headline (and PUBLISHED vs dry-run), the rule name + where it was placed, then the one-line WHY.\n- Any ok:false / error: relay the message plainly and stop.",
+          "inputModeration": "",
+          "maxIterations": "",
+          "enableDetailedStreaming": ""
+        },
+        "outputAnchors": [
+          {
+            "id": "toolAgent_0-output-toolAgent-AgentExecutor|BaseChain|Runnable",
+            "name": "toolAgent",
+            "label": "AgentExecutor",
+            "description": "Agent that uses Function Calling to pick the tools and args to call",
+            "type": "AgentExecutor | BaseChain | Runnable"
+          }
+        ],
+        "outputs": {},
+        "selected": false
+      },
+      "width": 300,
+      "height": 492,
+      "selected": false,
+      "positionAbsolute": {
+        "x": 720,
+        "y": 120
+      },
+      "dragging": false
+    },
+    {
+      "id": "stickyNote_0",
+      "position": {
+        "x": 1081.2351190476193,
+        "y": 124.37202380952385
+      },
+      "type": "customNode",
+      "data": {
+        "id": "stickyNote_0",
+        "label": "Sticky Note",
+        "version": 2,
+        "name": "stickyNote",
+        "type": "StickyNote",
+        "baseClasses": [
+          "StickyNote"
+        ],
+        "category": "Utilities",
+        "description": "Add a sticky note",
+        "inputParams": [
+          {
+            "label": "",
+            "name": "note",
+            "type": "string",
+            "rows": 1,
+            "placeholder": "Type something here",
+            "optional": true,
+            "id": "stickyNote_0-input-note-string",
+            "display": true
+          }
+        ],
+        "inputAnchors": [],
+        "inputs": {
+          "note": "PolicyPilot — Dynamic Layers Agent\n\nMCP endpoint: https://policypilot.{{DOMAIN}}/mcp/\nTools: 0 action(s)."
+        },
+        "outputAnchors": [
+          {
+            "id": "stickyNote_0-output-stickyNote-StickyNote",
+            "name": "stickyNote",
+            "label": "StickyNote",
+            "description": "Add a sticky note",
+            "type": "StickyNote"
+          }
+        ],
+        "outputs": {},
+        "selected": false
+      },
+      "width": 300,
+      "height": 484,
+      "selected": false,
+      "positionAbsolute": {
+        "x": 1081.2351190476193,
+        "y": 124.37202380952385
+      },
+      "dragging": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "customMCP_0",
+      "sourceHandle": "customMCP_0-output-customMCP-Tool",
+      "target": "toolAgent_0",
+      "targetHandle": "toolAgent_0-input-tools-Tool",
+      "type": "buttonedge",
+      "id": "customMCP_0-customMCP_0-output-customMCP-Tool-toolAgent_0-toolAgent_0-input-tools-Tool"
+    },
+    {
+      "source": "chatOpenAI_0",
+      "sourceHandle": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
+      "target": "toolAgent_0",
+      "targetHandle": "toolAgent_0-input-model-BaseChatModel",
+      "type": "buttonedge",
+      "id": "chatOpenAI_0-chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable-toolAgent_0-toolAgent_0-input-model-BaseChatModel"
+    },
+    {
+      "source": "bufferMemory_1",
+      "sourceHandle": "bufferMemory_1-output-bufferMemory-BufferMemory|BaseChatMemory|BaseMemory",
+      "target": "toolAgent_0",
+      "targetHandle": "toolAgent_0-input-memory-BaseChatMemory",
+      "type": "buttonedge",
+      "id": "bufferMemory_1-bufferMemory_1-output-bufferMemory-BufferMemory|BaseChatMemory|BaseMemory-toolAgent_0-toolAgent_0-input-memory-BaseChatMemory"
+    }
+  ],
+  "viewport": {
+    "x": 499.5255688192493,
+    "y": 176.68050485962888,
+    "zoom": 0.561710949597941
+  }
+}
