@@ -1,0 +1,344 @@
+{
+  "name": "CP Policy Insights — AI Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "public": true,
+        "initialMessages": "👋 I'm the **Check Point Policy Insights** AI agent — I surface AI policy-tightening suggestions from Infinity Cloud Services: zero-hit rules you can remove, over-permissive rules to tighten, and disabled rules to clean up. Ask me what's safe to remove!",
+        "options": {
+          "responseMode": "lastNode",
+          "title": "CP Policy Insights — AI Agent",
+          "subtitle": "What's safe to remove? Zero-hit, over-permissive & disabled rules.",
+          "inputPlaceholder": "e.g. Which rules have zero hits and can be deleted?"
+        }
+      },
+      "id": "7d2c3510-f5f5-4fd8-9a85-f8d8190726eb",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -140,
+        80
+      ],
+      "webhookId": "59e620a4-5bcb-4ac5-ba98-50c5805480ba"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are the **Check Point Policy Insights** assistant. You surface the official AI policy-tightening suggestions (zero-hit, over-permissive, and disabled rules) over MCP and help the user decide what is safe to act on.\n\n== WHAT YOU CAN DO ==\n- Check Policy Insights product status, license, and onboarding state (ShowState / ShowPolicyInsightsStatus).\n- Summarize how many suggestions exist per type on a layer (ShowSuggestionsSummary).\n- List which rules have suggestions and fetch the suggestion content, filtered by type, confidence, or security impact (ShowRulesUidsWithSuggestions / ShowSuggestions).\n- Report when the current insights were generated and when the next engine run is planned (ShowSuggestionEngineMetadata / ShowSuggestionsInfo).\n\n== HOW TO WORK ==\n- Call policy-insights__init once at the start of a conversation, before any other Policy Insights tool.\n- Use ONLY the MCP tools exposed to you. Never invent tool names or parameters; if no tool fits, say so.\n- Start with read-only tools (show/list/get) to gather facts before answering.\n- If no insights come back, check ShowState / ShowPolicyInsightsStatus first — the management server may not be onboarded to Infinity Cloud Services yet — and explain exactly what's missing.\n- If a tool call fails, show the error in one short line and suggest the next step.\n- You have conversation memory: use prior turns for context instead of re-asking.\n- Suggestions are advisory. Recommend a human review before ANY rule change, and note that applying changes happens elsewhere (SmartConsole or PolicyPilot) — never through this agent.\n- This agent talks to Policy Insights only, where layers and rules are addressed by UID. If the user gives names, explain that resolving names needs the Quantum Management agent (or the Gateway twin of this agent), then work with what you have.\n\n== OUTPUT STYLE ==\n- Answer in concise Markdown: short paragraphs, bullets, and small tables for object/rule lists.\n- Summarize tool results faithfully. Do NOT paste raw JSON unless the user explicitly asks for raw output; \"verbatim\" means faithful to the data, not raw JSON.\n- For long lists show the 15 most relevant items and say how many more exist.\n- End multi-step work with a one-line summary of what was done."
+        }
+      },
+      "id": "63ae7368-9206-4c3c-9b6b-a7e184addff5",
+      "name": "CP Policy Insights AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        480,
+        60
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        420,
+        380
+      ],
+      "id": "2c5835bd-2ed8-40b0-b9a6-97628163a2ee",
+      "name": "Conversation Memory"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "chatInput",
+              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "sessionId",
+              "value": "={{ $json?.sessionId || $json.body.sessionId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        160,
+        80
+      ],
+      "name": "Normalize input",
+      "id": "cf94a98a-eb59-52f9-ac5b-be84dae83a73"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1",
+              "name": "output",
+              "value": "=⚠️ I hit an error and made **no changes**.\n\n```\n{{ ($json.error && $json.error.message) || $json.error || $json.message || 'Unknown error' }}\n```\nPlease retry, or rephrase the request.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        940,
+        180
+      ],
+      "name": "Friendly error",
+      "id": "201e686a-be12-5130-abc5-3d28e6a3e88d"
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://policy-insights-mcp:3013",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        700,
+        380
+      ],
+      "name": "Policy Insights MCP",
+      "id": "90b0b8eb-d3bb-5b3c-a1ef-3e0d32d73e21"
+    },
+    {
+      "parameters": {
+        "model": "gpt-5.4-2026-03-05",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        240,
+        600
+      ],
+      "name": "Azure OpenAI (default)",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "nmUI0INbLO2IrroY",
+          "name": "Azure Open AI account"
+        }
+      },
+      "id": "7862ef9c-d114-5dac-951d-aa6c06081741"
+    },
+    {
+      "parameters": {
+        "model": "qwen3.5:4b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        460,
+        600
+      ],
+      "name": "Ollama — local qwen3.5",
+      "credentials": {
+        "ollamaApi": {
+          "id": "i8fXatxwj12xOABO",
+          "name": "Ollama account"
+        }
+      },
+      "id": "2acae3df-3236-52df-8687-9e95acb6980b"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        680,
+        600
+      ],
+      "name": "Gemini 2.5 Pro",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jQWvIJNDs6CeSDiN",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "id": "81ad6cac-2b00-537b-906b-3416348a96fa"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5.1",
+          "cachedResultName": "gpt-5.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        900,
+        600
+      ],
+      "name": "OpenAI gpt-5.1",
+      "credentials": {
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "OpenAi account"
+        }
+      },
+      "id": "973b1fa2-69eb-52b1-8b1e-414038726739"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-opus-4-8",
+          "cachedResultName": "Claude Opus 4.8"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        1120,
+        600
+      ],
+      "name": "Claude Opus 4.8",
+      "credentials": {
+        "anthropicApi": {
+          "id": "AnthropicCred001",
+          "name": "Anthropic account"
+        }
+      },
+      "id": "5c95a078-e426-50fb-bfe7-8877f66fd65e"
+    },
+    {
+      "parameters": {
+        "content": "## 🧹 Check Point Policy Insights — AI Agent · direct MCP\n**Surfaces the official AI policy-tightening suggestions — zero-hit, over-permissive and disabled rules — and tells you what's safe to remove.**",
+        "width": 1320,
+        "height": 120,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -140,
+        -240
+      ],
+      "name": "Banner",
+      "id": "ed8438dd-75e9-534c-a478-1cae456014b2"
+    },
+    {
+      "parameters": {
+        "content": "### 💬 Try these\n- What's my Policy Insights status?\n- How many suggestions do I have on layer <uid>?\n- Which rules have zero hits and can be deleted?\n- When is the next insights run planned?\n\n### ⚙️ How it works\n**Zero glue.** n8n's native MCP Client Tool talks straight to the server — every tool it exposes becomes an agent tool automatically.\n\n### 🧠 Models\nAzure OpenAI **gpt-5.4** wired as default — Ollama (local, no key), Gemini 2.5 Pro, GPT-5.1 and Claude Opus 4.8 are one click away.",
+        "width": 520,
+        "height": 620,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        60
+      ],
+      "name": "Guide",
+      "id": "ff8ad275-1792-5f79-ae52-5ca647d7cbc3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Normalize input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "CP Policy Insights AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize input": {
+      "main": [
+        [
+          {
+            "node": "CP Policy Insights AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Azure OpenAI (default)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "CP Policy Insights AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Policy Insights MCP": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP Policy Insights AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CP Policy Insights AI Agent": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Friendly error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9a327001-898b-4e33-bc01-256da4da8dd3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec"
+  },
+  "id": "PolicyInsightsWf1",
+  "tags": []
+}

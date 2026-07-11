@@ -23,6 +23,17 @@ registry:
       category: "checkpoint"
       tags: ["management", "quantum"]
 
+  policy-insights:
+    description: "Check Point Policy Insights MCP — AI policy-tightening suggestions (zero-hit, over-permissive, disabled rules)"
+    title: "CP Policy Insights"
+    type: "remote"
+    remote:
+      url: "http://policy-insights-mcp:3013"
+      transport_type: "streamable"
+    metadata:
+      category: "checkpoint"
+      tags: ["management", "insights", "cleanup"]
+
   cpinfo-analysis:
     description: "Check Point CPInfo bundle analysis MCP"
     title: "CP CPInfo Analysis"

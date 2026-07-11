@@ -24,9 +24,12 @@ RUN set -eux; \
   done
 
 # Install MCP CLIs
+# policy-insights is not in the vendored mcp-src snapshot (it landed upstream later), so it is
+# installed from the public npm registry, version-pinned. npm nests any @chkp/infra / @chkp/mcp-utils
+# version differences, so it can't disturb the locally-built packages.
 WORKDIR /opt/mcp-doc
 RUN npm init -y >/dev/null 2>&1 && \
-  npm install --omit=dev /opt/artifacts/*.tgz
+  npm install --omit=dev /opt/artifacts/*.tgz @chkp/policy-insights-mcp@0.3.5
 
 # ============== FINAL STAGE ==============
 FROM n8nio/n8n:2.28.6
@@ -61,7 +64,8 @@ RUN set -eux; \
   wrap quantum-gw-cli-mcp quantum-gw-cli-mcp; \
   wrap quantum-gw-connection-analysis-mcp quantum-gw-connection-analysis-mcp; \
   wrap quantum-gaia-mcp quantum-gaia-mcp; \
-  wrap cpinfo-analysis-mcp cpinfo-analysis-mcp
+  wrap cpinfo-analysis-mcp cpinfo-analysis-mcp; \
+  wrap policy-insights-mcp policy-insights-mcp
 
 # Fix ownership
 RUN chown -R node:node /opt/mcp-doc /opt/artifacts

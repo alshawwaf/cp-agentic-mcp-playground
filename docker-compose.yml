@@ -475,10 +475,18 @@ services:
       # framing middleware. (Add a flowise-hubframe like n8n's only if a future
       # version starts sending X-Frame-Options.)
       - "traefik.enable=true"
-      - "traefik.http.routers.flowise.rule=Host(`flowise.{{DOMAIN}}`)"
-      - "traefik.http.routers.flowise.entrypoints=websecure"
-      - "traefik.http.routers.flowise.tls.certresolver=letsencrypt"
-      - "traefik.http.services.flowise.loadbalancer.server.port=${FLOWISE_PORT}"
+      # Two explicit routers (same pattern as PolicyPilot): the Cloudflare tunnel fronts every
+      # host to entrypoint web (:80), and a router carrying TLS config never matches plain HTTP —
+      # Traefik 3.6 splits a web,websecure router and propagates certresolver onto BOTH, so the
+      # single-router form 404s through the tunnel.
+      - "traefik.http.routers.flowise-web.rule=Host(`flowise.{{DOMAIN}}`)"
+      - "traefik.http.routers.flowise-web.entrypoints=web"
+      - "traefik.http.routers.flowise-web.service=flowise-svc"
+      - "traefik.http.routers.flowise-websecure.rule=Host(`flowise.{{DOMAIN}}`)"
+      - "traefik.http.routers.flowise-websecure.entrypoints=websecure"
+      - "traefik.http.routers.flowise-websecure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.flowise-websecure.service=flowise-svc"
+      - "traefik.http.services.flowise-svc.loadbalancer.server.port=${FLOWISE_PORT}"
       - "traefik.docker.network=dokploy-network"
 
   # ──────────────── Open WebUI ────────────────
@@ -501,10 +509,18 @@ services:
 
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.open-webui.rule=Host(`chat.{{DOMAIN}}`)"
-      - "traefik.http.routers.open-webui.entrypoints=websecure"
-      - "traefik.http.routers.open-webui.tls.certresolver=letsencrypt"
-      - "traefik.http.services.open-webui.loadbalancer.server.port=8080"
+      # Two explicit routers (same pattern as PolicyPilot): the Cloudflare tunnel fronts every
+      # host to entrypoint web (:80), and a router carrying TLS config never matches plain HTTP —
+      # Traefik 3.6 splits a web,websecure router and propagates certresolver onto BOTH, so the
+      # single-router form 404s through the tunnel.
+      - "traefik.http.routers.open-webui-web.rule=Host(`chat.{{DOMAIN}}`)"
+      - "traefik.http.routers.open-webui-web.entrypoints=web"
+      - "traefik.http.routers.open-webui-web.service=open-webui-svc"
+      - "traefik.http.routers.open-webui-websecure.rule=Host(`chat.{{DOMAIN}}`)"
+      - "traefik.http.routers.open-webui-websecure.entrypoints=websecure"
+      - "traefik.http.routers.open-webui-websecure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.open-webui-websecure.service=open-webui-svc"
+      - "traefik.http.services.open-webui-svc.loadbalancer.server.port=8080"
       - "traefik.docker.network=dokploy-network"
 
     depends_on:
@@ -535,10 +551,18 @@ services:
       - ollama-pull-models-cpu
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.langflow.rule=Host(`langflow.{{DOMAIN}}`)"
-      - "traefik.http.routers.langflow.entrypoints=websecure"
-      - "traefik.http.routers.langflow.tls.certresolver=letsencrypt"
-      - "traefik.http.services.langflow.loadbalancer.server.port=7860"
+      # Two explicit routers (same pattern as PolicyPilot): the Cloudflare tunnel fronts every
+      # host to entrypoint web (:80), and a router carrying TLS config never matches plain HTTP —
+      # Traefik 3.6 splits a web,websecure router and propagates certresolver onto BOTH, so the
+      # single-router form 404s through the tunnel.
+      - "traefik.http.routers.langflow-web.rule=Host(`langflow.{{DOMAIN}}`)"
+      - "traefik.http.routers.langflow-web.entrypoints=web"
+      - "traefik.http.routers.langflow-web.service=langflow-svc"
+      - "traefik.http.routers.langflow-websecure.rule=Host(`langflow.{{DOMAIN}}`)"
+      - "traefik.http.routers.langflow-websecure.entrypoints=websecure"
+      - "traefik.http.routers.langflow-websecure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.langflow-websecure.service=langflow-svc"
+      - "traefik.http.services.langflow-svc.loadbalancer.server.port=7860"
       - "traefik.docker.network=dokploy-network"
       # Let the dev-hub desktop embed Langflow in an iframe (strip X-Frame-Options,
       # allow the hub in frame-ancestors).
@@ -791,6 +815,69 @@ services:
       - ./n8n/shared:/data/cpinfo
     restart: unless-stopped
 
+  # Official Policy Insights MCP (@chkp/policy-insights-mcp) — AI policy-tightening suggestions
+  # (zero-hit / over-permissive / disabled rules) from Infinity Cloud Services. Pairs with
+  # mcp-quantum-management (resolve layer/rule names) and with PolicyPilot's cleanup rail.
+  # Needs Management API v2.1 (R82.10+) and Policy Insights enabled on the SMS.
+  policy-insights-mcp:
+    image: custom-mcp-n8n:custom
+    container_name: policy-insights-mcp
+    networks: [ "demo" ]
+    depends_on:
+      - n8n
+    entrypoint: [ "/usr/local/bin/policy-insights-mcp" ]
+    environment:
+      - MANAGEMENT_HOST=${MANAGEMENT_HOST}
+      - API_KEY=${MANAGEMENT_API_KEY}
+    command:
+      - "--transport"
+      - "http"
+      - "--transport-port"
+      - "3013"
+    # Registered in the gateway catalog: the gateway enumerates tools once at startup, so it must
+    # only start after this server accepts connections (see the gateway's depends_on).
+    healthcheck:
+      test: [ "CMD", "node", "-e", "require('net').connect(3013,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))" ]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 20s
+    restart: unless-stopped
+
+  # ──────────────── Agent-builder import (Flowise + Langflow) ────────────────
+  # One-shot importer, parity with n8n-import: every deploy seeds the committed
+  # integrations/ flows into the RUNNING builders, idempotently (a same-named
+  # flow is never imported twice; an unparseable flow list refuses to import
+  # rather than duplicate). No manual API keys needed: Flowise authenticates
+  # with the stack admin account (its first-setup account uses the same creds)
+  # and Langflow with its provisioned superuser — set FLOWISE_API_KEY /
+  # LANGFLOW_API_KEY in .env only to override. The script waits for each
+  # builder itself, so plain start-order dependencies are enough.
+  builders-import:
+    image: python:3.12-alpine
+    container_name: builders-import
+    networks: [ "demo" ]
+    depends_on:
+      - flowise
+      - langflow
+    volumes:
+      - ./integrations:/integrations:ro
+    environment:
+      - FLOWISE_URL=http://flowise:${FLOWISE_PORT:-3020}
+      - LANGFLOW_URL=http://langflow:7860
+      - ADMIN_EMAIL=${N8N_ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${N8N_ADMIN_PASSWORD}
+      - FLOWISE_API_KEY=${FLOWISE_API_KEY:-}
+      - LANGFLOW_API_KEY=${LANGFLOW_API_KEY:-}
+      # Same default as the mcp-gateway service, so the imported agent authenticates out of the box.
+      - MCP_GATEWAY_TOKEN=${MCP_GATEWAY_TOKEN:-cp-mcp-gateway-training-token}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
+      - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT:-}
+    entrypoint: [ "python3", "/integrations/seed_builders.py" ]
+    restart: "no"
+
   # ──────────────── AI-Infra-Guard (AI Red Teaming Platform) ────────────────
   # Tencent Zhuque Lab - AI infrastructure vuln scanning, MCP security
   # analysis, and jailbreak evaluation. Web UI at port 8088.
@@ -819,10 +906,18 @@ services:
       retries: 3
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.aig.rule=Host(`aig.{{DOMAIN}}`)"
-      - "traefik.http.routers.aig.entrypoints=websecure"
-      - "traefik.http.routers.aig.tls.certresolver=letsencrypt"
-      - "traefik.http.services.aig.loadbalancer.server.port=8088"
+      # Two explicit routers (same pattern as PolicyPilot): the Cloudflare tunnel fronts every
+      # host to entrypoint web (:80), and a router carrying TLS config never matches plain HTTP —
+      # Traefik 3.6 splits a web,websecure router and propagates certresolver onto BOTH, so the
+      # single-router form 404s through the tunnel.
+      - "traefik.http.routers.aig-web.rule=Host(`aig.{{DOMAIN}}`)"
+      - "traefik.http.routers.aig-web.entrypoints=web"
+      - "traefik.http.routers.aig-web.service=aig-svc"
+      - "traefik.http.routers.aig-websecure.rule=Host(`aig.{{DOMAIN}}`)"
+      - "traefik.http.routers.aig-websecure.entrypoints=websecure"
+      - "traefik.http.routers.aig-websecure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.aig-websecure.service=aig-svc"
+      - "traefik.http.services.aig-svc.loadbalancer.server.port=8088"
       - "traefik.docker.network=dokploy-network"
 
   aig-agent:
@@ -864,7 +959,7 @@ services:
       # catalog must live under ~/.docker/mcp/catalogs/ and be referenced by name
       - "--catalog=checkpoint-mcp.yaml"
       # a custom catalog does not auto-enable its servers; list them explicitly
-      - "--servers=documentation,quantum-management,cpinfo-analysis,https-inspection,management-logs,gaia,gw-cli,reputation-service,threat-emulation,threat-prevention"
+      - "--servers=documentation,quantum-management,policy-insights,cpinfo-analysis,https-inspection,management-logs,gaia,gw-cli,reputation-service,threat-emulation,threat-prevention"
     environment:
       # required when running outside Docker Desktop (Dokploy / Docker CE)
       - DOCKER_MCP_IN_CONTAINER=1
@@ -888,6 +983,8 @@ services:
       mcp-documentation:
         condition: service_healthy
       mcp-quantum-management:
+        condition: service_healthy
+      policy-insights-mcp:
         condition: service_healthy
     # Surfaces a wedged gateway (e.g. it came up before a sidecar and enumerated
     # 0 tools) as 'unhealthy' in `docker ps`. The gateway image is a minimal Go
