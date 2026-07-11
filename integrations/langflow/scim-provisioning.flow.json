@@ -1,0 +1,1316 @@
+{
+  "data": {
+    "edges": [
+      {
+        "animated": false,
+        "className": "",
+        "data": {
+          "sourceHandle": {
+            "dataType": "ChatInput",
+            "id": "ChatInput-cpin1",
+            "name": "message",
+            "output_types": [
+              "Message"
+            ]
+          },
+          "targetHandle": {
+            "fieldName": "input_value",
+            "id": "ToolCallingAgent-scim1",
+            "inputTypes": [
+              "Message"
+            ],
+            "type": "str"
+          }
+        },
+        "id": "reactflow__edge-ChatInput-cpin1{œdataTypeœ:œChatInputœ,œidœ:œChatInput-cpin1œ,œnameœ:œmessageœ,œoutput_typesœ:[œMessageœ]}-ToolCallingAgent-scim1{œfieldNameœ:œinput_valueœ,œidœ:œToolCallingAgent-scim1œ,œinputTypesœ:[œMessageœ],œtypeœ:œstrœ}",
+        "selected": false,
+        "source": "ChatInput-cpin1",
+        "sourceHandle": "{œdataTypeœ: œChatInputœ, œidœ: œChatInput-cpin1œ, œnameœ: œmessageœ, œoutput_typesœ: [œMessageœ]}",
+        "target": "ToolCallingAgent-scim1",
+        "targetHandle": "{œfieldNameœ: œinput_valueœ, œidœ: œToolCallingAgent-scim1œ, œinputTypesœ: [œMessageœ], œtypeœ: œstrœ}"
+      },
+      {
+        "animated": false,
+        "className": "",
+        "data": {
+          "sourceHandle": {
+            "dataType": "OpenAIModel",
+            "id": "OpenAIModel-cpoai",
+            "name": "model_output",
+            "output_types": [
+              "LanguageModel"
+            ]
+          },
+          "targetHandle": {
+            "fieldName": "model",
+            "id": "ToolCallingAgent-scim1",
+            "inputTypes": [
+              "LanguageModel"
+            ],
+            "type": "other"
+          }
+        },
+        "id": "reactflow__edge-OpenAIModel-cpoai{œdataTypeœ:œOpenAIModelœ,œidœ:œOpenAIModel-cpoaiœ,œnameœ:œmodel_outputœ,œoutput_typesœ:[œLanguageModelœ]}-ToolCallingAgent-scim1{œfieldNameœ:œmodelœ,œidœ:œToolCallingAgent-scim1œ,œinputTypesœ:[œLanguageModelœ],œtypeœ:œotherœ}",
+        "selected": false,
+        "source": "OpenAIModel-cpoai",
+        "sourceHandle": "{œdataTypeœ: œOpenAIModelœ, œidœ: œOpenAIModel-cpoaiœ, œnameœ: œmodel_outputœ, œoutput_typesœ: [œLanguageModelœ]}",
+        "target": "ToolCallingAgent-scim1",
+        "targetHandle": "{œfieldNameœ: œmodelœ, œidœ: œToolCallingAgent-scim1œ, œinputTypesœ: [œLanguageModelœ], œtypeœ: œotherœ}"
+      },
+      {
+        "animated": false,
+        "className": "",
+        "data": {
+          "sourceHandle": {
+            "dataType": "SCIMProvisioningTools",
+            "id": "SCIMProvisioningTools-scim1",
+            "name": "tools",
+            "output_types": [
+              "Tool"
+            ]
+          },
+          "targetHandle": {
+            "fieldName": "tools",
+            "id": "ToolCallingAgent-scim1",
+            "inputTypes": [
+              "Tool"
+            ],
+            "type": "other"
+          }
+        },
+        "id": "reactflow__edge-SCIMProvisioningTools-scim1{œdataTypeœ:œSCIMProvisioningToolsœ,œidœ:œSCIMProvisioningTools-scim1œ,œnameœ:œtoolsœ,œoutput_typesœ:[œToolœ]}-ToolCallingAgent-scim1{œfieldNameœ:œtoolsœ,œidœ:œToolCallingAgent-scim1œ,œinputTypesœ:[œToolœ],œtypeœ:œotherœ}",
+        "selected": false,
+        "source": "SCIMProvisioningTools-scim1",
+        "sourceHandle": "{œdataTypeœ: œSCIMProvisioningToolsœ, œidœ: œSCIMProvisioningTools-scim1œ, œnameœ: œtoolsœ, œoutput_typesœ: [œToolœ]}",
+        "target": "ToolCallingAgent-scim1",
+        "targetHandle": "{œfieldNameœ: œtoolsœ, œidœ: œToolCallingAgent-scim1œ, œinputTypesœ: [œToolœ], œtypeœ: œotherœ}"
+      },
+      {
+        "animated": false,
+        "className": "",
+        "data": {
+          "sourceHandle": {
+            "dataType": "ToolCallingAgent",
+            "id": "ToolCallingAgent-scim1",
+            "name": "response",
+            "output_types": [
+              "Message"
+            ]
+          },
+          "targetHandle": {
+            "fieldName": "input_value",
+            "id": "ChatOutput-cpout",
+            "inputTypes": [
+              "Data",
+              "JSON",
+              "DataFrame",
+              "Table",
+              "Message"
+            ],
+            "type": "other"
+          }
+        },
+        "id": "reactflow__edge-ToolCallingAgent-scim1{œdataTypeœ:œToolCallingAgentœ,œidœ:œToolCallingAgent-scim1œ,œnameœ:œresponseœ,œoutput_typesœ:[œMessageœ]}-ChatOutput-cpout{œfieldNameœ:œinput_valueœ,œidœ:œChatOutput-cpoutœ,œinputTypesœ:[œDataœ,œJSONœ,œDataFrameœ,œTableœ,œMessageœ],œtypeœ:œotherœ}",
+        "selected": false,
+        "source": "ToolCallingAgent-scim1",
+        "sourceHandle": "{œdataTypeœ: œToolCallingAgentœ, œidœ: œToolCallingAgent-scim1œ, œnameœ: œresponseœ, œoutput_typesœ: [œMessageœ]}",
+        "target": "ChatOutput-cpout",
+        "targetHandle": "{œfieldNameœ: œinput_valueœ, œidœ: œChatOutput-cpoutœ, œinputTypesœ: [œDataœ, œJSONœ, œDataFrameœ, œTableœ, œMessageœ], œtypeœ: œotherœ}"
+      }
+    ],
+    "nodes": [
+      {
+        "data": {
+          "id": "ChatInput-cpin1",
+          "node": {
+            "base_classes": [
+              "Message"
+            ],
+            "beta": false,
+            "category": "inputs",
+            "conditional_paths": [],
+            "custom_fields": {},
+            "description": "Get chat inputs from the Playground.",
+            "display_name": "Chat Input",
+            "documentation": "",
+            "edited": false,
+            "field_order": [
+              "input_value",
+              "should_store_message",
+              "sender",
+              "sender_name",
+              "session_id",
+              "context_id",
+              "files"
+            ],
+            "frozen": false,
+            "icon": "MessagesSquare",
+            "key": "ChatInput",
+            "legacy": false,
+            "metadata": {
+              "code_hash": "7a26c54d89ed",
+              "dependencies": {
+                "dependencies": [
+                  {
+                    "name": "lfx",
+                    "version": null
+                  }
+                ],
+                "total_dependencies": 1
+              },
+              "module": "lfx.components.input_output.chat.ChatInput"
+            },
+            "minimized": true,
+            "output_types": [],
+            "outputs": [
+              {
+                "allows_loop": false,
+                "cache": true,
+                "display_name": "Chat Message",
+                "group_outputs": false,
+                "method": "message_response",
+                "name": "message",
+                "selected": "Message",
+                "tool_mode": true,
+                "types": [
+                  "Message"
+                ],
+                "value": "__UNDEFINED__"
+              }
+            ],
+            "pinned": false,
+            "score": 0.0020353564437605998,
+            "template": {
+              "_type": "Component",
+              "code": {
+                "advanced": true,
+                "dynamic": true,
+                "fileTypes": [],
+                "file_path": "",
+                "list": false,
+                "load_from_db": false,
+                "multiline": true,
+                "name": "code",
+                "password": false,
+                "required": true,
+                "show": true,
+                "type": "code",
+                "value": "from lfx.base.data.utils import IMG_FILE_TYPES, TEXT_FILE_TYPES\nfrom lfx.base.io.chat import ChatComponent\nfrom lfx.inputs.inputs import BoolInput\nfrom lfx.io import DropdownInput, FileInput, MessageTextInput, MultilineInput, Output\nfrom lfx.schema.message import Message\nfrom lfx.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_NAME_USER, MESSAGE_SENDER_USER\n\nclass ChatInput(ChatComponent):\n    display_name = 'Chat Input'\n    description = 'Get chat inputs from the Playground.'\n    documentation: str = 'https://docs.langflow.org/chat-input-and-output'\n    icon = 'MessagesSquare'\n    name = 'ChatInput'\n    minimized = True\n    inputs = [MultilineInput(name='input_value', display_name='Input Text', value='', info='Message to be passed as input.', input_types=[]), BoolInput(name='should_store_message', display_name='Store Messages', info='Store the message in the history.', value=True, advanced=True), DropdownInput(name='sender', display_name='Sender Type', options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER], value=MESSAGE_SENDER_USER, info='Type of sender.', advanced=True), MessageTextInput(name='sender_name', display_name='Sender Name', info='Name of the sender.', value=MESSAGE_SENDER_NAME_USER, advanced=True), MessageTextInput(name='session_id', display_name='Session ID', info='The session ID of the chat. If empty, the current session ID parameter will be used.', advanced=True), MessageTextInput(name='context_id', display_name='Context ID', info='The context ID of the chat. Adds an extra layer to the local memory.', value='', advanced=True), FileInput(name='files', display_name='Files', file_types=TEXT_FILE_TYPES + IMG_FILE_TYPES, info='Files to be sent with the message.', advanced=True, is_list=True, temp_file=True)]\n    outputs = [Output(display_name='Chat Message', name='message', method='message_response')]\n\n    async def message_response(self) -> Message:\n        files = self.files if self.files else []\n        if files and (not isinstance(files, list)):\n            files = [files]\n        files = [f for f in files if f is not None and f != '']\n        session_id = self.session_id or self.graph.session_id or ''\n        message = await Message.create(text=self.input_value, sender=self.sender, sender_name=self.sender_name, session_id=session_id, context_id=self.context_id, files=files)\n        if session_id and isinstance(message, Message) and self.should_store_message:\n            stored_message = await self.send_message(message)\n            self.message.value = stored_message\n            message = stored_message\n        self.status = message\n        return message"
+              },
+              "context_id": {
+                "_input_type": "MessageTextInput",
+                "advanced": true,
+                "dynamic": false,
+                "input_types": [
+                  "Message"
+                ],
+                "list": false,
+                "load_from_db": false,
+                "name": "context_id",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": ""
+              },
+              "files": {
+                "_input_type": "FileInput",
+                "advanced": true,
+                "dynamic": false,
+                "fileTypes": [
+                  "csv",
+                  "json",
+                  "pdf",
+                  "txt",
+                  "md",
+                  "mdx",
+                  "yaml",
+                  "yml",
+                  "xml",
+                  "html",
+                  "htm",
+                  "docx",
+                  "py",
+                  "sh",
+                  "sql",
+                  "js",
+                  "ts",
+                  "tsx",
+                  "jpg",
+                  "jpeg",
+                  "png",
+                  "bmp",
+                  "image"
+                ],
+                "file_path": "",
+                "list": true,
+                "name": "files",
+                "required": false,
+                "show": true,
+                "trace_as_metadata": true,
+                "type": "file",
+                "value": ""
+              },
+              "input_value": {
+                "_input_type": "MultilineInput",
+                "advanced": false,
+                "dynamic": false,
+                "input_types": [],
+                "list": false,
+                "load_from_db": false,
+                "multiline": true,
+                "name": "input_value",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": "Hello, how are you?"
+              },
+              "sender": {
+                "_input_type": "DropdownInput",
+                "advanced": true,
+                "combobox": false,
+                "dynamic": false,
+                "name": "sender",
+                "options": [
+                  "Machine",
+                  "User"
+                ],
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": "User"
+              },
+              "sender_name": {
+                "_input_type": "MessageTextInput",
+                "advanced": true,
+                "dynamic": false,
+                "input_types": [
+                  "Message"
+                ],
+                "list": false,
+                "load_from_db": false,
+                "name": "sender_name",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": "User"
+              },
+              "session_id": {
+                "_input_type": "MessageTextInput",
+                "advanced": true,
+                "dynamic": false,
+                "input_types": [
+                  "Message"
+                ],
+                "list": false,
+                "load_from_db": false,
+                "name": "session_id",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": ""
+              },
+              "should_store_message": {
+                "_input_type": "BoolInput",
+                "advanced": true,
+                "dynamic": false,
+                "list": false,
+                "name": "should_store_message",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "type": "bool",
+                "value": true
+              }
+            },
+            "tool_mode": false
+          },
+          "selected_output": "message",
+          "showNode": false,
+          "type": "ChatInput"
+        },
+        "id": "ChatInput-cpin1",
+        "position": {
+          "x": -640,
+          "y": 40
+        },
+        "selected": false,
+        "type": "genericNode"
+      },
+      {
+        "id": "OpenAIModel-cpoai",
+        "type": "genericNode",
+        "position": {
+          "x": -640,
+          "y": 460
+        },
+        "data": {
+          "id": "OpenAIModel-cpoai",
+          "type": "OpenAIModel",
+          "node": {
+            "base_classes": [
+              "LanguageModel",
+              "Message"
+            ],
+            "beta": false,
+            "conditional_paths": [],
+            "custom_fields": {},
+            "description": "Generates text using OpenAI LLMs.",
+            "display_name": "OpenAI",
+            "documentation": "",
+            "edited": false,
+            "field_order": [
+              "input_value",
+              "system_message",
+              "stream",
+              "max_tokens",
+              "model_kwargs",
+              "json_mode",
+              "model_name",
+              "openai_api_base",
+              "api_key",
+              "temperature",
+              "seed",
+              "max_retries",
+              "timeout"
+            ],
+            "frozen": false,
+            "icon": "OpenAI",
+            "legacy": false,
+            "metadata": {},
+            "minimized": false,
+            "output_types": [],
+            "outputs": [
+              {
+                "allows_loop": false,
+                "cache": true,
+                "display_name": "Model Response",
+                "group_outputs": false,
+                "method": "text_response",
+                "name": "text_output",
+                "selected": "Message",
+                "types": [
+                  "Message"
+                ],
+                "value": "__UNDEFINED__"
+              },
+              {
+                "allows_loop": false,
+                "cache": true,
+                "display_name": "Language Model",
+                "group_outputs": false,
+                "method": "build_model",
+                "name": "model_output",
+                "selected": "LanguageModel",
+                "types": [
+                  "LanguageModel"
+                ],
+                "value": "__UNDEFINED__"
+              }
+            ],
+            "pinned": false,
+            "template": {
+              "_type": "Component",
+              "code": {
+                "advanced": true,
+                "dynamic": true,
+                "fileTypes": [],
+                "file_path": "",
+                "list": false,
+                "load_from_db": false,
+                "multiline": true,
+                "name": "code",
+                "password": false,
+                "required": true,
+                "show": true,
+                "type": "code",
+                "value": "from typing import Any\nfrom langchain_openai import ChatOpenAI\nfrom lfx.base.models.model import LCModelComponent\nfrom lfx.base.models.openai_constants import OPENAI_CHAT_MODEL_NAMES, OPENAI_REASONING_MODEL_NAMES\nfrom lfx.field_typing import LanguageModel\nfrom lfx.field_typing.range_spec import RangeSpec\nfrom lfx.inputs.inputs import BoolInput, DictInput, DropdownInput, IntInput, SecretStrInput, SliderInput, StrInput\nfrom lfx.log.logger import logger\nfrom lfx.utils.secrets import secret_value_to_str\n\nclass OpenAIModelComponent(LCModelComponent):\n    display_name = 'OpenAI'\n    description = 'Generates text using OpenAI LLMs.'\n    icon = 'OpenAI'\n    name = 'OpenAIModel'\n    inputs = [*LCModelComponent.get_base_inputs(), IntInput(name='max_tokens', display_name='Max Tokens', advanced=True, info='The maximum number of tokens to generate. Set to 0 for unlimited tokens.', range_spec=RangeSpec(min=0, max=128000)), DictInput(name='model_kwargs', display_name='Model Kwargs', advanced=True, info='Additional keyword arguments to pass to the model.'), BoolInput(name='json_mode', display_name='JSON Mode', advanced=True, info='If True, it will output JSON regardless of passing a schema.'), DropdownInput(name='model_name', display_name='Model Name', advanced=False, options=OPENAI_CHAT_MODEL_NAMES + OPENAI_REASONING_MODEL_NAMES, value=OPENAI_CHAT_MODEL_NAMES[0], combobox=True, real_time_refresh=True), StrInput(name='openai_api_base', display_name='OpenAI API Base', advanced=True, info='The base URL of the OpenAI API. Defaults to https://api.openai.com/v1. You can change this to use other APIs like JinaChat, LocalAI and Prem.'), SecretStrInput(name='api_key', display_name='OpenAI API Key', info='The OpenAI API Key to use for the OpenAI model.', advanced=False, value='OPENAI_API_KEY', required=True), SliderInput(name='temperature', display_name='Temperature', value=0.1, range_spec=RangeSpec(min=0, max=1, step=0.01), show=True), IntInput(name='seed', display_name='Seed', info='The seed controls the reproducibility of the job.', advanced=True, value=1), IntInput(name='max_retries', display_name='Max Retries', info='The maximum number of retries to make when generating.', advanced=True, value=5), IntInput(name='timeout', display_name='Timeout', info='The timeout for requests to OpenAI completion API.', advanced=True, value=700)]\n\n    def build_model(self) -> LanguageModel:\n        logger.debug(f'Executing request with model: {self.model_name}')\n        logger.debug(f\"API key type: {type(self.api_key)}, value: {('***' if self.api_key else None)}\")\n        api_key_value = secret_value_to_str(self.api_key) if self.api_key else None\n        logger.debug(f\"Final api_key_value type: {type(api_key_value)}, value: {('***' if api_key_value else None)}\")\n        model_kwargs = self.model_kwargs or {}\n        if 'api_key' in model_kwargs:\n            logger.warning('api_key found in model_kwargs, removing to prevent conflicts')\n            model_kwargs = dict(model_kwargs)\n            del model_kwargs['api_key']\n        parameters = {'api_key': api_key_value, 'model_name': self.model_name, 'max_tokens': self.max_tokens or None, 'model_kwargs': model_kwargs, 'base_url': self.openai_api_base or 'https://api.openai.com/v1', 'max_retries': self.max_retries, 'timeout': self.timeout}\n        unsupported_params_for_reasoning_models = ['temperature', 'seed']\n        if self.model_name not in OPENAI_REASONING_MODEL_NAMES:\n            parameters['temperature'] = self.temperature if self.temperature is not None else 0.1\n            parameters['seed'] = self.seed\n        else:\n            params_str = ', '.join(unsupported_params_for_reasoning_models)\n            logger.debug(f'{self.model_name} is a reasoning model, {params_str} are not configurable. Ignoring.')\n        parameters['stream_usage'] = True\n        output = ChatOpenAI(**parameters)\n        if self.json_mode:\n            output = output.bind(response_format={'type': 'json_object'})\n        return output\n\n    def _get_exception_message(self, e: Exception):\n        try:\n            from openai import BadRequestError, NotFoundError\n        except ImportError:\n            return None\n        if isinstance(e, NotFoundError):\n            body = getattr(e, 'body', None) or {}\n            if isinstance(body, dict) and body.get('code') == 'model_not_found':\n                return f\"Model '{self.model_name}' is not available for this OpenAI account. Your API tier may not have access yet — check https://platform.openai.com/settings/organization/limits or select a different model.\"\n        if isinstance(e, BadRequestError):\n            message = e.body.get('message')\n            if message:\n                return message\n        return None\n\n    def update_build_config(self, build_config: dict, field_value: Any, field_name: str | None=None) -> dict:\n        if field_name in {'base_url', 'model_name', 'api_key'} and field_value in OPENAI_REASONING_MODEL_NAMES:\n            build_config['temperature']['show'] = False\n            build_config['seed']['show'] = False\n            if field_value.startswith('o1') and 'system_message' in build_config:\n                build_config['system_message']['show'] = False\n        if field_name in {'base_url', 'model_name', 'api_key'} and field_value in OPENAI_CHAT_MODEL_NAMES:\n            build_config['temperature']['show'] = True\n            build_config['seed']['show'] = True\n            if 'system_message' in build_config:\n                build_config['system_message']['show'] = True\n        return build_config"
+              },
+              "input_value": {
+                "_input_type": "MessageInput",
+                "advanced": false,
+                "dynamic": false,
+                "input_types": [
+                  "Message"
+                ],
+                "list": false,
+                "load_from_db": false,
+                "name": "input_value",
+                "required": false,
+                "show": true,
+                "tool_mode": true,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": ""
+              },
+              "system_message": {
+                "_input_type": "MultilineInput",
+                "advanced": true,
+                "dynamic": false,
+                "input_types": [],
+                "list": false,
+                "load_from_db": false,
+                "multiline": true,
+                "name": "system_message",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": ""
+              },
+              "stream": {
+                "_input_type": "BoolInput",
+                "advanced": true,
+                "dynamic": false,
+                "list": false,
+                "name": "stream",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "type": "bool",
+                "value": false
+              },
+              "max_tokens": {
+                "_input_type": "IntInput",
+                "advanced": true,
+                "dynamic": false,
+                "input_types": [],
+                "list": false,
+                "name": "max_tokens",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "type": "int",
+                "value": ""
+              },
+              "model_kwargs": {
+                "_input_type": "DictInput",
+                "advanced": true,
+                "dynamic": false,
+                "list": true,
+                "name": "model_kwargs",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_input": true,
+                "type": "dict",
+                "value": {}
+              },
+              "json_mode": {
+                "_input_type": "BoolInput",
+                "advanced": true,
+                "dynamic": false,
+                "list": false,
+                "name": "json_mode",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "type": "bool",
+                "value": false
+              },
+              "model_name": {
+                "_input_type": "DropdownInput",
+                "advanced": true,
+                "combobox": true,
+                "dynamic": false,
+                "name": "model_name",
+                "options": [
+                  "gpt-4o-mini",
+                  "gpt-4o",
+                  "gpt-4.1",
+                  "gpt-4.1-mini",
+                  "o3-mini",
+                  "o1",
+                  "gpt-3.5-turbo"
+                ],
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": "gpt-5.4",
+                "real_time_refresh": true
+              },
+              "openai_api_base": {
+                "_input_type": "StrInput",
+                "advanced": true,
+                "dynamic": false,
+                "input_types": [],
+                "list": false,
+                "load_from_db": false,
+                "name": "openai_api_base",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": "http://litellm:4000/v1"
+              },
+              "api_key": {
+                "_input_type": "SecretStrInput",
+                "advanced": true,
+                "dynamic": false,
+                "input_types": [],
+                "load_from_db": false,
+                "name": "api_key",
+                "password": true,
+                "real_time_refresh": true,
+                "required": true,
+                "show": true,
+                "type": "str",
+                "value": "__LITELLM_MASTER_KEY__"
+              },
+              "temperature": {
+                "_input_type": "SliderInput",
+                "advanced": false,
+                "dynamic": false,
+                "name": "temperature",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "type": "slider",
+                "value": 0.1
+              },
+              "seed": {
+                "_input_type": "IntInput",
+                "advanced": true,
+                "dynamic": false,
+                "input_types": [],
+                "list": false,
+                "name": "seed",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "type": "int",
+                "value": 1
+              },
+              "max_retries": {
+                "_input_type": "IntInput",
+                "advanced": true,
+                "dynamic": false,
+                "input_types": [],
+                "list": false,
+                "name": "max_retries",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "type": "int",
+                "value": 5
+              },
+              "timeout": {
+                "_input_type": "IntInput",
+                "advanced": true,
+                "dynamic": false,
+                "input_types": [],
+                "list": false,
+                "name": "timeout",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "type": "int",
+                "value": 700
+              }
+            },
+            "tool_mode": false
+          },
+          "selected_output": null,
+          "showNode": true
+        },
+        "selected": false
+      },
+      {
+        "id": "ToolCallingAgent-scim1",
+        "type": "genericNode",
+        "position": {
+          "x": 320,
+          "y": 40
+        },
+        "data": {
+          "id": "ToolCallingAgent-scim1",
+          "type": "ToolCallingAgent",
+          "node": {
+            "base_classes": [
+              "AgentExecutor",
+              "Message"
+            ],
+            "beta": false,
+            "conditional_paths": [],
+            "custom_fields": {},
+            "description": "An agent designed to utilize various tools seamlessly within workflows.",
+            "display_name": "Tool Calling Agent",
+            "documentation": "",
+            "edited": false,
+            "field_order": [
+              "tools",
+              "input_value",
+              "handle_parsing_errors",
+              "verbose",
+              "max_iterations",
+              "model",
+              "api_key",
+              "base_url_ibm_watsonx",
+              "project_id",
+              "system_prompt",
+              "chat_history"
+            ],
+            "frozen": false,
+            "icon": "LangChain",
+            "legacy": false,
+            "metadata": {
+              "code_hash": "5afbd30b7d58",
+              "dependencies": {
+                "dependencies": [
+                  {
+                    "name": "langchain_classic",
+                    "version": "1.0.8"
+                  },
+                  {
+                    "name": "langchain_core",
+                    "version": "1.4.8"
+                  },
+                  {
+                    "name": "lfx",
+                    "version": null
+                  }
+                ],
+                "total_dependencies": 3
+              },
+              "module": "lfx.components.langchain_utilities.tool_calling.ToolCallingAgentComponent"
+            },
+            "minimized": false,
+            "output_types": [],
+            "outputs": [
+              {
+                "allows_loop": false,
+                "cache": true,
+                "display_name": "Response",
+                "group_outputs": false,
+                "method": "message_response",
+                "name": "response",
+                "selected": "Message",
+                "tool_mode": true,
+                "types": [
+                  "Message"
+                ],
+                "value": "__UNDEFINED__"
+              },
+              {
+                "allows_loop": false,
+                "cache": true,
+                "display_name": "Agent",
+                "group_outputs": false,
+                "method": "build_agent",
+                "name": "agent",
+                "selected": "AgentExecutor",
+                "tool_mode": false,
+                "types": [
+                  "AgentExecutor"
+                ],
+                "value": "__UNDEFINED__"
+              }
+            ],
+            "pinned": false,
+            "template": {
+              "_type": "Component",
+              "api_key": {
+                "_input_type": "SecretStrInput",
+                "advanced": true,
+                "dynamic": false,
+                "input_types": [],
+                "load_from_db": true,
+                "name": "api_key",
+                "password": true,
+                "real_time_refresh": true,
+                "required": false,
+                "show": true,
+                "type": "str",
+                "value": ""
+              },
+              "base_url_ibm_watsonx": {
+                "_input_type": "DropdownInput",
+                "advanced": false,
+                "combobox": false,
+                "dynamic": false,
+                "name": "base_url_ibm_watsonx",
+                "options": [
+                  "https://us-south.ml.cloud.ibm.com",
+                  "https://eu-de.ml.cloud.ibm.com",
+                  "https://eu-gb.ml.cloud.ibm.com",
+                  "https://au-syd.ml.cloud.ibm.com",
+                  "https://jp-tok.ml.cloud.ibm.com",
+                  "https://ca-tor.ml.cloud.ibm.com"
+                ],
+                "real_time_refresh": true,
+                "required": false,
+                "show": false,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": "https://us-south.ml.cloud.ibm.com"
+              },
+              "chat_history": {
+                "_input_type": "JSONInput",
+                "advanced": true,
+                "dynamic": false,
+                "input_types": [
+                  "Data",
+                  "JSON"
+                ],
+                "list": true,
+                "name": "chat_history",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "type": "other",
+                "value": ""
+              },
+              "code": {
+                "advanced": true,
+                "dynamic": true,
+                "fileTypes": [],
+                "file_path": "",
+                "list": false,
+                "load_from_db": false,
+                "multiline": true,
+                "name": "code",
+                "password": false,
+                "required": true,
+                "show": true,
+                "type": "code",
+                "value": "import contextlib\nfrom datetime import datetime, timezone\nfrom langchain_classic.agents import create_tool_calling_agent\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom lfx.base.agents.agent import LCToolsAgentComponent\nfrom lfx.base.agents.default_system_prompt import DEFAULT_SYSTEM_PROMPT_TEMPLATE, has_env_placeholders, substitute_env_placeholders\nfrom lfx.base.models.model_utils import get_model_name\nfrom lfx.base.models.unified_models import get_language_model_options, get_llm, handle_model_input_update\nfrom lfx.base.models.watsonx_constants import IBM_WATSONX_URLS\nfrom lfx.components.langchain_utilities.ibm_granite_handler import create_granite_agent, get_enhanced_system_prompt, is_granite_model\nfrom lfx.inputs.inputs import DataInput, DropdownInput, MessageTextInput, ModelInput, SecretStrInput, StrInput\nfrom lfx.schema.data import Data\n\nclass ToolCallingAgentComponent(LCToolsAgentComponent):\n    display_name: str = 'Tool Calling Agent'\n    description: str = 'An agent designed to utilize various tools seamlessly within workflows.'\n    icon = 'LangChain'\n    name = 'ToolCallingAgent'\n    inputs = [*LCToolsAgentComponent.get_base_inputs(), ModelInput(name='model', display_name='Language Model', info='Select your model provider or connect a Language Model component.', real_time_refresh=True, required=True), SecretStrInput(name='api_key', display_name='API Key', info='Overrides global provider settings. Leave blank to use your pre-configured API Key.', real_time_refresh=True, advanced=True), DropdownInput(name='base_url_ibm_watsonx', display_name='watsonx API Endpoint', info='The base URL of the API (IBM watsonx.ai only)', options=IBM_WATSONX_URLS, value=IBM_WATSONX_URLS[0], show=False, real_time_refresh=True), StrInput(name='project_id', display_name='watsonx Project ID', info='The project ID associated with the foundation model (IBM watsonx.ai only)', show=False, required=False), MessageTextInput(name='system_prompt', display_name='System Prompt', info=\"System prompt to guide the agent's behavior.\", value=DEFAULT_SYSTEM_PROMPT_TEMPLATE), DataInput(name='chat_history', display_name='Chat Memory', is_list=True, advanced=True, info='This input stores the chat history, allowing the agent to remember previous conversations.')]\n\n    def _get_llm(self):\n        return get_llm(model=self.model, user_id=self.user_id, api_key=getattr(self, 'api_key', None), watsonx_url=getattr(self, 'base_url_ibm_watsonx', None), watsonx_project_id=getattr(self, 'project_id', None))\n\n    def update_build_config(self, build_config: dict, field_value: str, field_name: str | None=None) -> dict:\n        return handle_model_input_update(self, dict(build_config), field_value, field_name, cache_key_prefix='language_model_options_tool_calling', get_options_func=lambda user_id=None: get_language_model_options(user_id=user_id, tool_calling=True))\n\n    def get_chat_history_data(self) -> list[Data] | None:\n        return self.chat_history\n\n    def create_agent_runnable(self):\n        messages = []\n        effective_system_prompt = self.system_prompt or ''\n        llm = self._get_llm()\n        if getattr(llm, 'streaming', True) is False:\n            with contextlib.suppress(AttributeError, TypeError, ValueError):\n                llm.streaming = True\n        if effective_system_prompt and has_env_placeholders(effective_system_prompt):\n            effective_system_prompt = substitute_env_placeholders(effective_system_prompt, current_date=datetime.now(timezone.utc).date().isoformat(), model_name=str(get_model_name(llm)))\n            self._effective_system_prompt = effective_system_prompt\n        if is_granite_model(llm) and self.tools:\n            effective_system_prompt = get_enhanced_system_prompt(effective_system_prompt, self.tools)\n            self._effective_system_prompt = effective_system_prompt\n        if effective_system_prompt.strip():\n            messages.append(('system', '{system_prompt}'))\n        messages.extend([('placeholder', '{chat_history}'), ('human', '{input}'), ('placeholder', '{agent_scratchpad}')])\n        prompt = ChatPromptTemplate.from_messages(messages)\n        self.validate_tool_names()\n        try:\n            if is_granite_model(llm) and self.tools:\n                return create_granite_agent(llm, self.tools, prompt)\n            return create_tool_calling_agent(llm, self.tools or [], prompt)\n        except NotImplementedError as e:\n            message = f'{self.display_name} does not support tool calling. Please try using a compatible model.'\n            raise NotImplementedError(message) from e"
+              },
+              "handle_parsing_errors": {
+                "_input_type": "BoolInput",
+                "advanced": true,
+                "dynamic": false,
+                "list": false,
+                "name": "handle_parsing_errors",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "type": "bool",
+                "value": true
+              },
+              "input_value": {
+                "_input_type": "MessageInput",
+                "advanced": false,
+                "dynamic": false,
+                "input_types": [
+                  "Message"
+                ],
+                "list": false,
+                "load_from_db": false,
+                "name": "input_value",
+                "required": false,
+                "show": true,
+                "tool_mode": true,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": ""
+              },
+              "max_iterations": {
+                "_input_type": "IntInput",
+                "advanced": true,
+                "dynamic": false,
+                "list": false,
+                "name": "max_iterations",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "type": "int",
+                "value": 15
+              },
+              "model": {
+                "_input_type": "ModelInput",
+                "advanced": false,
+                "dynamic": false,
+                "input_types": [
+                  "LanguageModel"
+                ],
+                "list": false,
+                "name": "model",
+                "real_time_refresh": true,
+                "required": true,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_input": true,
+                "type": "model",
+                "value": ""
+              },
+              "project_id": {
+                "_input_type": "StrInput",
+                "advanced": false,
+                "dynamic": false,
+                "list": false,
+                "load_from_db": false,
+                "name": "project_id",
+                "required": false,
+                "show": false,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": ""
+              },
+              "system_prompt": {
+                "_input_type": "MessageTextInput",
+                "advanced": false,
+                "dynamic": false,
+                "input_types": [
+                  "Message"
+                ],
+                "list": false,
+                "load_from_db": false,
+                "name": "system_prompt",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": "You are the **Check Point Identity** provisioning assistant. You manage user identities in the organization's Identity Provider (IdP) over the **SCIM 2.0** protocol, using the SCIM Provisioning tools.\n\n== TOOLS YOU HAVE ==\n- **SCIM_Create_User** (HTTP POST /scim/v2/Users): provision a NEW user. Requires the person's email (used as the SCIM userName), first name (given_name) and last name (family_name).\n- **SCIM_List_Users** (HTTP GET /scim/v2/Users): list or search existing users. Accepts an optional SCIM `scim_filter` (e.g. userName eq \"jane.doe@example.com\") and a `count`.\n\n== HOW TO WORK ==\n- To onboard someone, extract their email, first name and last name, then call SCIM_Create_User. If any of those is missing, ASK for it first — never invent an email address.\n- Before creating, you may call SCIM_List_Users to check the user doesn't already exist.\n- To answer 'who exists / find a user', use SCIM_List_Users with a filter.\n- After creating a user, confirm back the userName that was provisioned.\n- Use ONLY these two tools. If asked for something they can't do (delete, update/PATCH, groups), say so plainly.\n- The SCIM bearer token and application/scim+json content type are applied automatically; you never handle secrets."
+              },
+              "tools": {
+                "_input_type": "HandleInput",
+                "advanced": false,
+                "dynamic": false,
+                "input_types": [
+                  "Tool"
+                ],
+                "list": true,
+                "name": "tools",
+                "required": false,
+                "show": true,
+                "trace_as_metadata": true,
+                "type": "other",
+                "value": ""
+              },
+              "verbose": {
+                "_input_type": "BoolInput",
+                "advanced": true,
+                "dynamic": false,
+                "list": false,
+                "name": "verbose",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "type": "bool",
+                "value": true
+              }
+            },
+            "tool_mode": false
+          },
+          "selected_output": null,
+          "showNode": true
+        },
+        "selected": false
+      },
+      {
+        "data": {
+          "id": "ChatOutput-cpout",
+          "node": {
+            "base_classes": [
+              "Message"
+            ],
+            "beta": false,
+            "category": "outputs",
+            "conditional_paths": [],
+            "custom_fields": {},
+            "description": "Display a chat message in the Playground.",
+            "display_name": "Chat Output",
+            "documentation": "",
+            "edited": false,
+            "field_order": [
+              "input_value",
+              "should_store_message",
+              "sender",
+              "sender_name",
+              "session_id",
+              "context_id",
+              "data_template",
+              "clean_data"
+            ],
+            "frozen": false,
+            "icon": "MessagesSquare",
+            "key": "ChatOutput",
+            "legacy": false,
+            "metadata": {
+              "code_hash": "84009527d08c",
+              "dependencies": {
+                "dependencies": [
+                  {
+                    "name": "orjson",
+                    "version": "3.11.9"
+                  },
+                  {
+                    "name": "fastapi",
+                    "version": "0.137.2"
+                  },
+                  {
+                    "name": "lfx",
+                    "version": null
+                  }
+                ],
+                "total_dependencies": 3
+              },
+              "module": "lfx.components.input_output.chat_output.ChatOutput"
+            },
+            "minimized": true,
+            "output_types": [],
+            "outputs": [
+              {
+                "allows_loop": false,
+                "cache": true,
+                "display_name": "Output Message",
+                "group_outputs": false,
+                "method": "message_response",
+                "name": "message",
+                "selected": "Message",
+                "tool_mode": true,
+                "types": [
+                  "Message"
+                ],
+                "value": "__UNDEFINED__"
+              }
+            ],
+            "pinned": false,
+            "score": 0.003169567463043492,
+            "template": {
+              "_type": "Component",
+              "clean_data": {
+                "_input_type": "BoolInput",
+                "advanced": true,
+                "dynamic": false,
+                "list": false,
+                "name": "clean_data",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "type": "bool",
+                "value": true
+              },
+              "code": {
+                "advanced": true,
+                "dynamic": true,
+                "fileTypes": [],
+                "file_path": "",
+                "list": false,
+                "load_from_db": false,
+                "multiline": true,
+                "name": "code",
+                "password": false,
+                "required": true,
+                "show": true,
+                "type": "code",
+                "value": "from collections.abc import Generator\nfrom typing import Any\nimport orjson\nfrom fastapi.encoders import jsonable_encoder\nfrom lfx.base.io.chat import ChatComponent\nfrom lfx.helpers.data import safe_convert\nfrom lfx.inputs.inputs import BoolInput, DropdownInput, HandleInput, MessageTextInput\nfrom lfx.schema.data import Data\nfrom lfx.schema.dataframe import DataFrame\nfrom lfx.schema.message import Message\nfrom lfx.schema.properties import Source\nfrom lfx.template.field.base import Output\nfrom lfx.utils.constants import MESSAGE_SENDER_AI, MESSAGE_SENDER_NAME_AI, MESSAGE_SENDER_USER\n\nclass ChatOutput(ChatComponent):\n    display_name = 'Chat Output'\n    description = 'Display a chat message in the Playground.'\n    documentation: str = 'https://docs.langflow.org/chat-input-and-output'\n    icon = 'MessagesSquare'\n    name = 'ChatOutput'\n    minimized = True\n    inputs = [HandleInput(name='input_value', display_name='Inputs', info='Message to be passed as output.', input_types=['Data', 'JSON', 'DataFrame', 'Table', 'Message'], required=True), BoolInput(name='should_store_message', display_name='Store Messages', info='Store the message in the history.', value=True, advanced=True), DropdownInput(name='sender', display_name='Sender Type', options=[MESSAGE_SENDER_AI, MESSAGE_SENDER_USER], value=MESSAGE_SENDER_AI, advanced=True, info='Type of sender.'), MessageTextInput(name='sender_name', display_name='Sender Name', info='Name of the sender.', value=MESSAGE_SENDER_NAME_AI, advanced=True), MessageTextInput(name='session_id', display_name='Session ID', info='The session ID of the chat. If empty, the current session ID parameter will be used.', advanced=True), MessageTextInput(name='context_id', display_name='Context ID', info='The context ID of the chat. Adds an extra layer to the local memory.', value='', advanced=True), MessageTextInput(name='data_template', display_name='Data Template', value='{text}', advanced=True, info=\"Template to convert Data to Text. If left empty, it will be dynamically set to the Data's text key.\"), BoolInput(name='clean_data', display_name='Basic Clean Data', value=True, advanced=True, info='Whether to clean data before converting to string.')]\n    outputs = [Output(display_name='Output Message', name='message', method='message_response')]\n\n    def _build_source(self, id_: str | None, display_name: str | None, source: str | None) -> Source:\n        source_dict = {}\n        if id_:\n            source_dict['id'] = id_\n        if display_name:\n            source_dict['display_name'] = display_name\n        if source:\n            if hasattr(source, 'model_name'):\n                source_dict['source'] = source.model_name\n            elif hasattr(source, 'model'):\n                source_dict['source'] = str(source.model)\n            else:\n                source_dict['source'] = str(source)\n        return Source(**source_dict)\n\n    async def message_response(self) -> Message:\n        text = self.convert_to_string()\n        source, _, display_name, source_id = self.get_properties_from_source_component()\n        if isinstance(self.input_value, Message) and (not self.is_connected_to_chat_input()):\n            message = self.input_value\n            message.text = text\n            existing_session_id = message.session_id\n        else:\n            message = Message(text=text)\n            existing_session_id = None\n        message.sender = self.sender\n        message.sender_name = self.sender_name\n        message.session_id = self.session_id or existing_session_id or (self.graph.session_id if hasattr(self, 'graph') else None) or ''\n        message.context_id = self.context_id\n        message.flow_id = self.graph.flow_id if hasattr(self, 'graph') else None\n        message.properties.source = self._build_source(source_id, display_name, source)\n        if message.session_id and self.should_store_message:\n            stored_message = await self.send_message(message)\n            self.message.value = stored_message\n            message = stored_message\n        if hasattr(self, '_vertex') and self._vertex is not None:\n            accumulated_usage = self._vertex._accumulate_upstream_token_usage()\n            if accumulated_usage:\n                message.properties.usage = accumulated_usage\n                if self.should_store_message and message.get_id():\n                    message = await self._update_stored_message(message)\n                    await self._send_message_event(message, id_=message.get_id())\n        self.status = message\n        return message\n\n    def _serialize_data(self, data: Data) -> str:\n        serializable_data = jsonable_encoder(data.data)\n        json_bytes = orjson.dumps(serializable_data, option=orjson.OPT_INDENT_2)\n        return '```json\\n' + json_bytes.decode('utf-8') + '\\n```'\n\n    def _validate_input(self) -> None:\n        if self.input_value is None:\n            msg = 'Input data cannot be None'\n            raise ValueError(msg)\n        if isinstance(self.input_value, list) and (not all((isinstance(item, Message | Data | DataFrame | str) for item in self.input_value))):\n            invalid_types = [type(item).__name__ for item in self.input_value if not isinstance(item, Message | Data | DataFrame | str)]\n            msg = f'Expected Data or DataFrame or Message or str, got {invalid_types}'\n            raise TypeError(msg)\n        if not isinstance(self.input_value, Message | Data | DataFrame | str | list | Generator | type(None)):\n            type_name = type(self.input_value).__name__\n            msg = f'Expected Data or DataFrame or Message or str, Generator or None, got {type_name}'\n            raise TypeError(msg)\n\n    def convert_to_string(self) -> str | Generator[Any, None, None]:\n        self._validate_input()\n        if isinstance(self.input_value, list):\n            clean_data: bool = getattr(self, 'clean_data', False)\n            return '\\n'.join([safe_convert(item, clean_data=clean_data) for item in self.input_value])\n        if isinstance(self.input_value, Generator):\n            return self.input_value\n        return safe_convert(self.input_value)"
+              },
+              "context_id": {
+                "_input_type": "MessageTextInput",
+                "advanced": true,
+                "dynamic": false,
+                "input_types": [
+                  "Message"
+                ],
+                "list": false,
+                "load_from_db": false,
+                "name": "context_id",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": ""
+              },
+              "data_template": {
+                "_input_type": "MessageTextInput",
+                "advanced": true,
+                "dynamic": false,
+                "input_types": [
+                  "Message"
+                ],
+                "list": false,
+                "load_from_db": false,
+                "name": "data_template",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": "{text}"
+              },
+              "input_value": {
+                "_input_type": "HandleInput",
+                "advanced": false,
+                "dynamic": false,
+                "input_types": [
+                  "Data",
+                  "JSON",
+                  "DataFrame",
+                  "Table",
+                  "Message"
+                ],
+                "list": false,
+                "name": "input_value",
+                "required": true,
+                "show": true,
+                "trace_as_metadata": true,
+                "type": "other",
+                "value": ""
+              },
+              "sender": {
+                "_input_type": "DropdownInput",
+                "advanced": true,
+                "combobox": false,
+                "dynamic": false,
+                "name": "sender",
+                "options": [
+                  "Machine",
+                  "User"
+                ],
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": "Machine"
+              },
+              "sender_name": {
+                "_input_type": "MessageTextInput",
+                "advanced": true,
+                "dynamic": false,
+                "input_types": [
+                  "Message"
+                ],
+                "list": false,
+                "load_from_db": false,
+                "name": "sender_name",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": "AI"
+              },
+              "session_id": {
+                "_input_type": "MessageTextInput",
+                "advanced": true,
+                "dynamic": false,
+                "input_types": [
+                  "Message"
+                ],
+                "list": false,
+                "load_from_db": false,
+                "name": "session_id",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "type": "str",
+                "value": ""
+              },
+              "should_store_message": {
+                "_input_type": "BoolInput",
+                "advanced": true,
+                "dynamic": false,
+                "list": false,
+                "name": "should_store_message",
+                "required": false,
+                "show": true,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "type": "bool",
+                "value": true
+              }
+            },
+            "tool_mode": false
+          },
+          "showNode": false,
+          "type": "ChatOutput"
+        },
+        "id": "ChatOutput-cpout",
+        "position": {
+          "x": 900,
+          "y": 60
+        },
+        "selected": false,
+        "type": "genericNode"
+      },
+      {
+        "id": "SCIMProvisioningTools-scim1",
+        "type": "genericNode",
+        "position": {
+          "x": -120,
+          "y": 520
+        },
+        "data": {
+          "id": "SCIMProvisioningTools-scim1",
+          "type": "SCIMProvisioningTools",
+          "node": {
+            "template": {
+              "_type": "Component",
+              "code": {
+                "type": "code",
+                "required": true,
+                "list": false,
+                "show": true,
+                "multiline": true,
+                "value": "from langflow.custom import Component\nfrom langflow.io import MessageTextInput, SecretStrInput, Output\nfrom langflow.field_typing import Tool\nfrom langchain_core.tools import StructuredTool\nfrom pydantic import BaseModel, Field\nimport httpx\n\nclass SCIMProvisioningTools(Component):\n    display_name = 'SCIM Provisioning Tools'\n    description = 'SCIM 2.0 identity-provider tools: create a user and list/search users.'\n    icon = 'user-plus'\n    name = 'SCIMProvisioningTools'\n    inputs = [MessageTextInput(name='scim_users_url', display_name='SCIM Users URL', value='https://idp.{{DOMAIN}}/scim/v2/Users', info='Base SCIM /Users endpoint of the Identity Provider.'), SecretStrInput(name='scim_token', display_name='SCIM Bearer Token', value='__IDP_SCIM_TOKEN__', info='Bearer token for the SCIM API.')]\n    outputs = [Output(display_name='Tools', name='tools', method='build_tools')]\n\n    def build_tools(self) -> list[Tool]:\n        url = (self.scim_users_url or '').strip()\n        token = self.scim_token or ''\n\n        def _post_headers():\n            return {'Authorization': f'Bearer {token}', 'Content-Type': 'application/scim+json', 'Accept': 'application/scim+json'}\n\n        def _get_headers():\n            return {'Authorization': f'Bearer {token}', 'Accept': 'application/scim+json'}\n\n        def scim_create_user(email: str, given_name: str, family_name: str) -> str:\n            body = {'schemas': ['urn:ietf:params:scim:schemas:core:2.0:User'], 'userName': email, 'name': {'givenName': given_name, 'familyName': family_name}, 'displayName': f'{given_name} {family_name}', 'emails': [{'value': email, 'primary': True}], 'active': True}\n            try:\n                r = httpx.post(url, headers=_post_headers(), json=body, timeout=30.0)\n                return f'HTTP {r.status_code}\\n{r.text[:1500]}'\n            except Exception as e:\n                return f'Request failed: {e}'\n\n        def scim_list_users(scim_filter: str='', count: int=50) -> str:\n            params = {}\n            if scim_filter:\n                params['filter'] = scim_filter\n            if count:\n                params['count'] = count\n            try:\n                r = httpx.get(url, headers=_get_headers(), params=params, timeout=30.0)\n                return f'HTTP {r.status_code}\\n{r.text[:1500]}'\n            except Exception as e:\n                return f'Request failed: {e}'\n\n        class CreateArgs(BaseModel):\n            email: str = Field(..., description=\"The new user's email address; used as the SCIM userName.\")\n            given_name: str = Field(..., description=\"The user's first name (givenName).\")\n            family_name: str = Field(..., description=\"The user's last name (familyName).\")\n\n        class ListArgs(BaseModel):\n            scim_filter: str = Field('', description='Optional SCIM filter, e.g. userName eq \"jane.doe@example.com\".')\n            count: int = Field(50, description='Maximum number of users to return.')\n        tools = [StructuredTool.from_function(func=scim_create_user, name='SCIM_Create_User', description=\"Provision (create) a NEW user in the Identity Provider via SCIM 2.0. Requires the person's email, first name and last name.\", args_schema=CreateArgs), StructuredTool.from_function(func=scim_list_users, name='SCIM_List_Users', description='List or search existing users in the Identity Provider via SCIM 2.0. Optionally pass a SCIM filter and a count.', args_schema=ListArgs)]\n        self.status = f'SCIM tools ready against {url}'\n        return tools",
+                "fileTypes": [],
+                "file_path": "",
+                "password": false,
+                "name": "code",
+                "advanced": true,
+                "dynamic": true,
+                "load_from_db": false
+              },
+              "scim_token": {
+                "load_from_db": true,
+                "required": false,
+                "show": true,
+                "name": "scim_token",
+                "value": "__IDP_SCIM_TOKEN__",
+                "advanced": false,
+                "input_types": [],
+                "dynamic": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
+              },
+              "scim_users_url": {
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "load_from_db": false,
+                "list": false,
+                "required": false,
+                "show": true,
+                "name": "scim_users_url",
+                "value": "https://idp.{{DOMAIN}}/scim/v2/Users",
+                "advanced": false,
+                "input_types": [
+                  "Message"
+                ],
+                "dynamic": false,
+                "type": "str",
+                "_input_type": "MessageTextInput"
+              }
+            },
+            "description": "SCIM 2.0 identity-provider tools: create a user and list/search users.",
+            "icon": "user-plus",
+            "base_classes": [
+              "Tool"
+            ],
+            "display_name": "SCIM Provisioning Tools",
+            "documentation": "",
+            "minimized": false,
+            "custom_fields": {},
+            "output_types": [],
+            "pinned": false,
+            "conditional_paths": [],
+            "frozen": false,
+            "outputs": [
+              {
+                "types": [
+                  "Tool"
+                ],
+                "selected": "Tool",
+                "name": "tools",
+                "hidden": null,
+                "display_name": "Tools",
+                "method": "build_tools",
+                "value": "__UNDEFINED__",
+                "cache": true,
+                "required_inputs": null,
+                "allows_loop": false,
+                "loop_types": null,
+                "group_outputs": false,
+                "options": null,
+                "tool_mode": true
+              }
+            ],
+            "field_order": [
+              "scim_users_url",
+              "scim_token"
+            ],
+            "beta": false,
+            "legacy": false,
+            "edited": false,
+            "metadata": {
+              "module": "custom_components.scim_provisioning_tools",
+              "code_hash": "7c4ba4331c34",
+              "dependencies": {
+                "total_dependencies": 4,
+                "dependencies": [
+                  {
+                    "name": "langflow",
+                    "version": "1.10.1"
+                  },
+                  {
+                    "name": "langchain_core",
+                    "version": "1.4.8"
+                  },
+                  {
+                    "name": "pydantic",
+                    "version": "2.13.4"
+                  },
+                  {
+                    "name": "httpx",
+                    "version": "0.28.1"
+                  }
+                ]
+              }
+            },
+            "tool_mode": false
+          },
+          "selected_output": null,
+          "showNode": true
+        },
+        "selected": false
+      }
+    ],
+    "viewport": {
+      "x": 300,
+      "y": 150,
+      "zoom": 0.6
+    }
+  },
+  "description": "HTTP-tool agent that provisions and lists users in an Identity Provider over SCIM 2.0 (create + list).",
+  "endpoint_name": null,
+  "is_component": false,
+  "last_tested_version": "1.10.1",
+  "name": "CP Identity — SCIM Provisioning Agent",
+  "tags": []
+}

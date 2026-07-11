@@ -1,0 +1,778 @@
+{
+  "nodes": [
+    {
+      "id": "chatOpenAI_0",
+      "position": {
+        "x": -780,
+        "y": 120
+      },
+      "type": "customNode",
+      "data": {
+        "id": "chatOpenAI_0",
+        "label": "ChatOpenAI",
+        "version": 8.2,
+        "name": "chatOpenAI",
+        "type": "ChatOpenAI",
+        "baseClasses": [
+          "ChatOpenAI",
+          "BaseChatModel",
+          "BaseLanguageModel",
+          "Runnable"
+        ],
+        "category": "Chat Models",
+        "description": "Wrapper around OpenAI large language models that use the Chat endpoint",
+        "inputParams": [
+          {
+            "label": "Connect Credential",
+            "name": "credential",
+            "type": "credential",
+            "credentialNames": [
+              "openAIApi"
+            ],
+            "id": "chatOpenAI_0-input-credential-credential",
+            "display": true
+          },
+          {
+            "label": "Model Name",
+            "name": "modelName",
+            "type": "asyncOptions",
+            "loadMethod": "listModels",
+            "default": "gpt-4o-mini",
+            "id": "chatOpenAI_0-input-modelName-asyncOptions",
+            "display": true
+          },
+          {
+            "label": "Temperature",
+            "name": "temperature",
+            "type": "number",
+            "step": 0.1,
+            "default": 0.9,
+            "optional": true,
+            "id": "chatOpenAI_0-input-temperature-number",
+            "display": true
+          },
+          {
+            "label": "Streaming",
+            "name": "streaming",
+            "type": "boolean",
+            "default": true,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-streaming-boolean",
+            "display": true
+          }
+        ],
+        "inputAnchors": [
+          {
+            "label": "Cache",
+            "name": "cache",
+            "type": "BaseCache",
+            "optional": true,
+            "id": "chatOpenAI_0-input-cache-BaseCache",
+            "display": true
+          }
+        ],
+        "inputs": {
+          "cache": "",
+          "modelName": "gpt-5.4",
+          "temperature": 0.2,
+          "streaming": true,
+          "maxTokens": "",
+          "topP": "",
+          "frequencyPenalty": "",
+          "presencePenalty": "",
+          "timeout": "",
+          "strictToolCalling": "",
+          "stopSequence": "",
+          "basepath": "",
+          "proxyUrl": "",
+          "baseOptions": "",
+          "allowImageUploads": false,
+          "imageResolution": "low",
+          "reasoningEffort": "",
+          "credential": ""
+        },
+        "outputAnchors": [
+          {
+            "id": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
+            "name": "chatOpenAI",
+            "label": "ChatOpenAI",
+            "description": "Wrapper around OpenAI large language models that use the Chat endpoint",
+            "type": "ChatOpenAI | BaseChatModel | BaseLanguageModel | Runnable"
+          }
+        ],
+        "outputs": {},
+        "selected": false,
+        "credential": ""
+      },
+      "width": 300,
+      "height": 676,
+      "selected": false,
+      "positionAbsolute": {
+        "x": -780,
+        "y": 120
+      },
+      "dragging": false
+    },
+    {
+      "id": "bufferMemory_0",
+      "position": {
+        "x": -420,
+        "y": 300
+      },
+      "type": "customNode",
+      "data": {
+        "id": "bufferMemory_0",
+        "label": "Buffer Memory",
+        "version": 2,
+        "name": "bufferMemory",
+        "type": "BufferMemory",
+        "baseClasses": [
+          "BufferMemory",
+          "BaseChatMemory",
+          "BaseMemory"
+        ],
+        "category": "Memory",
+        "description": "Retrieve chat messages stored in database",
+        "inputParams": [
+          {
+            "label": "Session Id",
+            "name": "sessionId",
+            "type": "string",
+            "description": "If not specified, a random id will be used.",
+            "default": "",
+            "additionalParams": true,
+            "optional": true,
+            "id": "bufferMemory_0-input-sessionId-string"
+          },
+          {
+            "label": "Memory Key",
+            "name": "memoryKey",
+            "type": "string",
+            "default": "chat_history",
+            "additionalParams": true,
+            "id": "bufferMemory_0-input-memoryKey-string"
+          }
+        ],
+        "inputAnchors": [],
+        "inputs": {
+          "sessionId": "",
+          "memoryKey": "chat_history"
+        },
+        "outputAnchors": [
+          {
+            "id": "bufferMemory_0-output-bufferMemory-BufferMemory|BaseChatMemory|BaseMemory",
+            "name": "bufferMemory",
+            "label": "BufferMemory",
+            "type": "BufferMemory | BaseChatMemory | BaseMemory"
+          }
+        ],
+        "outputs": {},
+        "selected": false
+      },
+      "width": 300,
+      "height": 259,
+      "selected": false,
+      "positionAbsolute": {
+        "x": -420,
+        "y": 300
+      },
+      "dragging": false
+    },
+    {
+      "id": "ollamaEmbedding_0",
+      "position": {
+        "x": -780,
+        "y": 470
+      },
+      "type": "customNode",
+      "data": {
+        "id": "ollamaEmbedding_0",
+        "label": "Ollama Embedding",
+        "version": 2,
+        "name": "ollamaEmbedding",
+        "type": "OllamaEmbeddings",
+        "baseClasses": [
+          "OllamaEmbeddings",
+          "Embeddings"
+        ],
+        "category": "Embeddings",
+        "description": "Generate embeddings for a given text using open source model on Ollama",
+        "inputParams": [
+          {
+            "label": "Base URL",
+            "name": "baseUrl",
+            "type": "string",
+            "default": "http://localhost:11434",
+            "id": "ollamaEmbedding_0-input-baseUrl-string",
+            "display": true
+          },
+          {
+            "label": "Model Name",
+            "name": "modelName",
+            "type": "string",
+            "id": "ollamaEmbedding_0-input-modelName-string",
+            "display": true
+          },
+          {
+            "label": "Number of GPU",
+            "name": "numGpu",
+            "type": "number",
+            "optional": true,
+            "additionalParams": true,
+            "id": "ollamaEmbedding_0-input-numGpu-number",
+            "display": true
+          },
+          {
+            "label": "Number of Thread",
+            "name": "numThread",
+            "type": "number",
+            "optional": true,
+            "additionalParams": true,
+            "id": "ollamaEmbedding_0-input-numThread-number",
+            "display": true
+          },
+          {
+            "label": "Use MMap",
+            "name": "useMMap",
+            "type": "boolean",
+            "default": true,
+            "optional": true,
+            "additionalParams": true,
+            "id": "ollamaEmbedding_0-input-useMMap-boolean",
+            "display": true
+          }
+        ],
+        "inputAnchors": [],
+        "inputs": {
+          "baseUrl": "http://ollama-cpu:11434",
+          "modelName": "nomic-embed-text",
+          "numGpu": "",
+          "numThread": "",
+          "useMMap": true
+        },
+        "outputAnchors": [
+          {
+            "id": "ollamaEmbedding_0-output-ollamaEmbedding-OllamaEmbeddings|Embeddings",
+            "name": "ollamaEmbedding",
+            "label": "OllamaEmbeddings",
+            "description": "Ollama Embedding models to generate embeddings for a given text",
+            "type": "OllamaEmbeddings | Embeddings"
+          }
+        ],
+        "outputs": {},
+        "selected": false
+      },
+      "width": 300,
+      "height": 430,
+      "selected": false,
+      "positionAbsolute": {
+        "x": -780,
+        "y": 470
+      },
+      "dragging": false
+    },
+    {
+      "id": "qdrant_0",
+      "position": {
+        "x": -420,
+        "y": 470
+      },
+      "type": "customNode",
+      "data": {
+        "id": "qdrant_0",
+        "label": "Qdrant",
+        "version": 5,
+        "name": "qdrant",
+        "type": "Qdrant",
+        "baseClasses": [
+          "Qdrant",
+          "VectorStoreRetriever",
+          "BaseRetriever"
+        ],
+        "category": "Vector Stores",
+        "description": "Upsert embedded data and perform similarity search upon query using Qdrant",
+        "inputParams": [
+          {
+            "label": "Connect Credential",
+            "name": "credential",
+            "type": "credential",
+            "description": "Only needed when using Qdrant cloud hosted",
+            "optional": true,
+            "credentialNames": [
+              "qdrantApi"
+            ],
+            "id": "qdrant_0-input-credential-credential",
+            "display": true
+          },
+          {
+            "label": "Qdrant Server URL",
+            "name": "qdrantServerUrl",
+            "type": "string",
+            "placeholder": "http://localhost:6333",
+            "id": "qdrant_0-input-qdrantServerUrl-string",
+            "display": true
+          },
+          {
+            "label": "Qdrant Collection Name",
+            "name": "qdrantCollection",
+            "type": "string",
+            "acceptVariable": true,
+            "id": "qdrant_0-input-qdrantCollection-string",
+            "display": true
+          },
+          {
+            "label": "File Upload",
+            "name": "fileUpload",
+            "type": "boolean",
+            "additionalParams": true,
+            "optional": true,
+            "id": "qdrant_0-input-fileUpload-boolean",
+            "display": true
+          },
+          {
+            "label": "Vector Dimension",
+            "name": "qdrantVectorDimension",
+            "type": "number",
+            "default": 1536,
+            "additionalParams": true,
+            "id": "qdrant_0-input-qdrantVectorDimension-number",
+            "display": true
+          },
+          {
+            "label": "Content Key",
+            "name": "contentPayloadKey",
+            "description": "The key for storing text. Default to `content`",
+            "type": "string",
+            "default": "content",
+            "optional": true,
+            "additionalParams": true,
+            "id": "qdrant_0-input-contentPayloadKey-string",
+            "display": true
+          },
+          {
+            "label": "Metadata Key",
+            "name": "metadataPayloadKey",
+            "description": "The key for storing metadata. Default to `metadata`",
+            "type": "string",
+            "default": "metadata",
+            "optional": true,
+            "additionalParams": true,
+            "id": "qdrant_0-input-metadataPayloadKey-string",
+            "display": true
+          },
+          {
+            "label": "Upsert Batch Size",
+            "name": "batchSize",
+            "type": "number",
+            "optional": true,
+            "additionalParams": true,
+            "id": "qdrant_0-input-batchSize-number",
+            "display": true
+          },
+          {
+            "label": "Similarity",
+            "name": "qdrantSimilarity",
+            "type": "options",
+            "default": "Cosine",
+            "options": [
+              {
+                "label": "Cosine",
+                "name": "Cosine"
+              },
+              {
+                "label": "Euclid",
+                "name": "Euclid"
+              },
+              {
+                "label": "Dot",
+                "name": "Dot"
+              }
+            ],
+            "additionalParams": true,
+            "id": "qdrant_0-input-qdrantSimilarity-options",
+            "display": true
+          },
+          {
+            "label": "Additional Collection Cofiguration",
+            "name": "qdrantCollectionConfiguration",
+            "type": "json",
+            "optional": true,
+            "additionalParams": true,
+            "id": "qdrant_0-input-qdrantCollectionConfiguration-json",
+            "display": true
+          },
+          {
+            "label": "Top K",
+            "name": "topK",
+            "type": "number",
+            "optional": true,
+            "additionalParams": true,
+            "id": "qdrant_0-input-topK-number",
+            "display": true
+          },
+          {
+            "label": "Qdrant Search Filter",
+            "name": "qdrantFilter",
+            "type": "json",
+            "optional": true,
+            "additionalParams": true,
+            "id": "qdrant_0-input-qdrantFilter-json",
+            "display": true
+          }
+        ],
+        "inputAnchors": [
+          {
+            "label": "Document",
+            "name": "document",
+            "type": "Document",
+            "list": true,
+            "optional": true,
+            "id": "qdrant_0-input-document-Document",
+            "display": true
+          },
+          {
+            "label": "Embeddings",
+            "name": "embeddings",
+            "type": "Embeddings",
+            "id": "qdrant_0-input-embeddings-Embeddings",
+            "display": true
+          },
+          {
+            "label": "Record Manager",
+            "name": "recordManager",
+            "type": "RecordManager",
+            "optional": true,
+            "id": "qdrant_0-input-recordManager-RecordManager",
+            "display": true
+          }
+        ],
+        "inputs": {
+          "document": "",
+          "embeddings": "{{ollamaEmbedding_0.data.instance}}",
+          "recordManager": "",
+          "qdrantServerUrl": "http://qdrant:6333",
+          "qdrantCollection": "cp_docs",
+          "fileUpload": "",
+          "qdrantVectorDimension": 768,
+          "contentPayloadKey": "text",
+          "metadataPayloadKey": "source",
+          "batchSize": "",
+          "qdrantSimilarity": "Cosine",
+          "qdrantCollectionConfiguration": "",
+          "topK": 4,
+          "qdrantFilter": ""
+        },
+        "outputAnchors": [
+          {
+            "name": "output",
+            "label": "Output",
+            "type": "options",
+            "description": "",
+            "options": [
+              {
+                "id": "qdrant_0-output-retriever-Qdrant|VectorStoreRetriever|BaseRetriever",
+                "name": "retriever",
+                "label": "Qdrant Retriever",
+                "description": "",
+                "type": "Qdrant | VectorStoreRetriever | BaseRetriever"
+              },
+              {
+                "id": "qdrant_0-output-vectorStore-Qdrant|VectorStore",
+                "name": "vectorStore",
+                "label": "Qdrant Vector Store",
+                "description": "",
+                "type": "Qdrant | VectorStore"
+              }
+            ],
+            "default": "retriever"
+          }
+        ],
+        "outputs": {
+          "output": "retriever"
+        },
+        "selected": false,
+        "credential": ""
+      },
+      "width": 300,
+      "height": 560,
+      "selected": false,
+      "positionAbsolute": {
+        "x": -420,
+        "y": 470
+      },
+      "dragging": false
+    },
+    {
+      "id": "retrieverTool_0",
+      "position": {
+        "x": -60,
+        "y": 470
+      },
+      "type": "customNode",
+      "data": {
+        "id": "retrieverTool_0",
+        "label": "Retriever Tool",
+        "version": 3,
+        "name": "retrieverTool",
+        "type": "RetrieverTool",
+        "baseClasses": [
+          "RetrieverTool",
+          "DynamicTool",
+          "Tool",
+          "StructuredTool",
+          "Runnable"
+        ],
+        "category": "Tools",
+        "description": "Use a retriever as allowed tool for agent",
+        "inputParams": [
+          {
+            "label": "Retriever Name",
+            "name": "name",
+            "type": "string",
+            "placeholder": "search_state_of_union",
+            "id": "retrieverTool_0-input-name-string",
+            "display": true
+          },
+          {
+            "label": "Retriever Description",
+            "name": "description",
+            "type": "string",
+            "description": "When should agent uses to retrieve documents",
+            "rows": 3,
+            "id": "retrieverTool_0-input-description-string",
+            "display": true
+          },
+          {
+            "label": "Return Source Documents",
+            "name": "returnSourceDocuments",
+            "type": "boolean",
+            "optional": true,
+            "id": "retrieverTool_0-input-returnSourceDocuments-boolean",
+            "display": true
+          },
+          {
+            "label": "Additional Metadata Filter",
+            "name": "retrieverToolMetadataFilter",
+            "type": "json",
+            "optional": true,
+            "additionalParams": true,
+            "acceptVariable": true,
+            "id": "retrieverTool_0-input-retrieverToolMetadataFilter-json",
+            "display": true
+          }
+        ],
+        "inputAnchors": [
+          {
+            "label": "Retriever",
+            "name": "retriever",
+            "type": "BaseRetriever",
+            "id": "retrieverTool_0-input-retriever-BaseRetriever",
+            "display": true
+          }
+        ],
+        "inputs": {
+          "name": "search_cp_docs",
+          "description": "Retrieve the most relevant Check Point documentation snippets for a question. Input: a natural-language query string. Returns the top snippets plus their `source` filename so you can cite them. Call this before answering any Check Point question.",
+          "retriever": "{{qdrant_0.data.instance}}",
+          "returnSourceDocuments": true,
+          "retrieverToolMetadataFilter": ""
+        },
+        "outputAnchors": [
+          {
+            "id": "retrieverTool_0-output-retrieverTool-RetrieverTool|DynamicTool|Tool|StructuredTool|Runnable",
+            "name": "retrieverTool",
+            "label": "RetrieverTool",
+            "description": "Use a retriever as allowed tool for agent",
+            "type": "RetrieverTool | DynamicTool | Tool | StructuredTool | Runnable"
+          }
+        ],
+        "outputs": {},
+        "selected": false
+      },
+      "width": 300,
+      "height": 555,
+      "selected": false,
+      "positionAbsolute": {
+        "x": -60,
+        "y": 470
+      },
+      "dragging": false
+    },
+    {
+      "id": "toolAgent_0",
+      "position": {
+        "x": 320,
+        "y": 180
+      },
+      "type": "customNode",
+      "data": {
+        "id": "toolAgent_0",
+        "label": "Tool Agent",
+        "version": 2,
+        "name": "toolAgent",
+        "type": "AgentExecutor",
+        "baseClasses": [
+          "AgentExecutor",
+          "BaseChain",
+          "Runnable"
+        ],
+        "category": "Agents",
+        "description": "Agent that uses Function Calling to pick the tools and args to call",
+        "inputParams": [
+          {
+            "label": "System Message",
+            "name": "systemMessage",
+            "type": "string",
+            "default": "You are a helpful AI assistant.",
+            "description": "If Chat Prompt Template is provided, this will be ignored",
+            "rows": 4,
+            "optional": true,
+            "additionalParams": true,
+            "id": "toolAgent_0-input-systemMessage-string",
+            "display": true
+          },
+          {
+            "label": "Max Iterations",
+            "name": "maxIterations",
+            "type": "number",
+            "optional": true,
+            "additionalParams": true,
+            "id": "toolAgent_0-input-maxIterations-number",
+            "display": true
+          },
+          {
+            "label": "Enable Detailed Streaming",
+            "name": "enableDetailedStreaming",
+            "type": "boolean",
+            "default": false,
+            "optional": true,
+            "additionalParams": true,
+            "id": "toolAgent_0-input-enableDetailedStreaming-boolean",
+            "display": true
+          }
+        ],
+        "inputAnchors": [
+          {
+            "label": "Tools",
+            "name": "tools",
+            "type": "Tool",
+            "list": true,
+            "id": "toolAgent_0-input-tools-Tool",
+            "display": true
+          },
+          {
+            "label": "Memory",
+            "name": "memory",
+            "type": "BaseChatMemory",
+            "id": "toolAgent_0-input-memory-BaseChatMemory",
+            "display": true
+          },
+          {
+            "label": "Tool Calling Chat Model",
+            "name": "model",
+            "type": "BaseChatModel",
+            "description": "Only compatible with models capable of function calling",
+            "id": "toolAgent_0-input-model-BaseChatModel",
+            "display": true
+          },
+          {
+            "label": "Chat Prompt Template",
+            "name": "chatPromptTemplate",
+            "type": "ChatPromptTemplate",
+            "optional": true,
+            "id": "toolAgent_0-input-chatPromptTemplate-ChatPromptTemplate",
+            "display": true
+          },
+          {
+            "label": "Input Moderation",
+            "name": "inputModeration",
+            "type": "Moderation",
+            "optional": true,
+            "list": true,
+            "id": "toolAgent_0-input-inputModeration-Moderation",
+            "display": true
+          }
+        ],
+        "inputs": {
+          "tools": [
+            "{{retrieverTool_0.data.instance}}"
+          ],
+          "memory": "{{bufferMemory_0.data.instance}}",
+          "model": "{{chatOpenAI_0.data.instance}}",
+          "chatPromptTemplate": "",
+          "systemMessage": "You are the **Check Point Documentation RAG assistant**. You answer questions about Check Point using ONLY a small vector-indexed corpus of Check Point concept snippets (Identity Awareness, Threat Prevention profiles, the Gaia API, HTTPS Inspection, access layers, SmartConsole, and more).\n\n== HOW TO WORK ==\n- For EVERY substantive question, FIRST call the `search_cp_docs` tool with a focused query to retrieve relevant snippets.\n- Answer strictly from what the tool returns. If the snippets do not contain the answer, say so plainly — do NOT fall back to your own prior knowledge or invent details.\n- The tool returns each snippet's `source` filename (in the returned source documents). ALWAYS cite the `source` filename(s) you used, e.g. *(source: identity-awareness.md)*.\n- You may call the tool more than once to refine the query.\n\n== OUTPUT STYLE ==\n- Concise Markdown: short paragraphs and bullets.\n- End with a **Sources:** line listing the filenames you cited.\n- The corpus is clearly-marked DEMO content, not official documentation — if asked, say so.",
+          "inputModeration": "",
+          "maxIterations": "",
+          "enableDetailedStreaming": ""
+        },
+        "outputAnchors": [
+          {
+            "id": "toolAgent_0-output-toolAgent-AgentExecutor|BaseChain|Runnable",
+            "name": "toolAgent",
+            "label": "AgentExecutor",
+            "description": "Agent that uses Function Calling to pick the tools and args to call",
+            "type": "AgentExecutor | BaseChain | Runnable"
+          }
+        ],
+        "outputs": {},
+        "selected": false
+      },
+      "width": 300,
+      "height": 492,
+      "selected": false,
+      "positionAbsolute": {
+        "x": 320,
+        "y": 180
+      },
+      "dragging": false
+    }
+  ],
+  "edges": [
+    {
+      "source": "ollamaEmbedding_0",
+      "sourceHandle": "ollamaEmbedding_0-output-ollamaEmbedding-OllamaEmbeddings|Embeddings",
+      "target": "qdrant_0",
+      "targetHandle": "qdrant_0-input-embeddings-Embeddings",
+      "type": "buttonedge",
+      "id": "ollamaEmbedding_0-ollamaEmbedding_0-output-ollamaEmbedding-OllamaEmbeddings|Embeddings-qdrant_0-qdrant_0-input-embeddings-Embeddings"
+    },
+    {
+      "source": "qdrant_0",
+      "sourceHandle": "qdrant_0-output-retriever-Qdrant|VectorStoreRetriever|BaseRetriever",
+      "target": "retrieverTool_0",
+      "targetHandle": "retrieverTool_0-input-retriever-BaseRetriever",
+      "type": "buttonedge",
+      "id": "qdrant_0-qdrant_0-output-retriever-Qdrant|VectorStoreRetriever|BaseRetriever-retrieverTool_0-retrieverTool_0-input-retriever-BaseRetriever"
+    },
+    {
+      "source": "retrieverTool_0",
+      "sourceHandle": "retrieverTool_0-output-retrieverTool-RetrieverTool|DynamicTool|Tool|StructuredTool|Runnable",
+      "target": "toolAgent_0",
+      "targetHandle": "toolAgent_0-input-tools-Tool",
+      "type": "buttonedge",
+      "id": "retrieverTool_0-retrieverTool_0-output-retrieverTool-RetrieverTool|DynamicTool|Tool|StructuredTool|Runnable-toolAgent_0-toolAgent_0-input-tools-Tool"
+    },
+    {
+      "source": "chatOpenAI_0",
+      "sourceHandle": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
+      "target": "toolAgent_0",
+      "targetHandle": "toolAgent_0-input-model-BaseChatModel",
+      "type": "buttonedge",
+      "id": "chatOpenAI_0-chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable-toolAgent_0-toolAgent_0-input-model-BaseChatModel"
+    },
+    {
+      "source": "bufferMemory_0",
+      "sourceHandle": "bufferMemory_0-output-bufferMemory-BufferMemory|BaseChatMemory|BaseMemory",
+      "target": "toolAgent_0",
+      "targetHandle": "toolAgent_0-input-memory-BaseChatMemory",
+      "type": "buttonedge",
+      "id": "bufferMemory_0-bufferMemory_0-output-bufferMemory-BufferMemory|BaseChatMemory|BaseMemory-toolAgent_0-toolAgent_0-input-memory-BaseChatMemory"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 1
+  }
+}

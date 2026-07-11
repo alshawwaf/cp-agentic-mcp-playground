@@ -290,6 +290,36 @@
    "flowise": "flowise/policypilot-dynamic-layer.flowdata.json",
    "langflow": "langflow/policypilot-dynamic-layer.flow.json",
    "tools": 0
+  },
+  {
+   "slug": "soc-response-chain",
+   "name": "CP SOC Response Chain — Estate Agent",
+   "kind": "gateway",
+   "endpoint": "http://mcp-gateway:8080/mcp",
+   "auth": "__MCP_GATEWAY_TOKEN__",
+   "flowise": "flowise/soc-response-chain.flowdata.json",
+   "langflow": "langflow/soc-response-chain.flow.json",
+   "tools": 0
+  },
+  {
+   "slug": "rag-cp-docs",
+   "name": "CP Docs — Visible RAG Agent",
+   "kind": "native",
+   "endpoint": "qdrant:cp_docs",
+   "auth": null,
+   "flowise": "flowise/rag-cp-docs.flowdata.json",
+   "langflow": "langflow/rag-cp-docs.flow.json",
+   "tools": 0
+  },
+  {
+   "slug": "scim-provisioning",
+   "name": "CP Identity — SCIM Provisioning Agent",
+   "kind": "external",
+   "endpoint": "https://idp.{{DOMAIN}}/scim/v2/Users",
+   "auth": "__IDP_SCIM_TOKEN__",
+   "flowise": "flowise/scim-provisioning.flowdata.json",
+   "langflow": "langflow/scim-provisioning.flow.json",
+   "tools": 0
   }
  ]
 }

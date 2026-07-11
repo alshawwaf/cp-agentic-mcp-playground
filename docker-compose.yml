@@ -1011,6 +1011,8 @@ services:
       - N8N_HOST=${N8N_HOST:-}
       - DEVHUB_MCP_TOKEN=${DEVHUB_MCP_TOKEN:-}
       - PILOT_MCP_TOKEN=${PILOT_MCP_TOKEN:-}
+      # SCIM identity agent (HTTP-tool flow → idp.<domain>/scim/v2/Users bearer)
+      - IDP_SCIM_TOKEN=${IDP_SCIM_TOKEN:-}
     entrypoint: [ "python3", "/integrations/seed_builders.py" ]
     restart: "no"
 

@@ -73,6 +73,7 @@ PLACEHOLDERS = {
     "__LITELLM_MASTER_KEY__": os.environ.get("LITELLM_MASTER_KEY", "") or "sk-cp-litellm-training-key",
     "__DEVHUB_MCP_TOKEN__": os.environ.get("DEVHUB_MCP_TOKEN", ""),
     "__PILOT_MCP_TOKEN__": os.environ.get("PILOT_MCP_TOKEN", ""),
+    "__IDP_SCIM_TOKEN__": os.environ.get("IDP_SCIM_TOKEN", ""),
     "{{DOMAIN}}": _domain(),
 }
 
