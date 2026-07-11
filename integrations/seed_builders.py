@@ -119,6 +119,32 @@ def wait_for(opener, name: str, url: str) -> bool:
 
 # ─────────────────────────── Flowise ───────────────────────────
 
+def flowise_ensure_openai_credential(opener, headers) -> str:
+    """Flowise keeps the model API key in a CREDENTIAL object, not in the flow JSON.
+    Create one from OPENAI_API_KEY (already in our env) and return its id, so the
+    imported agent's chatOpenAI node has a working key with no UI step. Idempotent by
+    name. Returns "" when no key is available or creation fails (node then needs the UI)."""
+    key = os.environ.get("OPENAI_API_KEY", "")
+    if not key:
+        log("  (no OPENAI_API_KEY — the model node will need its credential set in the UI)")
+        return ""
+    name = "CP OpenAI (auto)"
+    status, rows = request(opener, "GET", f"{FLOWISE_URL}/api/v1/credentials", headers=headers)
+    if status == 200 and isinstance(rows, list):
+        for r in rows:
+            if isinstance(r, dict) and r.get("name") == name and r.get("id"):
+                log(f"  credential '{name}' already present.")
+                return r["id"]
+    body = {"name": name, "credentialName": "openAIApi", "plainDataObj": {"openAIApiKey": key}}
+    status, resp = request(opener, "POST", f"{FLOWISE_URL}/api/v1/credentials", body=body, headers=headers)
+    if status in (200, 201) and isinstance(resp, dict) and resp.get("id"):
+        log(f"  created model credential '{name}' from OPENAI_API_KEY.")
+        return resp["id"]
+    detail = resp if isinstance(resp, str) else json.dumps(resp)
+    log(f"  WARNING: could not create the model credential (HTTP {status}: {detail[:160]}); set it in the UI.")
+    return ""
+
+
 def seed_flowise() -> bool:
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
     log(f"• Flowise: target {FLOWISE_URL}")
@@ -158,6 +184,15 @@ def seed_flowise() -> bool:
         return True
 
     graph = substituted(FLOWISE_JSON)
+    # Attach the auto-created model credential to the chatOpenAI node so the agent
+    # works on import with no UI step (Flowise references the key by credential id).
+    cred_id = flowise_ensure_openai_credential(opener, headers)
+    if cred_id:
+        for n in graph.get("nodes", []):
+            d = n.get("data", {})
+            if d.get("name") == "chatOpenAI":
+                d["credential"] = cred_id
+                d.setdefault("inputs", {})["credential"] = cred_id
     body = {"name": FLOW_NAME, "type": "CHATFLOW", "deployed": True, "flowData": json.dumps(graph)}
     status, resp = request(opener, "POST", f"{FLOWISE_URL}/api/v1/chatflows", body=body, headers=headers)
     if status not in (200, 201):
