@@ -33,6 +33,7 @@ volumes:
   aig_logs:
   aig_uploads:
   policypilot_data:   # PolicyPilot MCP sidecar DB (opt-in `policypilot` profile)
+  qdrant_storage:     # Qdrant vector DB storage (RAG / rag-cp-docs)
 
     ###############################################################################
     # Common Service Definitions (Anchors)
@@ -545,6 +546,10 @@ services:
       - LANGFLOW_AUTO_LOGIN=${LANGFLOW_AUTO_LOGIN:-false}
       - LANGFLOW_SUPERUSER=${N8N_ADMIN_EMAIL}
       - LANGFLOW_SUPERUSER_PASSWORD=${N8N_ADMIN_PASSWORD}
+      # ── Langfuse tracing (added) ──
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
+      - LANGFUSE_HOST=http://langfuse:3000
     volumes:
       - ./langflow/flows:/app/flows
     depends_on:
@@ -569,6 +574,90 @@ services:
       - "traefik.http.routers.langflow.middlewares=langflow-hubframe"
       - "traefik.http.middlewares.langflow-hubframe.headers.customresponseheaders.X-Frame-Options="
       - "traefik.http.middlewares.langflow-hubframe.headers.customresponseheaders.Content-Security-Policy=frame-ancestors 'self' https://hub.{{DOMAIN}} https://*.{{DOMAIN}}"
+
+  # ──────────────── Langfuse DB bootstrap (one-shot) ────────────────
+  # Creates a dedicated `langfuse` database inside the stack Postgres if it
+  # doesn't exist yet. Idempotent; exits 0 on reruns. Uses the already-pulled
+  # postgres:16-alpine image, so no extra pull. Skip this service entirely if
+  # LANGFUSE_DATABASE_URL points at a Postgres where the DB already exists.
+  langfuse-db-init:
+    image: postgres:16-alpine
+    container_name: langfuse-db-init
+    networks: [ "demo" ]
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+    entrypoint: /bin/sh
+    command:
+      - -lc
+      - |
+        echo ">> Ensuring 'langfuse' database exists ..."
+        psql -h postgres -U "$${POSTGRES_USER}" -tc \
+          "SELECT 1 FROM pg_database WHERE datname='langfuse'" | grep -q 1 \
+          || psql -h postgres -U "$${POSTGRES_USER}" -c "CREATE DATABASE langfuse"
+        echo ">> Done."
+
+  # ──────────────── Langfuse (LLM observability / tracing) ────────────────
+  langfuse:
+    # v2 line — single Postgres-backed container. Pinned to the v2 major; bump to
+    # a specific patch (e.g. langfuse/langfuse:2.95.4) for full reproducibility.
+    image: langfuse/langfuse:2
+    container_name: langfuse
+    # demo = internal stack net (Langflow/Flowise reach http://langfuse:3000 here);
+    # dokploy-network = Traefik can route trace.<domain> to it.
+    networks: [ "demo", "dokploy-network" ]
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      langfuse-db-init:
+        condition: service_completed_successfully
+    environment:
+      - DATABASE_URL=${LANGFUSE_DATABASE_URL}
+      - NEXTAUTH_URL=https://trace.{{DOMAIN}}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - SALT=${SALT}
+      - ENCRYPTION_KEY=${LANGFUSE_ENCRYPTION_KEY}
+      # MUST bind all interfaces or Traefik can't reach it (default is localhost).
+      - HOSTNAME=0.0.0.0
+      - PORT=3000
+      - TELEMETRY_ENABLED=${LANGFUSE_TELEMETRY_ENABLED:-false}
+      # ── Optional headless bootstrap: create org/project/user + API keys on
+      # first boot so the builders' keys work with NO manual UI step. Safe to
+      # omit — if you leave these out, create the project in the UI instead.
+      - LANGFUSE_INIT_ORG_ID=cp-playground
+      - LANGFUSE_INIT_ORG_NAME=Check Point Playground
+      - LANGFUSE_INIT_PROJECT_ID=agents
+      - LANGFUSE_INIT_PROJECT_NAME=Agents
+      - LANGFUSE_INIT_PROJECT_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
+      - LANGFUSE_INIT_PROJECT_SECRET_KEY=${LANGFUSE_SECRET_KEY}
+      - LANGFUSE_INIT_USER_EMAIL=${N8N_ADMIN_EMAIL}
+      - LANGFUSE_INIT_USER_NAME=${N8N_ADMIN_FIRST_NAME}
+      - LANGFUSE_INIT_USER_PASSWORD=${N8N_ADMIN_PASSWORD}
+    labels:
+      - "traefik.enable=true"
+      # Two explicit routers (same pattern as flowise/langflow/open-webui): the
+      # Cloudflare tunnel fronts every host to entrypoint web (:80), and a router
+      # carrying TLS config never matches plain HTTP — Traefik 3.6 splits a
+      # web,websecure router and propagates certresolver onto BOTH, so the
+      # single-router form 404s through the tunnel.
+      - "traefik.http.routers.langfuse-web.rule=Host(`trace.{{DOMAIN}}`)"
+      - "traefik.http.routers.langfuse-web.entrypoints=web"
+      - "traefik.http.routers.langfuse-web.service=langfuse-svc"
+      - "traefik.http.routers.langfuse-websecure.rule=Host(`trace.{{DOMAIN}}`)"
+      - "traefik.http.routers.langfuse-websecure.entrypoints=websecure"
+      - "traefik.http.routers.langfuse-websecure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.langfuse-websecure.service=langfuse-svc"
+      - "traefik.http.services.langfuse-svc.loadbalancer.server.port=3000"
+      - "traefik.docker.network=dokploy-network"
+      # Let the dev-hub desktop embed Langfuse in an iframe (strip X-Frame-Options,
+      # allow the hub in frame-ancestors) — same trick as the langflow service.
+      - "traefik.http.routers.langfuse-websecure.middlewares=langfuse-hubframe"
+      - "traefik.http.middlewares.langfuse-hubframe.headers.customresponseheaders.X-Frame-Options="
+      - "traefik.http.middlewares.langfuse-hubframe.headers.customresponseheaders.Content-Security-Policy=frame-ancestors 'self' https://hub.{{DOMAIN}} https://*.{{DOMAIN}}"
 
   # ─────────── Documentation MCP over HTTP ───────────
   mcp-documentation:
@@ -878,6 +967,74 @@ services:
     entrypoint: [ "python3", "/integrations/seed_builders.py" ]
     restart: "no"
 
+  # ──────────────── Qdrant (vector DB for RAG) ────────────────
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    pull_policy: missing
+    container_name: qdrant
+    networks: [ "demo" ]
+    restart: unless-stopped
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    environment:
+      # leave blank for no-auth on the private net; set QDRANT_API_KEY to require it
+      - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY:-}
+    healthcheck:
+      # Qdrant has no shell/curl; TCP-probe the REST port from the Python base image is done
+      # by dependents. This lightweight check keeps depends_on: service_healthy usable.
+      test: [ "CMD-SHELL", "bash -c ':> /dev/tcp/127.0.0.1/6333' || exit 1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # ──────────────── Visible RAG — one-shot corpus ingester ────────────────
+  rag-ingest:
+    image: python:3.12-alpine
+    pull_policy: missing
+    container_name: rag-ingest
+    networks: [ "demo" ]
+    restart: "no"
+    working_dir: /app
+    # ingest.py is STDLIB-only (urllib) — nothing to pip install.
+    volumes:
+      - ./integrations/rag-cp-docs:/app:ro
+    environment:
+      - OLLAMA_URL=http://ollama-cpu:11434
+      - QDRANT_URL=http://qdrant:6333
+      - EMBED_MODEL=nomic-embed-text
+      - COLLECTION=cp_docs
+      - QDRANT_API_KEY=${QDRANT_API_KEY:-}
+    command: [ "python3", "ingest.py" ]
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      ollama-cpu:
+        condition: service_healthy
+
+  # One-shot eval run (parity with builders-import): on `docker compose up` it
+  # POSTs the evals_cases.json cases to each agent's n8n chat webhook, scores the
+  # answers, and writes evals_report.md/.json to ./n8n/shared. Exit code is 0 if
+  # every case passes, 1 otherwise. Purely opt-in — start it explicitly with
+  # `docker compose up evals-run`; it never blocks the rest of the stack.
+  evals-run:
+    image: python:3.12-alpine
+    container_name: evals-run
+    networks: [ "demo" ]
+    depends_on:
+      - n8n
+    volumes:
+      - ./integrations:/integrations:ro
+      - ./n8n/shared:/out
+    environment:
+      # Inside the network n8n is reachable by service name; override to a public
+      # host (e.g. https://n8n.${YOUR_DOMAIN}) to eval a remote deployment.
+      - BASE_URL=${EVALS_BASE_URL:-http://n8n:5678}
+      - CASES_FILE=/integrations/evals/evals_cases.json
+      - OUT_DIR=/out
+      - TIMEOUT=120
+    entrypoint: [ "python3", "/integrations/evals/run_evals.py" ]
+    restart: "no"
+
   # ──────────────── AI-Infra-Guard (AI Red Teaming Platform) ────────────────
   # Tencent Zhuque Lab - AI infrastructure vuln scanning, MCP security
   # analysis, and jailbreak evaluation. Web UI at port 8088.
@@ -1019,6 +1176,36 @@ services:
       - MCP_PORT=3013
     healthcheck:
       test: [ "CMD", "python3", "-c", "import socket; socket.create_connection(('127.0.0.1',3013),3)" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+  # ─────────── MCP Security Lab (opt-in, INTENTIONALLY VULNERABLE) ───────────
+  # ☠️ A deliberately-unsafe MCP server used ONLY to teach MCP attack/defend
+  # (tool poisoning, indirect prompt injection, over-permissioned tools,
+  # rug-pull). Everything it does is SIMULATED and clearly labelled — no real
+  # file reads, no exfiltration. Behind the `security-lab` profile so it NEVER
+  # starts with the default stack or CI, and it publishes NO host port (internal
+  # `demo` network only). Do not front a real workload with this.
+  # Enable: COMPOSE_PROFILES=...,security-lab   (see integrations/mcp-security-lab/INTEGRATION.md)
+  # Guide:  docs/guides/MCP_Security_Lab.md
+  vuln-mcp:
+    image: python:3.12-alpine
+    container_name: vuln-mcp
+    profiles: [ "security-lab" ]
+    networks: [ "demo" ]
+    working_dir: /app
+    volumes:
+      - ./integrations/mcp-security-lab:/app:ro
+    environment:
+      - MCP_PORT=3099
+      # MCP_BEARER_TOKEN is intentionally left UNSET — the lab demonstrates a
+      # direct, unauthenticated sidecar (contrast the gateway's mandatory Bearer).
+    command: [ "python3", "/app/vuln_mcp_server.py" ]
+    healthcheck:
+      test: [ "CMD", "python3", "-c", "import socket; socket.create_connection(('127.0.0.1',3099),3)" ]
       interval: 10s
       timeout: 5s
       retries: 12
