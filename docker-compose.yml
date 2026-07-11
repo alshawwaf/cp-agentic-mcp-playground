@@ -981,8 +981,13 @@ services:
     volumes:
       - qdrant_storage:/qdrant/storage
     environment:
-      # leave blank for no-auth on the private net; set QDRANT_API_KEY to require it
-      - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY:-}
+      # Qdrant treats an EMPTY QDRANT__SERVICE__API_KEY as "auth on with an empty
+      # key" (rejects unauthenticated requests with 401), so we do NOT pass it when
+      # blank. Internal-only on the demo net = no auth by default. To require a key,
+      # set QDRANT_API_KEY in .env AND uncomment the line below (the ingester +
+      # retriever already send it as the api-key header when QDRANT_API_KEY is set).
+      # - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY}
+      - QDRANT__TELEMETRY_DISABLED=true
     healthcheck:
       # Qdrant has no shell/curl; TCP-probe the REST port from the Python base image is done
       # by dependents. This lightweight check keeps depends_on: service_healthy usable.
