@@ -350,10 +350,14 @@ services:
         # (http://litellm:4000) so every n8n LLM call is traced to Langfuse;
         # LiteLLM holds the real provider keys server-side. Only the proxy's
         # master key is substituted here — it always has a compose default.
+        # All four provider credentials point at the LiteLLM proxy (for Langfuse tracing),
+        # so each carries the proxy master key, not a provider key. The provider (OpenAI /
+        # Azure / Anthropic / Gemini) upstream keys live only on the litellm service. The
+        # base URL / host in each credential JSON is a literal http://litellm:4000[/...].
         subst_llm_key LITELLM_MASTER_KEY "$$LITELLM_MASTER_KEY" "openai.json"
         subst_llm_key LITELLM_MASTER_KEY "$$LITELLM_MASTER_KEY" "azure-OpenAI.json"
-        subst_llm_key GEMINI_API_KEY "$$GEMINI_API_KEY" "Google Gemini(PaLM) Api account.json"
-        subst_llm_key ANTHROPIC_API_KEY "$$ANTHROPIC_API_KEY" "anthropic.json"
+        subst_llm_key LITELLM_MASTER_KEY "$$LITELLM_MASTER_KEY" "anthropic.json"
+        subst_llm_key LITELLM_MASTER_KEY "$$LITELLM_MASTER_KEY" "Google Gemini(PaLM) Api account.json"
 
         # Integration credentials — same pattern: set the env once (answers.env /
         # .env, persisted across redeploys) and every deploy injects it into the
@@ -1013,6 +1017,10 @@ services:
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
       - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      # Upstream keys for the n8n Claude / Gemini nodes (bring-your-own). Empty = that
+      # provider's node stays unconfigured; the default Azure path is unaffected.
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
       - LANGFUSE_HOST=${LANGFUSE_HOST:-http://langfuse:3000}

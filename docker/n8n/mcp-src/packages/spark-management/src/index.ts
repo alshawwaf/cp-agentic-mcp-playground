@@ -19,23 +19,16 @@ const pkg = JSON.parse(
 
 process.env.CP_MCP_MAIN_PKG = `${pkg.name} v${pkg.version}`;
 
-// Create a new MCP server instance
-const server = new McpServer({
+// Build a fresh MCP server instance with all tools registered. A factory
+// is used (instead of a shared singleton) so that Streamable HTTP can create one
+// server per session. The MCP SDK forbids connecting a single server to more
+// than one transport, which otherwise breaks concurrent/multi-client use.
+function createSparkManagementServer(): McpServer {
+  const server = new McpServer({
   name: 'spark-management',
   description: 'MCP Assistant server for Spark Management',
   version: '1.0.0'
 });
-
-// Create a multi-user server module
-const serverModule = createServerModule(
-  server,
-  Settings,
-  pkg,
-  SMPAPIManager
-);
-
-// Create an API runner function
-const runApi = createApiRunner(serverModule);
 
 server.tool(
   "show_gateway",
@@ -705,7 +698,24 @@ server.tool(
   }
 );
 
-export { server };
+  return server;
+}
+
+// Singleton server module (used for stdio transport and as a fallback)
+const serverModule = createServerModule(
+  createSparkManagementServer(),
+  Settings,
+  pkg,
+  SMPAPIManager
+);
+
+// Provide a per-session server factory for multi-session Streamable HTTP
+serverModule.createServer = createSparkManagementServer;
+
+// Create an API runner function (reads serverModule at call time)
+const runApi = createApiRunner(serverModule);
+
+export const server = serverModule.server;
 
 // Settings implementation - updated for multi-user support
 

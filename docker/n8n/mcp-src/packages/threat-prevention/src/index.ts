@@ -18,22 +18,16 @@ const pkg = JSON.parse(
 
 process.env.CP_MCP_MAIN_PKG = `${pkg.name} v${pkg.version}`;
 
-const server = new McpServer({
+// Build a fresh MCP server instance with all tools registered. A factory
+// is used (instead of a shared singleton) so that Streamable HTTP can create one
+// server per session. The MCP SDK forbids connecting a single server to more
+// than one transport, which otherwise breaks concurrent/multi-client use.
+function createThreatPreventionServer(): McpServer {
+  const server = new McpServer({
   name: 'threat-prevention',
   version: '1.0.0',
   description: 'MCP server to interact with Threat Prevention objects on Check Point Gateways.'
 });
-
-// Create a multi-user server module
-const serverModule = createServerModule(
-  server,
-  Settings,
-  pkg,
-  APIManagerForAPIKey
-);
-
-// Create an API runner function
-const runApi = createApiRunner(serverModule);
 
 
 server.tool(
@@ -766,7 +760,24 @@ server.tool(
 );
 
 
-export { server };
+  return server;
+}
+
+// Singleton server module (used for stdio transport and as a fallback)
+const serverModule = createServerModule(
+  createThreatPreventionServer(),
+  Settings,
+  pkg,
+  APIManagerForAPIKey
+);
+
+// Provide a per-session server factory for multi-session Streamable HTTP
+serverModule.createServer = createThreatPreventionServer;
+
+// Create an API runner function (reads serverModule at call time)
+const runApi = createApiRunner(serverModule);
+
+export const server = serverModule.server;
 
 const main = async () => {
   await launchMCPServer(

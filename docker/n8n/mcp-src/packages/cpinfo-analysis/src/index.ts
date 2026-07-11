@@ -30,25 +30,40 @@ logger.info(`Working directory: ${process.cwd()}`);
 
 process.env.CP_MCP_MAIN_PKG = `${pkg.name} v${pkg.version}`;
 
-const server = new McpServer({
-  name: "cpinfo-analysis",
-  description: "Semantic CPInfo analysis server",
-  version: pkg.version || "1.0.0"
-});
+// Build a fresh MCP server instance with all tools registered. A factory is used
+// (instead of a shared singleton) so that Streamable HTTP can create one server per
+// session. The MCP SDK forbids connecting a single server to more than one transport,
+// which otherwise breaks concurrent/multi-client use.
+function createCpinfoAnalysisServer(): McpServer {
+  const server = new McpServer({
+    name: "cpinfo-analysis",
+    description: "Semantic CPInfo analysis server",
+    version: pkg.version || "1.0.0"
+  });
 
+  const service = new CpInfoService();
+  const registeredTools = registerCpinfoTools(server, service);
+
+  logger.info(`Registering ${registeredTools} tools`);
+
+  return server;
+}
+
+// Singleton server module (used for stdio transport and as a fallback)
 const serverModule = createServerModule(
-  server,
+  createCpinfoAnalysisServer(),
   Settings,
   pkg,
   CpInfoAPIManager
 );
 
+// Provide a per-session server factory for multi-session Streamable HTTP
+serverModule.createServer = createCpinfoAnalysisServer;
+
+// Create an API runner function (reads serverModule at call time)
 const runApi = createApiRunner(serverModule);
 
-const service = new CpInfoService();
-const registeredTools = registerCpinfoTools(server, service);
-
-logger.info(`Registering ${registeredTools} tools`);
+export const server = serverModule.server;
 
 const main = async () => {
   logger.info("Launching MCP server...");
