@@ -457,6 +457,14 @@ services:
     restart: unless-stopped
     environment:
       - PORT=${FLOWISE_PORT}
+      # Flowise's SSRF guard denies the whole private-IP range (incl. the
+      # 172.16.0.0/12 Docker network) by default, which blocks the Custom MCP
+      # node from reaching the internal MCP gateway (mcp-gateway:8080) with
+      # "isDeniedIP: Access to this host is denied by policy". HTTP_DENY_LIST
+      # can only ADD entries, so the only way to allow an internal host is to
+      # disable the default deny list. Safe here: Flowise is internal-only
+      # (behind Traefik auth) and the gateway lives on the private demo network.
+      - HTTP_SECURITY_CHECK=false
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
