@@ -18,19 +18,16 @@ const pkg = JSON.parse(
 );
 process.env.CP_MCP_MAIN_PKG = `${pkg.name} v${pkg.version}`;
 
+// Build a fresh MCP server instance with all tools registered. A factory is used
+// (instead of a shared singleton) so that Streamable HTTP can create one server per
+// session. The MCP SDK forbids connecting a single server to more than one
+// transport, which otherwise breaks concurrent/multi-client use.
+function createThreatEmulationServer(): McpServer {
 const server = new McpServer({
     name: 'Check Point Threat Emulation',
     description: 'Check Point Threat Emulation and Anti-Virus scanning service for files',
     version: '0.0.1'
 });
-
-// Create a multi-user server module
-const serverModule = createServerModule(
-  server,
-  ThreatEmulationSettings,
-  pkg,
-  ThreatEmulationClient
-);
 
 
 // Tool: Upload file for analysis
@@ -389,7 +386,21 @@ server.tool(
     }
 );
 
-export { server };
+  return server;
+}
+
+// Singleton server module (used for stdio transport and as a fallback)
+const serverModule = createServerModule(
+  createThreatEmulationServer(),
+  ThreatEmulationSettings,
+  pkg,
+  ThreatEmulationClient
+);
+
+// Provide a per-session server factory for multi-session Streamable HTTP
+serverModule.createServer = createThreatEmulationServer;
+
+export const server = serverModule.server;
 
 const main = async () => {
     await launchMCPServer(

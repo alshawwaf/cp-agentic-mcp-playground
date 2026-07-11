@@ -4,7 +4,8 @@
   "id": "AnthropicCred001",
   "name": "Anthropic account",
   "data": {
-    "apiKey": "__ANTHROPIC_API_KEY__"
+    "apiKey": "__LITELLM_MASTER_KEY__",
+    "url": "http://litellm:4000"
   },
   "type": "anthropicApi",
   "isManaged": false

@@ -4,7 +4,8 @@
   "id": "jQWvIJNDs6CeSDiN",
   "name": "Google Gemini(PaLM) Api account",
   "data": {
-    "apiKey": "__GEMINI_API_KEY__"
+    "apiKey": "__LITELLM_MASTER_KEY__",
+    "host": "http://litellm:4000/gemini"
   },
   "type": "googlePalmApi",
   "isManaged": false

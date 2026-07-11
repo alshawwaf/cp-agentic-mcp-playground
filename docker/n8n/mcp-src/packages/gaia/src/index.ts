@@ -44,7 +44,12 @@ const pkg = JSON.parse(
 
 process.env.CP_MCP_MAIN_PKG = `${pkg.name} v${pkg.version}`;
 
-const server = new McpServer(
+// Build a fresh MCP server instance with all tools registered. A factory is used
+// (instead of a shared singleton) so that Streamable HTTP can create one server
+// per session. The MCP SDK forbids connecting a single server to more than one
+// transport, which otherwise breaks concurrent/multi-client use.
+function createGaiaServer(): McpServer {
+  const server = new McpServer(
   {
     name: 'quantum-gaia',
     version: '1.0.0',
@@ -65,14 +70,6 @@ const server = new McpServer(
       tools: {},
     },
   }
-);
-
-// Create a multi-user server module
-const serverModule = createServerModule(
-  server,
-  Settings,
-  pkg,
-  GaiaAPIManager
 );
 
 /**
@@ -1721,7 +1718,21 @@ server.tool(
   }
 );
 
-export { server };
+  return server;
+}
+
+// Singleton server module (used for stdio transport and as a fallback)
+const serverModule = createServerModule(
+  createGaiaServer(),
+  Settings,
+  pkg,
+  GaiaAPIManager
+);
+
+// Provide a per-session server factory for multi-session Streamable HTTP
+serverModule.createServer = createGaiaServer;
+
+export const server = serverModule.server;
 
 const main = async () => {
   await launchMCPServer(

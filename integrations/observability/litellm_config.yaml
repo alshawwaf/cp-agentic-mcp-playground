@@ -1,12 +1,19 @@
-# LiteLLM proxy — the n8n → Langfuse tracing path.
-# n8n has no native Langfuse callback, so its OpenAI/Azure credentials point at this proxy
+# LiteLLM proxy — the n8n + Langflow → Langfuse tracing path.
+# n8n's provider credentials and every Langflow flow's OpenAI model point at this proxy
 # (internal-only, demo network, no host port). LiteLLM forwards to the real provider using
-# the server-side keys below and logs every request/response pair to Langfuse.
+# the server-side keys below and logs every request/response pair to Langfuse. Flowise
+# traces natively and does NOT use this proxy.
 #
-# Routes n8n uses:
-#   * Azure-style  : POST /openai/deployments/<deployment>/chat/completions?api-version=...
-#                    (the "Azure OpenAI (default)" model node on every agent)
-#   * OpenAI-style : POST /v1/chat/completions   (the "OpenAI gpt-5.1" model node)
+# Routes the builders use:
+#   * Azure-style   : POST /openai/deployments/<deployment>/chat/completions?api-version=...
+#                     (the "Azure OpenAI (default)" node on every n8n agent — the default model)
+#   * OpenAI-style  : POST /v1/chat/completions          (n8n "OpenAI" node + all Langflow flows)
+#   * Anthropic     : POST /v1/messages                  (n8n "Claude" node → model claude-opus-4-8)
+#   * Gemini (n8n)  : POST /gemini/v1beta/models/<m>:generateContent  (passthrough; needs GEMINI_API_KEY)
+#
+# A provider only works when its upstream key is present in the container env (see the litellm
+# service block in docker-compose.yml). Missing key = that model node stays unconfigured, exactly
+# like the pre-proxy behaviour — the default Azure path is unaffected.
 model_list:
   # The Azure deployment every n8n agent defaults to — served upstream by Azure OpenAI:
   - model_name: gpt-5.4-2026-03-05
@@ -15,16 +22,31 @@ model_list:
       api_base: os.environ/AZURE_OPENAI_ENDPOINT
       api_key: os.environ/AZURE_OPENAI_API_KEY
       api_version: "2025-04-01-preview"
-  # Everything else (gpt-5.1, gpt-5.4, ...) passes through to OpenAI:
+  # Anthropic — the n8n "Claude" node sends model=claude-opus-4-8 to /v1/messages. Explicit entry
+  # so the Anthropic route resolves (a bare "*" would mis-route it to openai/*), plus an anthropic/*
+  # passthrough for any other claude id a user selects:
+  - model_name: claude-opus-4-8
+    litellm_params:
+      model: anthropic/claude-opus-4-8
+      api_key: os.environ/ANTHROPIC_API_KEY
+  - model_name: "anthropic/*"
+    litellm_params:
+      model: "anthropic/*"
+      api_key: os.environ/ANTHROPIC_API_KEY
+  # Everything else (gpt-5.1, gpt-5.4, …) passes through to OpenAI:
   - model_name: "*"
     litellm_params:
       model: openai/*
       api_key: os.environ/OPENAI_API_KEY
 
+# Gemini is served by LiteLLM's built-in /gemini/* passthrough route (no model_list entry needed);
+# it forwards to Google AI Studio using GEMINI_API_KEY from the environment. The n8n Gemini
+# credential's host is set to http://litellm:4000/gemini.
+
 litellm_settings:
   success_callback: ["langfuse"]
   failure_callback: ["langfuse"]
-  # n8n/LangChain sometimes sends params Azure rejects — drop rather than 400:
+  # n8n/LangChain sometimes sends params a provider rejects — drop rather than 400:
   drop_params: true
 
 general_settings:

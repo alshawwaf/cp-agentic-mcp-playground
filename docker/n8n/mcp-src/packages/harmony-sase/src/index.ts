@@ -19,16 +19,6 @@ const API_V2_1 = "2.1";
 const API_V2_1_NETWORKS = `/rest/v${API_V2_1}/networks`;
 const API_V2_1_APPLICATIONS = `/rest/v${API_V2_1}/applications`;
 
-// Create a new MCP server instance
-const server = new McpServer({
-  name: "harmony_sase",
-  version: "1.0.0", // Added missing version parameter
-  description:
-    "MCP server to run commands on a Check Point Harmony SASE. " +
-    "Use this to list networks topology, network regions, network gateways, " +
-    "network applications, and deep dive to any of those entities using its ID.",
-});
-
 // Get package information for version display
 const pkg = JSON.parse(
   readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../package.json'), 'utf-8')
@@ -36,15 +26,19 @@ const pkg = JSON.parse(
 
 process.env.CP_MCP_MAIN_PKG = `${pkg.name} v${pkg.version}`;
 
-// Create a multi-user server module
-const serverModule = createServerModule(
-  server,
-  Settings,
-  pkg,
-  APIManagerForHarmonySASE
-);
-
-const runApi = createApiRunner(serverModule);
+// Build a fresh MCP server instance with all tools registered. A factory is used
+// (instead of a shared singleton) so that Streamable HTTP can create one server
+// per session. The MCP SDK forbids connecting a single server to more than one
+// transport, which otherwise breaks concurrent/multi-client use.
+function createHarmonySaseServer(): McpServer {
+  const server = new McpServer({
+    name: "harmony_sase",
+    version: "1.0.0", // Added missing version parameter
+    description:
+      "MCP server to run commands on a Check Point Harmony SASE. " +
+      "Use this to list networks topology, network regions, network gateways, " +
+      "network applications, and deep dive to any of those entities using its ID.",
+  });
 
 // --- Harmony SASE API Tools ---
 
@@ -222,7 +216,24 @@ server.tool(
   }
 );
 
-export { server };
+  return server;
+}
+
+// Singleton server module (used for stdio transport and as a fallback)
+const serverModule = createServerModule(
+  createHarmonySaseServer(),
+  Settings,
+  pkg,
+  APIManagerForHarmonySASE
+);
+
+// Provide a per-session server factory for multi-session Streamable HTTP
+serverModule.createServer = createHarmonySaseServer;
+
+// Create an API runner function (reads serverModule at call time)
+const runApi = createApiRunner(serverModule);
+
+export const server = serverModule.server;
 
 const main = async () => {
   await launchMCPServer(

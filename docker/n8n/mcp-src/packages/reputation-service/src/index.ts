@@ -18,20 +18,13 @@ const pkg = JSON.parse(
 );
 process.env.CP_MCP_MAIN_PKG = `${pkg.name} v${pkg.version}`;
 
+function createReputationServiceServer(): McpServer {
 const server = new McpServer({
     name: 'Check Point Reputation Service',
     description:
         "Check Point security reputation about IP, URL, File hashes - Get their current verdict",
     version: '1.0.0'
 });
-
-// Create a multi-user server module
-const serverModule = createServerModule(
-  server,
-  ReputationSettings,
-  pkg,
-  ReputationClient
-);
 
 // --- TOOLS ---
 
@@ -143,7 +136,21 @@ server.tool(
     }
 );
 
-export { server };
+  return server;
+}
+
+// Singleton server module (used for stdio transport and as a fallback)
+const serverModule = createServerModule(
+  createReputationServiceServer(),
+  ReputationSettings,
+  pkg,
+  ReputationClient
+);
+
+// Provide a per-session server factory for multi-session Streamable HTTP
+serverModule.createServer = createReputationServiceServer;
+
+export const server = serverModule.server;
 
 const main = async () => {
     await launchMCPServer(
