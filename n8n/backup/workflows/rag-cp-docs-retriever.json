@@ -1,0 +1,137 @@
+{
+  "name": "RAG · CP Docs Retriever (embed + Qdrant search)",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "workflowInputs",
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "query",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -40,
+        0
+      ],
+      "id": "0b327961-fc30-4278-b49e-f2b28337fbd6",
+      "name": "When called by the agent"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ollama-cpu:11434/api/embeddings",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"nomic-embed-text\",\n  \"prompt\": {{ JSON.stringify($json.query || '') }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        200,
+        0
+      ],
+      "id": "25baead9-8b47-4280-9ab6-862ea501988c",
+      "name": "Embed query (Ollama)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://qdrant:6333/collections/cp_docs/points/search",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"vector\": {{ JSON.stringify($json.embedding) }},\n  \"limit\": 4,\n  \"with_payload\": true\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "id": "5f7cb7da-51d8-42f1-8dac-bbfbce4b6557",
+      "name": "Search cp_docs (Qdrant)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const hits = ($input.first().json.result) || [];\nif (!Array.isArray(hits) || hits.length === 0) {\n  return [{ json: { response: \"No matching snippets were found in the 'cp_docs' Qdrant collection. It may be empty — run the one-shot 'rag-ingest' job (see integrations/rag-cp-docs/INTEGRATION.md).\" } }];\n}\nconst blocks = hits.map((h, i) => {\n  const p = h.payload || {};\n  const score = (typeof h.score === 'number') ? h.score.toFixed(3) : 'n/a';\n  const title = p.title || p.source || 'snippet';\n  return `### Result ${i + 1} — ${title}\\n(source: ${p.source || 'unknown'} · score: ${score})\\n\\n${p.text || ''}`;\n});\nconst response = `Retrieved ${hits.length} snippet(s) from the 'cp_docs' collection. Answer ONLY from these snippets and cite each \\`source\\` filename you use.\\n\\n` + blocks.join('\\n\\n');\nreturn [{ json: { response } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        0
+      ],
+      "id": "b60bd5cd-bd0f-4fa0-8eaf-e71869fb81a1",
+      "name": "Format hits + sources"
+    },
+    {
+      "parameters": {
+        "content": "## 🔎 RAG Retriever (sub-workflow / agent tool)\n**query → embed (Ollama `nomic-embed-text`) → Qdrant search `cp_docs` → top-4 snippets + sources.**\n\nCalled by the *CP Docs RAG Agent* as the `search_cp_docs` tool. To test it alone: pin `{ \"query\": \"How do I enable Identity Awareness?\" }` on the trigger and Execute.\n\nRun the `rag-ingest` job first so `cp_docs` has vectors.",
+        "width": 760,
+        "height": 200,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -260
+      ],
+      "id": "251d745e-d9b1-421b-b1df-cfe0039dc737",
+      "name": "Guide"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When called by the agent": {
+      "main": [
+        [
+          {
+            "node": "Embed query (Ollama)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embed query (Ollama)": {
+      "main": [
+        [
+          {
+            "node": "Search cp_docs (Qdrant)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search cp_docs (Qdrant)": {
+      "main": [
+        [
+          {
+            "node": "Format hits + sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b55a2fb2-8037-4bb9-9a36-610b5ab6c15d",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "RagCpDocsRetrieverWf1",
+  "tags": []
+}
