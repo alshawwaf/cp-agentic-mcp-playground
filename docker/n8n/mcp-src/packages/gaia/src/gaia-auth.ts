@@ -11,11 +11,33 @@ export interface GaiaConnection {
  * Get gateway connection details (IP, port, credentials) with automatic prompting
  */
 export async function getGaiaConnection(
-  gatewayIp?: string, 
-  port?: number, 
+  gatewayIp?: string,
+  port?: number,
   extra?: any
 ): Promise<GaiaConnection> {
-  
+
+  // Headless env-credential fallback (added for the containerized HTTP-transport deployment).
+  // Upstream, Gaia authenticates through an interactive localhost browser dialog, which cannot
+  // run in a headless sidecar reached over the remote MCP gateway. When the operator configures
+  // a default gateway via environment variables, use them directly and skip both dialogs. A
+  // tool-supplied gateway_ip still takes precedence for the host; GAIA_USERNAME/GAIA_PASSWORD
+  // apply to whichever host is used. Leave the env unset to keep the original dialog behaviour.
+  const envIp = process.env.GAIA_GATEWAY_IP;
+  const envUser = process.env.GAIA_USERNAME;
+  const envPass = process.env.GAIA_PASSWORD;
+  const envPort = process.env.GAIA_GATEWAY_PORT
+    ? parseInt(process.env.GAIA_GATEWAY_PORT, 10)
+    : undefined;
+  const effectiveIp = gatewayIp || envIp;
+  if (effectiveIp && envUser && envPass) {
+    return {
+      gatewayIp: effectiveIp,
+      port: port || envPort || 443,
+      user: envUser,
+      password: envPass,
+    };
+  }
+
   // Step 1: Get gateway IP and port if not provided
   let connectionDetails: { gatewayIp: string; port: number };
   
