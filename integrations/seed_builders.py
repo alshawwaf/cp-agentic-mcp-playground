@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""seed_builders.py — deploy-time import of the CP MCP Gateway Agent into Flowise and Langflow.
+"""seed_builders.py — deploy-time import of the CP MCP agent fleet into Flowise and Langflow.
 
 Runs as the one-shot `builders-import` compose service (parity with `n8n-import`): waits for each
-builder, substitutes the __PLACEHOLDER__ secrets from the environment into in-memory copies of the
-committed flow JSONs, and imports them idempotently (skip when a flow with the same name exists).
-Nothing is written back to the repo and no secret is ever printed.
+builder, then imports every agent flow — the umbrella "CP MCP Gateway Agent" plus the per-domain
+gateway agents listed in builders_agents.json (Quantum Management, Gaia, GW-CLI, Threat Prevention,
+Threat Emulation, Reputation, cpinfo, HTTPS Inspection, Logs, Documentation, Policy Insights). Each
+flow is a committed JSON with __PLACEHOLDER__ secrets substituted from the environment in memory and
+imported idempotently (skip when a flow with the same name already exists). Nothing is written back
+to the repo and no secret is ever printed.
 
 Auth (per builder, in order):
   * Flowise : FLOWISE_API_KEY (Bearer) if set; otherwise LOGIN with ADMIN_EMAIL / ADMIN_PASSWORD —
@@ -12,8 +15,9 @@ Auth (per builder, in order):
   * Langflow: LANGFLOW_API_KEY (x-api-key) if set; otherwise LOGIN with ADMIN_EMAIL / ADMIN_PASSWORD
               (the provisioned LANGFLOW_SUPERUSER) and use the returned JWT as a Bearer token.
 
-Stdlib only — runs unmodified in python:3.12-alpine. Exit 0 = every targeted builder is seeded (or
-was already); exit 1 = a builder stayed unreachable or an import failed, so the deploy surfaces it.
+Stdlib only — runs unmodified in python:3.12-alpine. Exit 0 = every targeted flow is seeded (or was
+already) on every reachable builder; exit 1 = a builder stayed unreachable or an import failed, so
+the deploy surfaces it.
 """
 from __future__ import annotations
 
@@ -28,9 +32,10 @@ import urllib.parse
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-FLOW_NAME = "CP MCP Gateway Agent"
-FLOWISE_JSON = os.path.join(HERE, "flowise", "cp-mcp-gateway-agent.flowdata.json")
-LANGFLOW_JSON = os.path.join(HERE, "langflow", "cp-mcp-gateway-agent.flow.json")
+UMBRELLA_NAME = "CP MCP Gateway Agent"
+FLOWISE_DIR = os.path.join(HERE, "flowise")
+LANGFLOW_DIR = os.path.join(HERE, "langflow")
+MANIFEST = os.path.join(HERE, "builders_agents.json")
 
 FLOWISE_URL = os.environ.get("FLOWISE_URL", "http://flowise:3020").rstrip("/")
 LANGFLOW_URL = os.environ.get("LANGFLOW_URL", "http://langflow:7860").rstrip("/")
@@ -58,6 +63,29 @@ def substituted(path: str) -> dict:
     return json.loads(data)
 
 
+def agent_entries() -> list:
+    """Umbrella flow first, then every per-domain agent from the manifest. Each entry is
+    {name, flowise, langflow} with absolute paths. Missing manifest = umbrella only (back-compat)."""
+    entries = [{
+        "name": UMBRELLA_NAME,
+        "flowise": os.path.join(FLOWISE_DIR, "cp-mcp-gateway-agent.flowdata.json"),
+        "langflow": os.path.join(LANGFLOW_DIR, "cp-mcp-gateway-agent.flow.json"),
+    }]
+    if os.path.exists(MANIFEST):
+        try:
+            m = json.load(open(MANIFEST, encoding="utf-8"))
+        except ValueError:
+            log(f"  WARNING: {MANIFEST} is not valid JSON — importing the umbrella flow only.")
+            return entries
+        for a in m.get("agents", []):
+            entries.append({
+                "name": a["name"],
+                "flowise": os.path.join(HERE, a["flowise"]),
+                "langflow": os.path.join(HERE, a["langflow"]),
+            })
+    return entries
+
+
 def request(opener, method: str, url: str, *, body=None, headers=None, form=False, timeout=30,
             want_cookies=False):
     """One HTTP call. Returns (status, parsed-or-raw-body[, cookie-header]); raises only on transport
@@ -77,6 +105,7 @@ def request(opener, method: str, url: str, *, body=None, headers=None, form=Fals
         req.add_header("Content-Type", ctype)
     for k, v in (headers or {}).items():
         req.add_header(k, v)
+
     def _decode(blob: bytes) -> str:
         # Langflow gzips some list endpoints regardless of Accept-Encoding — decompress by magic bytes.
         if blob[:2] == b"\x1f\x8b":
@@ -122,11 +151,11 @@ def wait_for(opener, name: str, url: str) -> bool:
 def flowise_ensure_openai_credential(opener, headers) -> str:
     """Flowise keeps the model API key in a CREDENTIAL object, not in the flow JSON.
     Create one from OPENAI_API_KEY (already in our env) and return its id, so the
-    imported agent's chatOpenAI node has a working key with no UI step. Idempotent by
-    name. Returns "" when no key is available or creation fails (node then needs the UI)."""
+    imported agents' chatOpenAI nodes have a working key with no UI step. Idempotent by
+    name. Returns "" when no key is available or creation fails (nodes then need the UI)."""
     key = os.environ.get("OPENAI_API_KEY", "")
     if not key:
-        log("  (no OPENAI_API_KEY — the model node will need its credential set in the UI)")
+        log("  (no OPENAI_API_KEY — the model nodes will need their credential set in the UI)")
         return ""
     name = "CP OpenAI (auto)"
     status, rows = request(opener, "GET", f"{FLOWISE_URL}/api/v1/credentials", headers=headers)
@@ -145,7 +174,7 @@ def flowise_ensure_openai_credential(opener, headers) -> str:
     return ""
 
 
-def seed_flowise() -> bool:
+def seed_flowise(entries: list) -> bool:
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
     log(f"• Flowise: target {FLOWISE_URL}")
     if not wait_for(opener, "Flowise", f"{FLOWISE_URL}/api/v1/chatflows"):
@@ -174,38 +203,47 @@ def seed_flowise() -> bool:
         log("  auth: admin login OK (session cookies).")
 
     # Fail-safe idempotency: if we cannot POSITIVELY parse the existing list, do NOT import — a mis-parse
-    # here (e.g. an unexpected encoding) would otherwise create a duplicate flow on every deploy.
+    # here (e.g. an unexpected encoding) would otherwise create duplicate flows on every deploy.
     status, rows = request(opener, "GET", f"{FLOWISE_URL}/api/v1/chatflows", headers=headers)
     if status != 200 or not isinstance(rows, list):
         log(f"  ERROR: could not list chatflows (HTTP {status}) — refusing to import blind.")
         return False
-    if any(isinstance(r, dict) and r.get("name") == FLOW_NAME for r in rows):
-        log(f"  ↳ already present (name: {FLOW_NAME}) — skipping.")
-        return True
+    existing = {r.get("name") for r in rows if isinstance(r, dict)}
 
-    graph = substituted(FLOWISE_JSON)
-    # Attach the auto-created model credential to the chatOpenAI node so the agent
-    # works on import with no UI step (Flowise references the key by credential id).
     cred_id = flowise_ensure_openai_credential(opener, headers)
-    if cred_id:
-        for n in graph.get("nodes", []):
-            d = n.get("data", {})
-            if d.get("name") == "chatOpenAI":
-                d["credential"] = cred_id
-                d.setdefault("inputs", {})["credential"] = cred_id
-    body = {"name": FLOW_NAME, "type": "CHATFLOW", "deployed": True, "flowData": json.dumps(graph)}
-    status, resp = request(opener, "POST", f"{FLOWISE_URL}/api/v1/chatflows", body=body, headers=headers)
-    if status not in (200, 201):
-        detail = resp if isinstance(resp, str) else json.dumps(resp)
-        log(f"  ERROR: chatflow POST failed (HTTP {status}): {detail[:300]}")
-        return False
-    log(f"  ↳ created chatflow (HTTP {status}).")
-    return True
+    ok = True
+    for e in entries:
+        name = e["name"]
+        if name in existing:
+            log(f"  = {name} (exists — skip)")
+            continue
+        if not os.path.exists(e["flowise"]):
+            log(f"  ! {name}: missing flow file {e['flowise']}")
+            ok = False
+            continue
+        graph = substituted(e["flowise"])
+        # Attach the auto-created model credential to the chatOpenAI node so the agent works on
+        # import with no UI step (Flowise references the key by credential id).
+        if cred_id:
+            for n in graph.get("nodes", []):
+                d = n.get("data", {})
+                if d.get("name") == "chatOpenAI":
+                    d["credential"] = cred_id
+                    d.setdefault("inputs", {})["credential"] = cred_id
+        body = {"name": name, "type": "CHATFLOW", "deployed": True, "flowData": json.dumps(graph)}
+        status, resp = request(opener, "POST", f"{FLOWISE_URL}/api/v1/chatflows", body=body, headers=headers)
+        if status in (200, 201):
+            log(f"  + {name} (HTTP {status})")
+        else:
+            detail = resp if isinstance(resp, str) else json.dumps(resp)
+            log(f"  ! {name}: chatflow POST failed (HTTP {status}): {detail[:200]}")
+            ok = False
+    return ok
 
 
 # ─────────────────────────── Langflow ──────────────────────────
 
-def seed_langflow() -> bool:
+def seed_langflow(entries: list) -> bool:
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
     log(f"• Langflow: target {LANGFLOW_URL}")
     if not wait_for(opener, "Langflow", f"{LANGFLOW_URL}/api/v1/version"):
@@ -238,27 +276,40 @@ def seed_langflow() -> bool:
     if status != 200 or not isinstance(rows, list):
         log(f"  ERROR: could not list flows (HTTP {status}) — refusing to import blind.")
         return False
-    if any(isinstance(r, dict) and r.get("name") == FLOW_NAME for r in rows):
-        log(f"  ↳ already present (name: {FLOW_NAME}) — skipping.")
-        return True
+    existing = {r.get("name") for r in rows if isinstance(r, dict)}
 
-    flow = substituted(LANGFLOW_JSON)
-    flow.pop("id", None)   # the export carries a slug id; the create endpoint requires a UUID or none
-    status, resp = request(opener, "POST", f"{LANGFLOW_URL}/api/v1/flows/", body=flow, headers=headers)
-    if status not in (200, 201):
-        detail = resp if isinstance(resp, str) else json.dumps(resp)
-        log(f"  ERROR: flow POST failed (HTTP {status}): {detail[:300]}")
-        return False
-    log(f"  ↳ imported flow (HTTP {status}).")
-    return True
+    ok = True
+    for e in entries:
+        name = e["name"]
+        if name in existing:
+            log(f"  = {name} (exists — skip)")
+            continue
+        if not os.path.exists(e["langflow"]):
+            log(f"  ! {name}: missing flow file {e['langflow']}")
+            ok = False
+            continue
+        flow = substituted(e["langflow"])
+        flow.pop("id", None)          # the export may carry a slug id; the create endpoint wants a UUID or none
+        flow["name"] = name           # the create endpoint keys the flow on this name
+        flow["endpoint_name"] = None  # avoid unique-endpoint collisions across the fleet
+        status, resp = request(opener, "POST", f"{LANGFLOW_URL}/api/v1/flows/", body=flow, headers=headers)
+        if status in (200, 201):
+            log(f"  + {name} (HTTP {status})")
+        else:
+            detail = resp if isinstance(resp, str) else json.dumps(resp)
+            log(f"  ! {name}: flow POST failed (HTTP {status}): {detail[:200]}")
+            ok = False
+    return ok
 
 
 def main() -> int:
-    log("Seeding the CP MCP Gateway Agent into the org's agent builders…")
+    entries = agent_entries()
+    log(f"Seeding {len(entries)} agent flows into the org's agent builders "
+        f"(umbrella + {len(entries) - 1} per-domain)…")
     if not PLACEHOLDERS["__MCP_GATEWAY_TOKEN__"]:
-        log("  (warning: MCP_GATEWAY_TOKEN is empty — the agent won't reach the gateway)")
-    ok_flowise = seed_flowise()
-    ok_langflow = seed_langflow()
+        log("  (warning: MCP_GATEWAY_TOKEN is empty — the agents won't reach the gateway)")
+    ok_flowise = seed_flowise(entries)
+    ok_langflow = seed_langflow(entries)
     if ok_flowise and ok_langflow:
         log("Builders import completed!!!")
         return 0
