@@ -258,6 +258,23 @@ def seed_flowise(entries: list) -> bool:
                                         body={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
                                         want_cookies=True)
         if status != 200 or not cookies:
+            # Fresh database (first boot on a new SQLite file or an empty Postgres DB):
+            # Flowise 3.x has no env-based admin bootstrap, so no account exists yet and
+            # login answers 400 "Invalid User Email". Register the stack admin (this also
+            # creates the Default Organization + workspace) and log in again. If login
+            # failed for any other reason (e.g. wrong password on an existing account),
+            # register answers 4xx and we fall through to the original error below.
+            reg_status, _ = request(opener, "POST", f"{FLOWISE_URL}/api/v1/account/register",
+                                    body={"user": {"name": ADMIN_EMAIL.split("@")[0],
+                                                   "email": ADMIN_EMAIL,
+                                                   "credential": ADMIN_PASSWORD,
+                                                   "confirmPassword": ADMIN_PASSWORD}})
+            if reg_status in (200, 201):
+                log("  auth: no admin account yet (fresh DB) — registered the stack admin.")
+                status, resp, cookies = request(opener, "POST", f"{FLOWISE_URL}/api/v1/auth/login",
+                                                body={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
+                                                want_cookies=True)
+        if status != 200 or not cookies:
             log(f"  ERROR: Flowise login failed (HTTP {status}) — is the admin account the stack admin? "
                 "Set FLOWISE_API_KEY in .env as an override.")
             return False
