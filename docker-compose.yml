@@ -600,6 +600,33 @@ services:
     depends_on:
       - ollama-pull-models-cpu
 
+  # ──────────────── Open WebUI PROVISIONER (first admin) ────────────────
+  # One-shot (same pattern as n8n-provision): pre-seeds the admin account so the
+  # publicly routed chat.<domain> never sits in "first signup becomes admin".
+  # Idempotent — 400 "already registered" and 403 "signups disabled" are treated
+  # as no-ops, so re-deploys against an already-provisioned (or live) instance
+  # change nothing. The exposure is that ENABLE_SIGNUP is left on here, so whoever
+  # signs up first becomes admin; this one-shot claims that slot during deploy.
+  # Operators may additionally set ENABLE_SIGNUP=false on open-webui to close
+  # signups entirely, but that default is left untouched.
+  openwebui-provision:
+    image: curlimages/curl:8.9.1
+    container_name: openwebui-provision
+    networks: [ "demo" ]
+    depends_on:
+      - open-webui
+    volumes:
+      - ./scripts:/scripts:ro
+    environment:
+      # Open WebUI from inside the network
+      - OPEN_WEBUI_URL=http://open-webui:8080
+      # admin creds (rendered into the env by the installer bootstrap);
+      # when unset the script logs a warning and skips instead of failing
+      - OPEN_WEBUI_ADMIN_EMAIL=${OPEN_WEBUI_ADMIN_EMAIL:-}
+      - OPEN_WEBUI_ADMIN_PASSWORD=${OPEN_WEBUI_ADMIN_PASSWORD:-}
+    command: [ "sh", "/scripts/openwebui-provision.sh" ]
+    restart: "no"
+
   # ──────────────── Langflow ────────────────
   langflow:
     # PINNED (not :latest) — CVE-2026-33017 (unauth RCE) compromised this host on a
