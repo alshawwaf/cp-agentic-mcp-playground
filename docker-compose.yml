@@ -524,10 +524,10 @@ services:
       # host to entrypoint web (:80), and a router carrying TLS config never matches plain HTTP —
       # Traefik 3.6 splits a web,websecure router and propagates certresolver onto BOTH, so the
       # single-router form 404s through the tunnel.
-      - "traefik.http.routers.flowise-web.rule=Host(`flowise.{{DOMAIN}}`)"
+      - "traefik.http.routers.flowise-web.rule=Host(`flowise.${DOMAIN}`)"
       - "traefik.http.routers.flowise-web.entrypoints=web"
       - "traefik.http.routers.flowise-web.service=flowise-svc"
-      - "traefik.http.routers.flowise-websecure.rule=Host(`flowise.{{DOMAIN}}`)"
+      - "traefik.http.routers.flowise-websecure.rule=Host(`flowise.${DOMAIN}`)"
       - "traefik.http.routers.flowise-websecure.entrypoints=websecure"
       - "traefik.http.routers.flowise-websecure.tls.certresolver=letsencrypt"
       - "traefik.http.routers.flowise-websecure.service=flowise-svc"
@@ -587,10 +587,10 @@ services:
       # host to entrypoint web (:80), and a router carrying TLS config never matches plain HTTP —
       # Traefik 3.6 splits a web,websecure router and propagates certresolver onto BOTH, so the
       # single-router form 404s through the tunnel.
-      - "traefik.http.routers.open-webui-web.rule=Host(`chat.{{DOMAIN}}`)"
+      - "traefik.http.routers.open-webui-web.rule=Host(`chat.${DOMAIN}`)"
       - "traefik.http.routers.open-webui-web.entrypoints=web"
       - "traefik.http.routers.open-webui-web.service=open-webui-svc"
-      - "traefik.http.routers.open-webui-websecure.rule=Host(`chat.{{DOMAIN}}`)"
+      - "traefik.http.routers.open-webui-websecure.rule=Host(`chat.${DOMAIN}`)"
       - "traefik.http.routers.open-webui-websecure.entrypoints=websecure"
       - "traefik.http.routers.open-webui-websecure.tls.certresolver=letsencrypt"
       - "traefik.http.routers.open-webui-websecure.service=open-webui-svc"
@@ -660,10 +660,10 @@ services:
       # host to entrypoint web (:80), and a router carrying TLS config never matches plain HTTP —
       # Traefik 3.6 splits a web,websecure router and propagates certresolver onto BOTH, so the
       # single-router form 404s through the tunnel.
-      - "traefik.http.routers.langflow-web.rule=Host(`langflow.{{DOMAIN}}`)"
+      - "traefik.http.routers.langflow-web.rule=Host(`langflow.${DOMAIN}`)"
       - "traefik.http.routers.langflow-web.entrypoints=web"
       - "traefik.http.routers.langflow-web.service=langflow-svc"
-      - "traefik.http.routers.langflow-websecure.rule=Host(`langflow.{{DOMAIN}}`)"
+      - "traefik.http.routers.langflow-websecure.rule=Host(`langflow.${DOMAIN}`)"
       - "traefik.http.routers.langflow-websecure.entrypoints=websecure"
       - "traefik.http.routers.langflow-websecure.tls.certresolver=letsencrypt"
       - "traefik.http.routers.langflow-websecure.service=langflow-svc"
@@ -673,7 +673,7 @@ services:
       # allow the hub in frame-ancestors).
       - "traefik.http.routers.langflow.middlewares=langflow-hubframe"
       - "traefik.http.middlewares.langflow-hubframe.headers.customresponseheaders.X-Frame-Options="
-      - "traefik.http.middlewares.langflow-hubframe.headers.customresponseheaders.Content-Security-Policy=frame-ancestors 'self' https://hub.{{DOMAIN}} https://*.{{DOMAIN}}"
+      - "traefik.http.middlewares.langflow-hubframe.headers.customresponseheaders.Content-Security-Policy=frame-ancestors 'self' https://hub.${DOMAIN} https://*.${DOMAIN}"
 
   # ──────────────── Langfuse DB bootstrap (one-shot) ────────────────
   # Creates a dedicated `langfuse` database inside the stack Postgres if it
@@ -724,7 +724,7 @@ services:
       # re-expanded (compose doesn't recurse into .env values). Set LANGFUSE_DATABASE_URL
       # to a full URL only to point at a different Postgres.
       - DATABASE_URL=${LANGFUSE_DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/langfuse}
-      - NEXTAUTH_URL=https://trace.{{DOMAIN}}
+      - NEXTAUTH_URL=https://trace.${DOMAIN}
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - SALT=${SALT}
       - ENCRYPTION_KEY=${LANGFUSE_ENCRYPTION_KEY}
@@ -751,10 +751,10 @@ services:
       # carrying TLS config never matches plain HTTP — Traefik 3.6 splits a
       # web,websecure router and propagates certresolver onto BOTH, so the
       # single-router form 404s through the tunnel.
-      - "traefik.http.routers.langfuse-web.rule=Host(`trace.{{DOMAIN}}`)"
+      - "traefik.http.routers.langfuse-web.rule=Host(`trace.${DOMAIN}`)"
       - "traefik.http.routers.langfuse-web.entrypoints=web"
       - "traefik.http.routers.langfuse-web.service=langfuse-svc"
-      - "traefik.http.routers.langfuse-websecure.rule=Host(`trace.{{DOMAIN}}`)"
+      - "traefik.http.routers.langfuse-websecure.rule=Host(`trace.${DOMAIN}`)"
       - "traefik.http.routers.langfuse-websecure.entrypoints=websecure"
       - "traefik.http.routers.langfuse-websecure.tls.certresolver=letsencrypt"
       - "traefik.http.routers.langfuse-websecure.service=langfuse-svc"
@@ -764,7 +764,7 @@ services:
       # allow the hub in frame-ancestors) — same trick as the langflow service.
       - "traefik.http.routers.langfuse-websecure.middlewares=langfuse-hubframe"
       - "traefik.http.middlewares.langfuse-hubframe.headers.customresponseheaders.X-Frame-Options="
-      - "traefik.http.middlewares.langfuse-hubframe.headers.customresponseheaders.Content-Security-Policy=frame-ancestors 'self' https://hub.{{DOMAIN}} https://*.{{DOMAIN}}"
+      - "traefik.http.middlewares.langfuse-hubframe.headers.customresponseheaders.Content-Security-Policy=frame-ancestors 'self' https://hub.${DOMAIN} https://*.${DOMAIN}"
 
   # ─────────── Documentation MCP over HTTP ───────────
   mcp-documentation:
@@ -1237,10 +1237,10 @@ services:
       # host to entrypoint web (:80), and a router carrying TLS config never matches plain HTTP —
       # Traefik 3.6 splits a web,websecure router and propagates certresolver onto BOTH, so the
       # single-router form 404s through the tunnel.
-      - "traefik.http.routers.aig-web.rule=Host(`aig.{{DOMAIN}}`)"
+      - "traefik.http.routers.aig-web.rule=Host(`aig.${DOMAIN}`)"
       - "traefik.http.routers.aig-web.entrypoints=web"
       - "traefik.http.routers.aig-web.service=aig-svc"
-      - "traefik.http.routers.aig-websecure.rule=Host(`aig.{{DOMAIN}}`)"
+      - "traefik.http.routers.aig-websecure.rule=Host(`aig.${DOMAIN}`)"
       - "traefik.http.routers.aig-websecure.entrypoints=websecure"
       - "traefik.http.routers.aig-websecure.tls.certresolver=letsencrypt"
       - "traefik.http.routers.aig-websecure.service=aig-svc"
