@@ -476,11 +476,6 @@ services:
     # so a fresh spin-up serves flowise.<domain> without manual setup.
     networks: [ "demo", "dokploy-network" ]
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-      flowise-db-init:
-        condition: service_completed_successfully
     environment:
       - PORT=${FLOWISE_PORT}
       # Flowise's SSRF guard denies the whole private-IP range (incl. the
@@ -491,19 +486,6 @@ services:
       # disable the default deny list. Safe here: Flowise is internal-only
       # (behind Traefik auth) and the gateway lives on the private demo network.
       - HTTP_SECURITY_CHECK=false
-      # Store data in the stack Postgres (a dedicated `flowise` DB) instead of the
-      # default SQLite — SQLite serialises writes and returns SQLITE_BUSY under
-      # concurrent load (e.g. a full class using the agents at once). The credential
-      # encryption key still lives on the ./flowise_data volume, so credentials seeded
-      # by builders-import stay decryptable. builders-import re-imports every flow, so
-      # switching backends loses no committed flow. Set DATABASE_TYPE=sqlite to revert.
-      - DATABASE_TYPE=postgres
-      - DATABASE_HOST=postgres
-      - DATABASE_PORT=5432
-      - DATABASE_NAME=flowise
-      - DATABASE_USER=${POSTGRES_USER}
-      - DATABASE_PASSWORD=${POSTGRES_PASSWORD}
-      - DATABASE_SSL=false
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -527,29 +509,6 @@ services:
       - "traefik.http.routers.flowise-websecure.service=flowise-svc"
       - "traefik.http.services.flowise-svc.loadbalancer.server.port=${FLOWISE_PORT}"
       - "traefik.docker.network=dokploy-network"
-
-  # ──────────────── Flowise DB bootstrap ────────────────
-  # Creates the `flowise` database in the stack Postgres before Flowise starts (same
-  # idempotent pattern as langfuse-db-init). Uses the already-pulled postgres:16-alpine.
-  flowise-db-init:
-    image: postgres:16-alpine
-    container_name: flowise-db-init
-    networks: [ "demo" ]
-    restart: "no"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      - PGPASSWORD=${POSTGRES_PASSWORD}
-    entrypoint: /bin/sh
-    command:
-      - -lc
-      - |
-        echo ">> Ensuring 'flowise' database exists ..."
-        psql -h postgres -U "$${POSTGRES_USER}" -tc \
-          "SELECT 1 FROM pg_database WHERE datname='flowise'" | grep -q 1 \
-          || psql -h postgres -U "$${POSTGRES_USER}" -c "CREATE DATABASE flowise"
-        echo ">> Done."
 
   # ──────────────── Open WebUI ────────────────
   open-webui:
