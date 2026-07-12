@@ -476,6 +476,11 @@ services:
     # so a fresh spin-up serves flowise.<domain> without manual setup.
     networks: [ "demo", "dokploy-network" ]
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      flowise-db-init:
+        condition: service_completed_successfully
     environment:
       - PORT=${FLOWISE_PORT}
       # Flowise's SSRF guard denies the whole private-IP range (incl. the
@@ -486,6 +491,25 @@ services:
       # disable the default deny list. Safe here: Flowise is internal-only
       # (behind Traefik auth) and the gateway lives on the private demo network.
       - HTTP_SECURITY_CHECK=false
+      # Storage backend toggle. Default = SQLite (Flowise's own default, on the
+      # ./flowise_data volume). Set FLOWISE_DATABASE_TYPE=postgres in the env to
+      # store data in the stack Postgres instead (dedicated `flowise` DB, created
+      # idempotently by flowise-db-init) — SQLite serialises writes and returns
+      # SQLITE_BUSY under concurrent load (e.g. a full class using the agents at
+      # once). The DATABASE_HOST/PORT/NAME/USER/PASSWORD values below are ignored
+      # by Flowise while the type is sqlite, so they are safe to leave set. The
+      # credential encryption key stays on ./flowise_data either way, and
+      # seed_builders registers the stack admin on a fresh DB, so flipping the
+      # toggle on a NEW deploy still comes up fully seeded. NOTE: flipping it on
+      # an EXISTING deploy does not move data by itself — migrate first (or
+      # re-seed via builders-import and accept losing chat history).
+      - DATABASE_TYPE=${FLOWISE_DATABASE_TYPE:-sqlite}
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_NAME=flowise
+      - DATABASE_USER=${POSTGRES_USER}
+      - DATABASE_PASSWORD=${POSTGRES_PASSWORD}
+      - DATABASE_SSL=false
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -509,6 +533,35 @@ services:
       - "traefik.http.routers.flowise-websecure.service=flowise-svc"
       - "traefik.http.services.flowise-svc.loadbalancer.server.port=${FLOWISE_PORT}"
       - "traefik.docker.network=dokploy-network"
+
+  # ──────────────── Flowise DB bootstrap ────────────────
+  # Creates the `flowise` database in the stack Postgres before Flowise starts (same
+  # idempotent pattern as langfuse-db-init). Runs on every deploy regardless of the
+  # FLOWISE_DATABASE_TYPE toggle — on SQLite deploys it just leaves an empty unused DB,
+  # which keeps the postgres opt-in a single-knob flip. Uses the already-pulled
+  # postgres:16-alpine, so no extra image.
+  flowise-db-init:
+    image: postgres:16-alpine
+    container_name: flowise-db-init
+    networks: [ "demo" ]
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # POSTGRES_USER is passed explicitly: $${POSTGRES_USER} in the command is
+      # shell-expanded INSIDE the container, so it must exist in the container env.
+      - POSTGRES_USER=${POSTGRES_USER}
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+    entrypoint: /bin/sh
+    command:
+      - -lc
+      - |
+        echo ">> Ensuring 'flowise' database exists ..."
+        psql -h postgres -U "$${POSTGRES_USER}" -d postgres -tc \
+          "SELECT 1 FROM pg_database WHERE datname='flowise'" | grep -q 1 \
+          || psql -h postgres -U "$${POSTGRES_USER}" -d postgres -c "CREATE DATABASE flowise"
+        echo ">> Done."
 
   # ──────────────── Open WebUI ────────────────
   open-webui:
@@ -609,15 +662,18 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      # POSTGRES_USER is passed explicitly: $${POSTGRES_USER} in the command is
+      # shell-expanded INSIDE the container, so it must exist in the container env.
+      - POSTGRES_USER=${POSTGRES_USER}
       - PGPASSWORD=${POSTGRES_PASSWORD}
     entrypoint: /bin/sh
     command:
       - -lc
       - |
         echo ">> Ensuring 'langfuse' database exists ..."
-        psql -h postgres -U "$${POSTGRES_USER}" -tc \
+        psql -h postgres -U "$${POSTGRES_USER}" -d postgres -tc \
           "SELECT 1 FROM pg_database WHERE datname='langfuse'" | grep -q 1 \
-          || psql -h postgres -U "$${POSTGRES_USER}" -c "CREATE DATABASE langfuse"
+          || psql -h postgres -U "$${POSTGRES_USER}" -d postgres -c "CREATE DATABASE langfuse"
         echo ">> Done."
 
   # ──────────────── Langfuse (LLM observability / tracing) ────────────────
