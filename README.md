@@ -1,690 +1,354 @@
-# Check Point Agentic MCP Playground
+# CP Agentic MCP Playground
+
+A self-hosted lab for building AI agents (n8n, Flowise, Langflow, Open WebUI) over Check Point MCP servers, with Langfuse tracing — brought up with a single `docker compose up`.
+
+Part of the [Dev Hub](https://github.com/alshawwaf/dev-hub) ecosystem — deploy the whole suite with [ubuntu-dokploy-ai](https://github.com/alshawwaf/ubuntu-dokploy-ai).
 
 <p align="left">
   <img src="https://img.shields.io/badge/License-MIT-blue.svg" />
   <img src="https://img.shields.io/badge/Docker-Compose-blue?logo=docker" />
-  <img src="https://img.shields.io/badge/n8n-Automation-orange?logo=n8n" />
-  <img src="https://img.shields.io/badge/langflow-Workflow-green?logo=langflow" />
-  <img src="https://img.shields.io/badge/Ollama-LLM-grey" />
-  <img src="https://img.shields.io/badge/Check%20Point-MCP-magenta?" />
+  <img src="https://img.shields.io/badge/n8n-2.28-orange?logo=n8n" />
+  <img src="https://img.shields.io/badge/Langflow-1.10-green" />
+  <img src="https://img.shields.io/badge/Ollama-local%20LLMs-grey" />
+  <img src="https://img.shields.io/badge/Check%20Point-MCP-magenta" />
   <img src="https://img.shields.io/badge/Deploy-Dokploy%20%2B%20Traefik-blueviolet" />
 </p>
 
-> **An Agentic AI Playground built on Check Point MCP Servers**
->
-> Bring up n8n + Ollama + Open WebUI + Langflow + Flowise + AI-Infra-Guard + a full fleet of Check Point MCP servers with:
->
-> ```bash
-> docker compose --profile cpu up -d
-> ```
 ---
 
-## Quick Overview
+## Overview
 
-A **multi-service Docker Compose stack** that brings up a full AI + Check Point MCP (Model Context Protocol) environment:
+The CP Agentic MCP Playground is a multi-service Docker Compose stack that stands up a complete
+**Agentic AI + Check Point** environment: three low-code agent builders, a chat UI, local LLMs,
+an AI red-teaming platform, full request tracing, and a fleet of **Check Point MCP (Model Context
+Protocol) servers** exposed as HTTP sidecars — fronted by a single MCP gateway.
 
-- **n8n** – workflow automation + MCP tools orchestrator
-- **PostgreSQL** – n8n backend database
-- **Auto-provisioner** – creates the n8n instance owner (no community node needed — the agents use n8n's **native** MCP Client Tool)
-- **Ollama** – local LLMs; CPU **or** NVIDIA GPU; auto model pull
-- **Open WebUI** – chat UI for Ollama / LLMs (with an n8n pipe)
-- **Langflow** – visual AI flow builder
-- **Flowise** – LLM orchestration UI
-- **AI-Infra-Guard** – Tencent Zhuque Lab AI red-teaming platform (MCP security scanning, jailbreak eval)
-- **Check Point MCP servers** – 13 dedicated HTTP sidecars on the Docker network
+The point is a **single lab stack** for building, testing, and demoing AI agents that operate
+Check Point products (Quantum Management, Gaia, gateway CLI, logs, threat prevention/emulation,
+reputation, HTTPS inspection, CPInfo, policy insights, and more). Everything is provisioned and
+seeded automatically — the instance owners are created for you, and example agents are imported
+into all three builders on every deploy.
 
-The goal is a **single lab stack** for building, testing, and demoing AI + Check Point workflows:
+Built for **lab and demo** use. See [Deployment](#deployment) and the
+[Production Deployment Guide](docs/operations/PRODUCTION_DEPLOYMENT.md) before exposing it more widely.
 
-- Instance owner is **auto-configured**
-- Agents use n8n's **native** `@n8n/n8n-nodes-langchain.mcpClientTool` node (no community package to install)
-- MCP servers are reachable as **HTTP tools** from inside n8n
+## What's in the stack
 
-> **Deployment model.** This repo is deployed on the lab's bare-metal Ubuntu + [Dokploy](https://dokploy.com) host, where **Traefik** provides ingress and **Let's Encrypt** provides TLS. The web UIs are published as subdomains (e.g. `chat.<domain>`, `langflow.<domain>`, `flowise.<domain>`, `aig.<domain>`) via the external `dokploy-network`, **not** on host ports. You can still run it standalone with `docker compose up`, but no service ports are bound to the host by default — see [URLs & Access](#-urls--access).
+| Component | Image / tag | Role |
+|-----------|-------------|------|
+| **n8n** | `n8nio/n8n:2.28.6` | Workflow automation + agent builder (native MCP Client Tool node) |
+| **PostgreSQL** | `postgres:16-alpine` | Backing store for n8n, Langfuse, and (optionally) Flowise |
+| **Ollama** | `ollama/ollama:0.31.1` | Local LLM server — CPU by default, NVIDIA GPU via profile |
+| **Open WebUI** | `ghcr.io/open-webui/open-webui` | Chat UI for Ollama, with an n8n pipe |
+| **Flowise** | `flowiseai/flowise` | Low-code LLM/agent builder — **native** Langfuse tracing |
+| **Langflow** | `langflowai/langflow:1.10.1` | Visual AI flow builder |
+| **Langfuse** | `langfuse/langfuse:2` | LLM observability / tracing UI (`trace.<domain>`) |
+| **LiteLLM** | `berriai/litellm` | Internal OpenAI-compatible proxy — routes n8n + Langflow → Langfuse |
+| **Qdrant** | `qdrant/qdrant:v1.12.4` | Vector DB for the Visible RAG demo |
+| **AI-Infra-Guard** | built from [Tencent/AI-Infra-Guard](https://github.com/Tencent/AI-Infra-Guard) | AI red-teaming: MCP security scan + jailbreak eval (`aig.<domain>`) |
+| **MCP sidecars** | `custom-mcp-n8n:custom` | 14 Check Point MCP servers as internal HTTP services |
+| **MCP Gateway** | `docker/mcp-gateway` | Aggregates the MCP fleet behind one Bearer-auth endpoint |
 
----
+One-shot helpers run on every `docker compose up` and then exit: `n8n-provision` (creates the n8n
+owner), `n8n-import` / `builders-import` (seed agents into n8n / Flowise / Langflow),
+`openwebui-provision` (claims the Open WebUI admin), `*-db-init` (create the `langfuse` / `flowise`
+databases), `rag-ingest` (embed the RAG corpus into Qdrant), and `ollama-pull-models-*` (pull the
+configured models).
 
-## Navigation
+## Features
 
-- [📦 Quick Start](#-quick-start)
-- [🔧 Tech Stack & Layout](#-tech-stack--layout)
-- [⚙️ Environment--env](#%EF%B8%8F-environment-env)
-- [🏗️ Build & Profiles](#%EF%B8%8F-build--profiles)
-- [🎯 n8n Provision & Auto-Import](#-n8n-provision--auto-import)
-- [🌐 URLs & Access](#-urls--access)
-- [🤖 Ollama Models](#-ollama-models)
-- [💾 Data & Persistence](#-data--persistence)
-- [📚 Guides](#-guides)
-- [🚀 Production Deployment](docs/operations/PRODUCTION_DEPLOYMENT.md)
-- [💿 Backup & Recovery](docs/operations/BACKUP_RECOVERY.md)
-- [🔍 Troubleshooting](#-troubleshooting)
-- [🔄 Updating & Resetting](#%EF%B8%8F-updating--resetting)
+- **Three agent builders, pre-seeded.** n8n ships 34 example workflows; Flowise and Langflow each
+  ship 32 importable agent flows. Agents come in three shapes: **gateway** (through the MCP
+  gateway), **direct** (a single MCP sidecar), and **external** (DevHub / PolicyPilot / SCIM IdP
+  endpoints). Seeding is idempotent — a same-named flow is never imported twice.
+- **14 Check Point MCP servers** over HTTP, plus a **Docker MCP Gateway** that fronts 11 of them
+  behind a single Bearer-authenticated endpoint (`http://mcp-gateway:8080/mcp`).
+- **End-to-end tracing.** Every Flowise run traces natively to Langfuse; n8n and Langflow route
+  their model calls through the LiteLLM proxy, which logs each call to Langfuse.
+- **Local, private LLMs** via Ollama (CPU or NVIDIA GPU), with a small default model set and an
+  embedding model for RAG.
+- **Guardrails demo** — a Lakera Guard agent that blocks prompt injection before it reaches a tool.
+- **Visible RAG** — a one-shot ingester embeds a small Check Point corpus into Qdrant; an n8n agent
+  retrieves and cites it.
+- **Evals harness** — replay scored chat cases against the agents' webhooks.
+- **Teaching labs** — "Build Your Own MCP Server" (zero-dependency) and an **intentionally
+  vulnerable** MCP server for attack/defend exercises (both opt-in).
+- **Zero-touch provisioning** — owners, admins, credentials, databases, and agents are all created
+  automatically on deploy.
 
----
+## Screenshots
 
-## Quick Start
+![n8n agent demo](assets/n8n-demo.gif)
 
-<details>
-<summary><strong>1. Requirements</strong></summary>
+Guide walkthroughs include step-by-step node screenshots — see the
+[Lakera Playground Guide](docs/guides/n8n_Lakera_Playground_Guide.md).
 
-- **Docker Engine** + **Docker Compose v2**
-- Outbound Internet access from containers (for:
-  - Pulling images
-  - Installing community nodes
-  - Pulling Ollama models)
-- All commands executed from the folder containing `docker-compose.yml` and `.env`
+## Quick start
 
-**Optional – GPU Profile**
-
-- NVIDIA GPU on the host
-- **NVIDIA Container Toolkit** installed
-- `nvidia-smi` works on the host
-
-</details>
-
-<details>
-<summary><strong>2. Minimal Happy Path</strong></summary>
-
-1. Run the setup script to generate a secure `.env` file:
-   
-   ```bash
-   ./setup.sh
-   ```
-   
-   (Or manually create a `.env` file if you prefer, see [Environment](#%EF%B8%8F-environment-env)).  
-2. Build the custom n8n image:
-
-   ```bash
-   docker compose build n8n
-   ```
-
-3. Start the CPU stack:
-
-   ```bash
-   docker compose --profile cpu up -d
-   ```
-
-4. Wait 30–60 seconds for:
-   - Postgres
-   - n8n
-   - Provisioner (owner setup)
-   - Optional `n8n-import` (workflows/credentials)
-
-5. Browse to **n8n**:
-
-   - On the Dokploy/Traefik host, use the routed subdomain (e.g. `https://n8n.<domain>`).
-   - Log in with the owner credentials from `.env`.
-   - No host port is bound by default. To reach a service directly on a plain host, add a `ports:` mapping in `docker-compose.yml` (see [URLs & Access](#-urls--access)) or `docker compose exec` into the container.
-
-</details>
-
-<details>
-<summary><strong>3. GPU Profile</strong></summary>
-
-If you want Ollama to use GPU instead of CPU:
+**Requirements:** Docker Engine + Docker Compose v2, outbound Internet from containers (image pulls,
+Ollama model pulls). For the GPU profile: an NVIDIA GPU with the NVIDIA Container Toolkit
+(`nvidia-smi` working on the host).
 
 ```bash
-# Start GPU profile
-docker compose --profile gpu-nvidia up -d
+# 1. Generate a .env with secure secrets (or copy .env-example yourself)
+./setup.sh
 
-# Or CPU + GPU together
-docker compose --profile cpu --profile gpu-nvidia up -d
-```
-
-To avoid repeating profiles each time:
-
-```bash
-export COMPOSE_PROFILES=cpu
-docker compose up -d
-```
-
-</details>
-
----
-
-## Tech Stack & Layout
-
-### Stack Summary
-
-| Component      | Purpose                                      |
-|----------------|----------------------------------------------|
-| n8n            | Automation engine + MCP orchestrator         |
-| PostgreSQL     | n8n backend DB                               |
-| n8n-provision  | Owner creation + `n8n-nodes-mcp` installation|
-| n8n-import     | Optional workflow & credential auto-import   |
-| Ollama         | Local LLM server (CPU / GPU)                 |
-| Open WebUI     | Chat UI for Ollama                           |
-| Flowise        | LLM orchestration / low-code builder         |
-| Langflow       | Visual AI flow builder                       |
-| AI-Infra-Guard | AI red-teaming: MCP security scan + jailbreak eval |
-| MCP sidecars   | Check Point MCP tools as HTTP servers (13)   |
-
-### Repository Layout
-
-```bash
-.
-├─ docker-compose.yml           # Multi-service stack (CPU / GPU profiles)
-├─ .env                         # Passwords / admin values / MCP creds (from .env-example)
-├─ .env-example                 # Template environment file
-├─ setup.sh                     # Interactive .env + credential bootstrap
-├─ update.sh / update.ps1       # Pull + rebuild + restart helpers
-├─ docker/
-│  └─ n8n/
-│     ├─ Dockerfile             # Custom n8n image (MCP CLIs + wrappers baked in)
-│     └─ mcp-src/               # Vendored Check Point MCP server source (PATCHES.md documents the gateway patches)
-├─ mcp-gateway/
-│  └─ catalog.yaml              # Docker MCP Gateway catalog — the MCP servers it fronts
-├─ scripts/                     # n8n-provision, health-check, backup/restore, validate-env
-├─ tests/                       # Integration test suite (used by CI)
-├─ n8n/
-│  ├─ backup/
-│  │  ├─ credentials_public/    # Credential templates auto-imported by n8n-import
-│  │  └─ workflows/             # Example MCP-agent workflows auto-imported by n8n-import
-│  ├─ custom-nodes/             # Extra n8n nodes (persisted, created at runtime)
-│  └─ shared/                   # Shared data between n8n and MCP sidecars (runtime)
-├─ aig/
-│  └─ patches/llm.py            # AI-Infra-Guard LLM client patch (mounted into aig-agent)
-├─ assets/                      # Demo GIF + exportable n8n tool workflows
-├─ quadrant/                    # Legacy Qdrant backup dir (Qdrant is NOT in the compose stack)
-└─ docs/                        # Guides + operations + development docs
-```
-
-> **Note.** `langflow/`, `open-webui/`, and `flowise_data/` are created at runtime (bind mounts) and are not committed. Qdrant is **not** part of the compose stack despite the leftover `quadrant/` directory.
-
----
-
-## Environment (`.env`)
-
-Run `./setup.sh` to generate a `.env` from `.env-example` (optionally with random secrets), or copy `.env-example` yourself. The variable names below must match what `docker-compose.yml` reads — the authoritative template is [`.env-example`](.env-example):
-
-```env
-# ───────── Postgres (n8n DB) ─────────
-POSTGRES_USER=admin
-POSTGRES_PASSWORD=change_me
-POSTGRES_DB=n8n
-POSTGRES_PORT=5432
-
-# ───────── n8n ─────────
-N8N_HOST=localhost
-N8N_PORT=5678
-N8N_ENCRYPTION_KEY=change_me_to_a_long_random_string
-N8N_USER_MANAGEMENT_JWT_SECRET=change_me_to_a_random_secret
-
-# owner/admin (POSTed by the provisioner to /rest/owner/setup)
-N8N_ADMIN_EMAIL=admin@example.com
-N8N_ADMIN_FIRST_NAME=Admin
-N8N_ADMIN_LAST_NAME=User
-N8N_ADMIN_PASSWORD=change_me
-
-# basic auth (MUST match the provisioner)
-N8N_BASIC_AUTH_USER=admin
-N8N_BASIC_AUTH_PASSWORD=change_me
-WEBHOOK_URL=http://localhost:5678/
-N8N_EDITOR_BASE_URL=http://localhost:5678/
-N8N_PUSH_BACKEND=websocket
-
-# ───────── Ollama ─────────
-OLLAMA_PORT=11434
-OLLAMA_HOST=localhost
-OLLAMA_KEEP_ALIVE=-1
-
-# ───────── Other UIs ─────────
-LANGFLOW_PORT=7860
-FLOWISE_PORT=3001
-OPEN_WEBUI_PORT=3000
-
-# Auth is ON by default for the publicly-routed Langflow. Set true for a no-auth demo.
-LANGFLOW_AUTO_LOGIN=false
-
-# ───────── Documentation MCP ─────────
-DOC_CLIENT_ID=
-DOC_SECRET_KEY=
-DOC_REGION=EU            # one of: EU, US, STG, Local
-
-# ───────── Management-backed MCP (SMS host + API key) ─────────
-MANAGEMENT_HOST=
-MANAGEMENT_API_KEY=
-TE_API_KEY=
-REPUTATION_API_KEY=
-
-# ───────── Spark Management MCP ─────────
-SPARK_MGMT_CLIENT_ID=
-SPARK_MGMT_SECRET_KEY=
-SPARK_MGMT_REGION=US
-SPARK_MGMT_INFINITY_PORTAL_URL=https://cloudinfra-gw-us.portal.checkpoint.com/auth/external
-
-# ───────── Harmony SASE MCP ─────────
-HARMONY_SASE_API_KEY=
-HARMONY_SASE_MANAGEMENT_HOST=
-HARMONY_SASE_REGION=
-
-CPINFO_LOG_LEVEL=info
-
-# ───────── AI-Infra-Guard (AI red teaming) ─────────
-AIG_PORT=8088
-AIG_LLM_API_KEY=ollama
-AIG_LLM_BASE_URL=http://ollama-cpu:11434/v1
-AIG_LLM_MODEL=huihui_ai/deepseek-r1-abliterated:latest
-
-# ───────── Profiles (opt-in; core CPU stack always runs) ─────────
-# Real profiles: gpu-nvidia, exercises, policypilot. 'cpu' is a harmless no-op.
-COMPOSE_PROFILES=cpu
-```
-
-> 💡 **Tip**  
-> - `N8N_ADMIN_*` is used by the provisioner to call `/rest/owner/setup`.  
-> - `N8N_BASIC_AUTH_*` must match what the provisioner uses to authenticate.  
-> - The `MANAGEMENT_HOST` + `MANAGEMENT_API_KEY` pair backs several MCP sidecars (HTTPS Inspection, Quantum Management, Management Logs, Threat Prevention, GW CLI, GW Connection Analysis, Gaia, CPInfo Analysis).  
-> - Only populate the MCP variables for the services you actually use (or comment out those services in `docker-compose.yml`).
-
----
-
-## Build & Profiles
-
-### Build the Custom n8n Image
-
-The Check Point MCP sidecars reuse a **custom n8n base image** with MCP CLIs and wrappers baked in.
-
-```bash
+# 2. Build the custom n8n image (bakes in the Check Point MCP CLIs)
 docker compose build n8n
+
+# 3. Start the core CPU stack
+docker compose up -d
 ```
 
-This produces an image (e.g. `custom-mcp-n8n:custom`) which includes:
+Wait 30–60 s for Postgres, n8n, the provisioners, and the importers to settle, then browse to n8n.
+Log in with the owner credentials from `.env`. The core stack (n8n, Postgres, Ollama CPU, Open
+WebUI, Flowise, Langflow, Langfuse, LiteLLM, Qdrant, all MCP sidecars, the gateway) has **no
+profile and always runs**.
 
-- All relevant `@chkp/*` MCP CLI packages
-- Wrapper scripts in `/usr/local/bin` for each MCP service:
-  - `mcp-documentation`
-  - `mcp-https-inspection`
-  - `mcp-quantum-management`
-  - `mcp-management-logs`
-  - `threat-emulation-mcp`
-  - `threat-prevention-mcp`
-  - `spark-management-mcp`
-  - `reputation-service-mcp`
-  - `harmony-sase-mcp`
-  - `quantum-gw-cli-mcp`
-  - `quantum-gw-connection-analysis-mcp`
-  - `quantum-gaia-mcp`
-  - `cpinfo-analysis-mcp`
-
-### Start the Stack
-
-**CPU stack:**
-
-```bash
-docker compose --profile cpu up -d
-```
-
-**GPU (NVIDIA) Ollama stack:**
+**GPU Ollama** instead of CPU:
 
 ```bash
 docker compose --profile gpu-nvidia up -d
 ```
 
-**Both profiles:**
+Set a default profile to avoid repeating it: `export COMPOSE_PROFILES=gpu-nvidia`.
+
+> **No host ports are bound by default.** Services are reached through Traefik at their subdomains
+> (see [Deployment](#deployment)). To reach a service directly on a plain host, add a temporary
+> `ports:` mapping to that service in `docker-compose.yml`, or `docker compose exec` into it.
+
+### Profiles
+
+The core stack is profile-less. Everything below is strictly opt-in (comma-separated in
+`COMPOSE_PROFILES`):
+
+| Profile | Adds | Guide |
+|---------|------|-------|
+| `gpu-nvidia` | GPU Ollama (run instead of CPU Ollama) | — |
+| `exercises` | `ips-cve-mcp` — the "Build Your Own MCP" IPS/CVE sidecar | [Build Your Own MCP](docs/guides/Build_Your_Own_MCP_Exercise.md) |
+| `security-lab` | `vuln-mcp` — an **intentionally vulnerable** MCP server (simulated, no host port) | [MCP Security Lab](docs/guides/MCP_Security_Lab.md) |
+| `policypilot` | `policypilot-mcp` — [PolicyPilot](https://github.com/alshawwaf/PolicyPilot)'s guarded-WRITE MCP server | [PolicyPilot behind the Gateway](docs/guides/PolicyPilot_Gateway_Sidecar_Guide.md) |
+
+The `evals-run` one-shot is not a profile — start it explicitly with `docker compose up evals-run`
+([Evals Harness](docs/guides/Evals_Harness.md)). The legacy `cpu` value is a harmless no-op.
+
+## Deployment
+
+On the lab host this repo is deployed automatically by
+[ubuntu-dokploy-ai](https://github.com/alshawwaf/ubuntu-dokploy-ai) on bare-metal Ubuntu +
+[Dokploy](https://dokploy.com), where **Traefik** provides ingress and **Let's Encrypt** provides
+TLS. There is no separate `docker-compose.dokploy.yml` — the routing lives as Traefik labels in
+`docker-compose.yml`, and the web services join the external `dokploy-network`.
+
+Published subdomains (set `DOMAIN` in `.env`):
+
+| Service | URL |
+|---------|-----|
+| n8n | `https://n8n.<domain>` (routed by the host's Dokploy workflow) |
+| Open WebUI | `https://chat.<domain>` |
+| Flowise | `https://flowise.<domain>` |
+| Langflow | `https://langflow.<domain>` |
+| Langfuse | `https://trace.<domain>` |
+| AI-Infra-Guard | `https://aig.<domain>` |
+
+Ollama, the MCP sidecars, the gateway, LiteLLM, and Qdrant are **internal-only** on the private
+`demo` network (no host port, no route). Langflow, Langfuse, and AI-Infra-Guard carry framing
+middleware so the [Dev Hub](https://github.com/alshawwaf/dev-hub) desktop can embed them in a window.
+
+You can still run the whole thing standalone with `docker compose up`; without a `DOMAIN` the Host
+rules degrade harmlessly and you reach services via `exec`/a temporary port mapping.
+
+## MCP servers
+
+The 14 Check Point MCP sidecars run from the custom n8n image and listen on the internal `demo`
+network only. From an **n8n MCP HTTP node** (or any in-network client) use the service name — set
+**Connection Type** to `http` and **Base URL** to `http://<service>:<port>`; do **not** set a
+Package/Command field.
+
+| Service | URL | Fronted by gateway |
+|---------|-----|:---:|
+| Documentation | `http://mcp-documentation:3000` | ✅ |
+| HTTPS Inspection | `http://mcp-https-inspection:3001` | ✅ |
+| Quantum Management | `http://mcp-quantum-management:3002` | ✅ |
+| Management Logs | `http://mcp-management-logs:3003` | ✅ |
+| Threat Emulation | `http://threat-emulation-mcp:3004` | ✅ |
+| Threat Prevention | `http://threat-prevention-mcp:3005` | ✅ |
+| Spark Management | `http://spark-management-mcp:3006` | |
+| Reputation Service | `http://reputation-service-mcp:3007` | ✅ |
+| Harmony SASE | `http://harmony-sase-mcp:3008` | |
+| Quantum GW CLI | `http://quantum-gw-cli-mcp:3009` | ✅ |
+| GW Connection Analysis | `http://quantum-gw-connection-analysis-mcp:3010` | |
+| Quantum Gaia | `http://quantum-gaia-mcp:3011` | ✅ |
+| CPInfo Analysis | `http://cpinfo-analysis-mcp:3012` | ✅ |
+| Policy Insights | `http://policy-insights-mcp:3013` | ✅ |
+
+### MCP Gateway
+
+The [Docker MCP Gateway](docs/guides/MCP_Gateway_Explained.md) aggregates 11 of the sidecars behind
+one endpoint at `http://mcp-gateway:8080/mcp` (Streamable-HTTP), authenticated with a **Bearer
+token** (`MCP_GATEWAY_TOKEN`). The token is pinned so it survives redeploys — otherwise the gateway
+mints a new one on each restart and invalidates every client credential. The servers it fronts are
+listed in [`mcp-gateway/catalog.yaml`](mcp-gateway/catalog.yaml). See the
+[MCP Gateway Agent Guide](docs/guides/MCP_Gateway_Agent_Guide.md) for direct-sidecar vs. gateway agents.
+
+The vendored MCP servers carry a local patch giving each Streamable-HTTP session its own server
+instance — required for fronting them with a gateway (stock packages are single-client). See
+[`docker/n8n/mcp-src/PATCHES.md`](docker/n8n/mcp-src/PATCHES.md); built npm tarballs are attached to
+the repo's GitHub Releases.
+
+## Agents & flows
+
+Example agents are committed in the repo and re-seeded into the running builders on every deploy.
+
+- **n8n** (`n8n/backup/workflows/`) — imported by the `n8n-import` one-shot, which substitutes
+  secrets from `.env` and resolves the `{{DOMAIN}}` placeholder. Each direct MCP agent also ships a
+  `*-via-gateway` twin. Committed files carry placeholders only — **never real secrets**.
+- **Flowise + Langflow** (`integrations/flowise/`, `integrations/langflow/`) — imported by the
+  `builders-import` one-shot ([`integrations/README.md`](integrations/README.md)). Each builder gets
+  32 flows: gateway, direct-sidecar, and external-endpoint variants, catalogued in
+  [`integrations/builders_agents.json`](integrations/builders_agents.json). **No manual API keys
+  required** — the importer authenticates with the stack admin account (Flowise first-setup /
+  Langflow superuser).
+- **Code-first agent** (`integrations/code-agent/`) — the graduation path from low-code to plain
+  Python, hitting the exact same gateway (stdlib-only, no PyPI deps).
+
+## Observability
+
+Langfuse (v2, single Postgres-backed container) gives every agent run a trace: prompts, tool calls,
+token counts, latency, and cost where reported. Flowise traces **natively**. n8n and Langflow have
+no callback that works against the lean v2 server, so their model calls go through the **LiteLLM**
+proxy (`http://litellm:4000`, OpenAI-compatible), which forwards to the real provider and logs each
+call to Langfuse. Open the UI at `trace.<domain>`. See
+[Observability with Langfuse](docs/guides/Observability_Langfuse.md).
+
+## Ollama models
+
+The `ollama-pull-models-*` sidecar pulls the comma-separated `OLLAMA_MODELS` on startup (default:
+`gemma4:e2b,qwen3.5:4b,nomic-embed-text` — a small chat model, a light tool-calling model, and the
+RAG embedder). The `.env-example` lists a heavier full-demo set for GPU boxes. Change the models by
+editing `OLLAMA_MODELS`; inspect or prune inside the container with `ollama list` / `ollama rm`.
+
+## Configuration
+
+Run `./setup.sh` to generate a `.env` from [`.env-example`](.env-example) (optionally with random
+secrets). The variable names must match what `docker-compose.yml` reads — `.env-example` is the
+authoritative, fully-commented template. Key variables:
+
+| Variable | Purpose |
+|----------|---------|
+| `DOMAIN` | Base domain for the Traefik Host routers (`<sub>.${DOMAIN}`); leave blank for purely local runs |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` | Postgres (n8n DB; Langfuse/Flowise DBs are created alongside) |
+| `N8N_ENCRYPTION_KEY` / `N8N_USER_MANAGEMENT_JWT_SECRET` | n8n secrets — must match across all n8n containers |
+| `N8N_ADMIN_*` / `N8N_BASIC_AUTH_*` | n8n owner (used by the provisioner) and basic-auth pair |
+| `OLLAMA_MODELS` | Comma-separated models pulled on startup |
+| `LANGFLOW_AUTO_LOGIN` | `true` = no-login demo; `false` (default) = login required |
+| `NEXTAUTH_SECRET` / `SALT` / `LANGFUSE_ENCRYPTION_KEY` | Langfuse secrets (`gen_secrets.py` can generate them) |
+| `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` | Project keys the builders send with traces |
+| `LITELLM_MASTER_KEY` | Auth for the internal LiteLLM proxy |
+| `MCP_GATEWAY_TOKEN` | Pinned Bearer token for the MCP gateway |
+| `DOC_CLIENT_ID` / `DOC_SECRET_KEY` / `DOC_REGION` | Documentation MCP (Infinity Portal) |
+| `MANAGEMENT_HOST` / `MANAGEMENT_API_KEY` | SMS host + API key backing the management-family MCP servers |
+| `TE_API_KEY` / `REPUTATION_API_KEY` | Threat Emulation / Reputation service keys |
+| `GAIA_GATEWAY_IP` / `GAIA_USERNAME` / `GAIA_PASSWORD` | Gaia OS agent → a gateway's Gaia REST API |
+| `SPARK_MGMT_*` / `HARMONY_SASE_*` | Spark Management / Harmony SASE MCP creds |
+| `OPENAI_API_KEY` / `AZURE_OPENAI_API_KEY` / `GEMINI_API_KEY` / `ANTHROPIC_API_KEY` | Bring-your-own chat-model keys, injected into the matching agent credential at import |
+| `LAKERA_API_KEY` / `LAKERA_PROJECT_ID` | Lakera Guard (guardrails demos) |
+| `IDP_SCIM_TOKEN` / `DEVHUB_MCP_TOKEN` / `PILOT_MCP_TOKEN` | Bearer tokens for the external SCIM / DevHub / PolicyPilot agents |
+| `AIG_LLM_*` | AI-Infra-Guard's LLM (defaults to local Ollama) |
+| `COMPOSE_PROFILES` | Opt-in profiles (see [Profiles](#profiles)) |
+
+> Only populate the MCP variables for the services you actually use. `MANAGEMENT_HOST` +
+> `MANAGEMENT_API_KEY` back several sidecars (HTTPS Inspection, Quantum Management, Management Logs,
+> Threat Prevention, Policy Insights). Committed agent/credential files carry placeholders — real
+> values are injected at import time and dropped if the corresponding env is empty.
+
+## Data & persistence
+
+Named Docker volumes let you destroy containers and keep data:
+
+| Volume | Contents |
+|--------|----------|
+| `n8n_storage` | n8n config / user data |
+| `postgres_storage` | PostgreSQL (n8n, Langfuse, optional Flowise) |
+| `ollama_storage` | Ollama models |
+| `open-webui` | Open WebUI data |
+| `flowise` | Flowise data (SQLite default) |
+| `langflow` | Langflow data |
+| `qdrant_storage` | Qdrant vectors (RAG) |
+| `aig_data` / `aig_db` / `aig_logs` / `aig_uploads` | AI-Infra-Guard state |
+| `policypilot_data` | PolicyPilot MCP DB (opt-in profile) |
+
+Full reset (fresh DB, no workflows/credentials/history): `docker compose down -v && docker compose up -d`.
+See the [Backup & Recovery Guide](docs/operations/BACKUP_RECOVERY.md) and `scripts/backup-volumes.sh`.
+
+## Tech stack
+
+Docker Compose · n8n · Flowise · Langflow · Open WebUI · Ollama · PostgreSQL 16 · Langfuse ·
+LiteLLM · Qdrant · Docker MCP Gateway · Check Point `@chkp/*` MCP servers · AI-Infra-Guard ·
+Traefik + Let's Encrypt (via Dokploy) · Python (stdlib-only integration scripts).
+
+## Development
 
 ```bash
-docker compose --profile cpu --profile gpu-nvidia up -d
+# Rebuild the custom n8n image (after changing MCP CLI versions or Dockerfile)
+docker compose build --pull n8n     # do NOT `docker compose pull n8n` — it's a local image
+
+# Health check / env validation
+./scripts/health-check.sh
+./scripts/validate-env.sh
+
+# Integration tests (also run in CI on every push/PR)
+./tests/integration-test.sh
 ```
 
-Set a default profile:
+CI/CD lives in `.github/workflows/` (`ci.yml`, `security-scan.yml`). Repo layout and internals are
+documented in [docs/development/](docs/development/) (`DEVELOPER_GUIDE.md`, `DIRECTORY_STRUCTURE.md`).
 
-```bash
-export COMPOSE_PROFILES=cpu
-docker compose up -d
-```
+## Guides
 
----
-
-## n8n Provision & Auto-Import
-
-### Provisioner (`n8n-provision`)
-
-The `n8n-provision` sidecar runs **once** and performs:
-
-1. Wait for `http://n8n:5678/healthz`
-2. Create the owner via `/rest/owner/setup` (using `N8N_ADMIN_*`)
-3. Login using `N8N_BASIC_AUTH_*` and owner credentials
-4. Install `n8n-nodes-mcp` (idempotent – HTTP 400 “already installed” is fine)
-5. Exit
-
-Safe to re-run; it will **skip** already-completed steps.
-
-### Auto-Import (`n8n-import`)
-
-After the provisioner completes, the `n8n-import` container imports the assets committed in the repo:
-
-- `./n8n/backup/credentials_public` – credential templates (edit these and replace `CHANGE_ME` with real keys)
-- `./n8n/backup/workflows` – the example MCP-agent workflows
-
-Before importing, it copies `./n8n/backup` to a temp dir and rewrites it (the committed files are public, so they carry placeholders — never real secrets):
-
-- **Secret substitution** — real values from `.env` replace the placeholders `__POSTGRES_PASSWORD__`, `__PILOT_MCP_TOKEN__` (PolicyPilot bearer), and `__DEVHUB_MCP_TOKEN__` (DevHub bearer). If a token env is empty, that credential file is **dropped** (not imported with a broken placeholder) and a warning is logged.
-- **Domain resolution** — the `{{DOMAIN}}` placeholder in the `policypilot-management-agent`, `policypilot-dynamic-layer-agent`, and `devhub-agent` workflows is resolved to the real deployment domain (`DOMAIN`, falling back to `N8N_HOST` minus the `n8n.` prefix).
-
-It then runs:
-
-```bash
-n8n import:credentials --separate --input=/tmp/import/credentials_public
-n8n import:workflow    --separate --input=/tmp/import/workflows
-```
-
-> **Tags are stripped.** `n8n import:workflow` errors on duplicate tag names, so every committed workflow JSON keeps an empty `"tags": []`. Preserve that when re-exporting a workflow.
-
-> `setup.sh` copies `credentials_public/` to `credentials/` locally so you can fill in real keys without touching the committed templates. The `n8n-import` service imports from `credentials_public`.
-
-Each direct MCP-agent workflow also ships a `*-via-gateway.json` twin that connects through the Docker MCP Gateway (Bearer auth) instead of a single sidecar; both are re-imported on every redeploy. See the [MCP Gateway Agent Guide](docs/guides/MCP_Gateway_Agent_Guide.md).
-
----
-
-## URLs & Access
-
-> **No host ports are bound.** All direct `ports:` bindings were removed to shrink the external attack surface. On the lab host, the web UIs are reached through **Traefik** at their subdomains. Standalone, reach a service by adding a temporary `ports:` mapping or via `docker compose exec`.
-
-### Main Web UIs (Traefik subdomains)
-
-These services join the external `dokploy-network` and are routed by Traefik with Let's Encrypt TLS:
-
-| Service        | URL (routed)                 |
-|----------------|------------------------------|
-| Open WebUI     | `https://chat.<domain>`      |
-| Flowise        | `https://flowise.<domain>`   |
-| Langflow       | `https://langflow.<domain>`  |
-| AI-Infra-Guard | `https://aig.<domain>`       |
-
-n8n is served on `demo` (internal) and routed by the host's existing Dokploy workflow at `n8n.<domain>`. Ollama is internal-only (`ollama-cpu:11434` on the `demo` network) and is not routed externally.
-
-To reach a service directly on a host without Traefik, add a mapping under that service in `docker-compose.yml`, e.g.:
-
-```yaml
-  open-webui:
-    ports:
-      - "3000:8080"
-```
-
-### MCP Servers – Internal Docker URLs
-
-The 13 Check Point MCP sidecars are **internal-only** on the `demo` network (no host ports, no Traefik route). Use these base URLs from **n8n MCP HTTP nodes**:
-
-- Documentation MCP → `http://mcp-documentation:3000`
-- HTTPS Inspection MCP → `http://mcp-https-inspection:3001`
-- Quantum Management MCP → `http://mcp-quantum-management:3002`
-- Management Logs MCP → `http://mcp-management-logs:3003`
-- Threat Emulation MCP → `http://threat-emulation-mcp:3004`
-- Threat Prevention MCP → `http://threat-prevention-mcp:3005`
-- Spark Management MCP → `http://spark-management-mcp:3006`
-- Reputation Service MCP → `http://reputation-service-mcp:3007`
-- Harmony SASE MCP → `http://harmony-sase-mcp:3008`
-- Quantum GW CLI MCP → `http://quantum-gw-cli-mcp:3009`
-- Quantum GW Connection Analysis MCP → `http://quantum-gw-connection-analysis-mcp:3010`
-- Quantum Gaia MCP → `http://quantum-gaia-mcp:3011`
-- CPInfo Analysis MCP → `http://cpinfo-analysis-mcp:3012`
-
-### n8n MCP Node Configuration
-
-In n8n’s MCP client nodes (e.g., `mcpClientTool`):
-
-- **Connection Type / Mode**: `http`
-- **Base URL**: `http://<mcp-service-name>:<port>` (e.g., `http://threat-emulation-mcp:3004`)
-- **Do NOT** set “Package” or “Command” to `@chkp/...`.
-
-If package fields are set, n8n will try `npx @chkp/...` in the container and you’ll see:
-- `npm warn exec The following package was not found and will be installed`
-- `Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@chkp/mcp-utils'`
-
-HTTP mode + sidecars = clean, predictable behavior.
-
----
-
-## 🔌 n8n Pipe for Open WebUI
-
-The included `n8n_pipe.py` allows Open WebUI to talk to n8n workflows.
-
-### Configuration
-
-1.  **Default URL**: The pipe is pre-configured to send requests to `http://n8n:5678/webhook/n8n-pipe`.
-2.  **Multiple Workflows**: You can use this pipe with **any** n8n workflow.
-    - In Open WebUI, go to **Admin Panel** -> **Functions** (or **Pipes**).
-    - Select the **N8N Pipe**.
-    - Edit the **N8N URL** valve to point to your desired workflow's webhook URL (e.g., `http://n8n:5678/webhook/my-custom-agent`).
-    - You can even duplicate the pipe file to have multiple named pipes pointing to different agents!
-
-### Workflow Requirements
-
-For a workflow to work with this pipe, it must:
-1.  Start with a **Webhook** node.
-2.  Method: `POST`.
-3.  Path: Matches the URL you configured (e.g., `n8n-pipe`).
-4.  Respond using a **Respond to Webhook** node.
-
----
-
-## Ollama Models
-
-The `ollama-pull-models-*` sidecar waits for the Ollama API and then pulls the configured model. The stack currently pulls:
-
-- `huihui_ai/foundation-sec-abliterated:latest`
-
-AI-Infra-Guard's agent additionally uses `huihui_ai/deepseek-r1-abliterated:latest` (via `AIG_LLM_MODEL`), pointed at the local Ollama by default.
-
-To change which models are pulled, edit the `command:` in the `ollama-pull-models-*` services inside `docker-compose.yml`.
-
-To inspect or prune models inside the Ollama container:
-
-```bash
-ollama list
-ollama rm <model-name>
-```
-
----
-
-## Data & Persistence
-
-The stack uses named Docker volumes so you can destroy containers and keep data.
-
-| Volume            | Description                                   |
-|-------------------|-----------------------------------------------|
-| `n8n_storage`     | n8n config, user data, some cached metadata   |
-| `postgres_storage`| PostgreSQL database for n8n                   |
-| `ollama_storage`  | Ollama models and data                        |
-| `open-webui`      | Open WebUI data                               |
-| `flowise`         | Flowise data                                  |
-| `langflow`        | Langflow data                                 |
-| `aig_data` / `aig_db` / `aig_logs` / `aig_uploads` | AI-Infra-Guard state, DB, logs, uploads |
-
-Example: backup `n8n_storage` to a local tarball:
-
-```bash
-docker run --rm -v n8n_storage:/data -v "$(pwd)":/backup busybox \
-  tar czf /backup/n8n_storage.tgz -C /data .
-```
-
----
+- [MCP Gateway — Explained](docs/guides/MCP_Gateway_Explained.md) and the
+  [MCP Gateway Agent Guide](docs/guides/MCP_Gateway_Agent_Guide.md) — direct sidecar vs. gateway agents.
+- Per-server agent guides: [Quantum Management](docs/guides/Quantum_Management_MCP_Agent_Guide.md),
+  [Gaia OS](docs/guides/Quantum_Gaia_MCP_Agent_Guide.md),
+  [Gateway CLI](docs/guides/Quantum_Gateway_CLI_MCP_Agent_Guide.md),
+  [Management Logs](docs/guides/Management_Logs_MCP_Agent_Guide.md),
+  [Threat Prevention](docs/guides/Threat_Prevention_MCP_Agent_Guide.md),
+  [Threat Emulation](docs/guides/Threat_Emulation_MCP_Agent_Guide.md),
+  [Reputation](docs/guides/Reputation_Service_MCP_Agent_Guide.md),
+  [HTTPS Inspection](docs/guides/HTTPS_Inspection_MCP_Agent_Guide.md),
+  [CPInfo Analysis](docs/guides/CPInfo_Analysis_MCP_Agent_Guide.md),
+  [Documentation](docs/guides/Documentation_MCP_Agent_Guide.md).
+- [Lakera Guardrails Playground](docs/guides/n8n_Lakera_Playground_Guide.md) ·
+  [Observability with Langfuse](docs/guides/Observability_Langfuse.md) ·
+  [Visible RAG](docs/guides/Visible_RAG.md) ·
+  [Evals Harness](docs/guides/Evals_Harness.md) ·
+  [MCP Security Lab](docs/guides/MCP_Security_Lab.md).
+- [Build Your Own MCP Server](docs/guides/Build_Your_Own_MCP_Exercise.md) ·
+  [Identity Provisioning (SCIM)](docs/guides/Identity_Provisioning_SCIM_Agent_Guide.md) ·
+  [PolicyPilot behind the Gateway](docs/guides/PolicyPilot_Gateway_Sidecar_Guide.md) ·
+  [Capstone: Zero-Trust Onboarding](docs/guides/Capstone_Zero_Trust_Onboarding.md).
+- Operations: [Production Deployment](docs/operations/PRODUCTION_DEPLOYMENT.md) ·
+  [Backup & Recovery](docs/operations/BACKUP_RECOVERY.md).
 
 ## Troubleshooting
 
-### A) `n8n-import`: “Mismatching encryption keys”
+| Symptom | Fix |
+|---------|-----|
+| `n8n-import`: "Mismatching encryption keys" | Use the same `N8N_ENCRYPTION_KEY` across `n8n`, `n8n-import`, `n8n-provision`. |
+| MCP node shows `@chkp/... ERR_MODULE_NOT_FOUND` | The node is in package mode — switch it to **HTTP** and point at `http://<service>:<port>`. |
+| Can't reach an MCP server | From inside the network use the **service name**, not `localhost`: `docker compose exec n8n sh` → `curl http://mcp-documentation:3000/`. |
+| Gateway exposes 0 tools | A sidecar wasn't listening when the gateway enumerated. Healthchecks gate this; restart the gateway if it wedged. |
+| GPU not detected | Use the `gpu-nvidia` profile and verify `docker run --rm --gpus all nvidia/cuda:12.3.2-base nvidia-smi`. |
+| Provisioner: HTTP 400 "already installed/registered" | Normal on re-runs — the one-shots are idempotent. |
 
-Make sure **all n8n-related containers** (`n8n`, `n8n-import`, `n8n-provision`) use the **same** `N8N_ENCRYPTION_KEY` value from `.env`.
+## Security notes
 
-### B) Provisioner: HTTP 400 “Package already installed”
+Built for lab and demo use. Always run `./setup.sh` for strong random secrets, never commit `.env`,
+and keep API keys to environments you trust. This stack is designed for a private/isolated network;
+apply the hardening in the [Production Deployment Guide](docs/operations/PRODUCTION_DEPLOYMENT.md)
+before wider exposure. The `security-lab` profile is **intentionally vulnerable** and must stay off
+outside the teaching exercise.
 
-Normal on re-runs. As long as you see `n8n-nodes-mcp` in **Settings → Community Nodes**, you’re good.
+## License
 
-### C) MCP node shows `@chkp/...` install errors
-
-If logs show:
-
-- `npm warn exec The following package was not found and will be installed`
-- `Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@chkp/mcp-utils'`
-
-…then the node is in **package mode**. Switch it to **HTTP** and point at the correct MCP URL, e.g.:
-
-```text
-http://mcp-management-logs:3003
-```
-
-### D) Cannot reach MCP from inside Docker
-
-From the `n8n` container, use the **service name**, not `localhost`:
-
-```bash
-docker compose exec n8n sh
-# Inside
-curl http://mcp-documentation:3000/
-```
-
-If that works, the MCP sidecar is healthy and reachable.
-
-### E) Postgres connection issues
-
-Check the DB logs:
-
-```bash
-docker compose logs postgres | tail -n 50
-```
-
-Ensure:
-
-- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` match between `postgres`, `n8n`, and `n8n-import`.
-
-### F) GPU not detected
-
-- Ensure you use the `gpu-nvidia` profile.
-- Verify NVIDIA toolkit:
-
-  ```bash
-  docker run --rm --gpus all nvidia/cuda:12.3.2-base nvidia-smi
-  ```
-
-If this fails, fix GPU drivers / toolkit before using the GPU profile.
-
----
-
-## Updating & Resetting
-
-### Updating
-
-- **n8n-nodes-mcp** – update via n8n UI (Settings → Community Nodes) or adjust the version in your provisioner / Dockerfile and rebuild.
-- **Check Point MCP CLIs** – adjust versions in `docker/n8n/Dockerfile` and rebuild:
-
-  ```bash
-  docker compose build n8n
-  ```
-
-- **Base Images** – To update the underlying `n8n` version (fixes "n8n is not running the latest version"):
-
-  ```bash
-  # This pulls the latest base image AND rebuilds your custom image in one step
-  docker compose build --pull n8n
-  
-  # Then restart the service
-  docker compose --profile cpu up -d n8n
-  ```
-
-  > **Note**: Do not run `docker compose pull n8n`. This will fail because it tries to pull your *local custom image* from Docker Hub. Always use `build --pull`.
-
-(adjust profiles as needed).
-
-### Full Reset (Lab-Style)
-
-If you want a **clean slate** (fresh DB, no workflows, no credentials, no chat history):
-
-```bash
-# WARNING: deletes all volumes for selected profiles
-docker compose --profile cpu down -v
-docker compose --profile cpu up -d
-```
-
-This re-creates the entire environment from zero, re-runs the provisioner, and re-imports any assets in `./n8n/backup`.
-
----
-
-## 📚 Guides
-
-Detailed documentation for specific workflows and agents:
-
-- **[Lakera Playground Guide](docs/guides/n8n_Lakera_Playground_Guide.md)**: A complete guide to the Lakera Guard workflow, including a technical deep dive into each node and security logic.
-- **[Threat Prevention Agent Guide](docs/guides/CheckPoint_Threat_Prevention_Guide.md)**: Documentation for the Check Point Threat Prevention agent, covering the AI agent, MCP client, and policy management.
-- **[MCP Gateway Agent Guide](docs/guides/MCP_Gateway_Agent_Guide.md)**: Two ways to connect agents to the Check Point MCP servers — direct sidecar vs. the Docker MCP Gateway (aggregation + Bearer auth) — with walkthroughs, exercises, and lab-connectivity troubleshooting.
-- **[Exercise: Build Your Own MCP Server](docs/guides/Build_Your_Own_MCP_Exercise.md)**: Author an MCP server from scratch (zero-dependency, stdlib only) that wraps the Check Point IPS/CVE API, then register it behind the gateway. Scaffold (5 TODOs) + solution under `exercises/build-your-own-mcp/`.
-- **[Identity Provisioning Agent (SCIM)](docs/guides/Identity_Provisioning_SCIM_Agent_Guide.md)**: An agent that onboards a person into Identity Provider (IdP) — the Identity Provider simulator — from plain language — the identity side of Zero Trust, paired with the [Identity Provider (IdP)](https://github.com/alshawwaf/SAML_IDP_Simulator).
-- **[PolicyPilot behind the Gateway](docs/guides/PolicyPilot_Gateway_Sidecar_Guide.md)**: Opt-in — front [PolicyPilot](https://github.com/alshawwaf/PolicyPilot)'s MCP server (guarded policy changes: preview/approve/rollback) as a gateway sidecar. The guarded-WRITE counterpart to the read-only Quantum Management tools.
-- **[Capstone: Zero-Trust Contractor Onboarding](docs/guides/Capstone_Zero_Trust_Onboarding.md)**: The end-to-end story tying it together — an agent onboards an identity (SCIM), grants least-privilege network access (PolicyPilot preview/approve/rollback), all behind a Lakera guardrail that blocks prompt-injection.
-
-### 🧩 Gateway-ready Check Point MCP servers
-
-The vendored Check Point MCP servers carry a local patch that gives each
-Streamable HTTP session its own server instance — required for fronting them
-with an MCP gateway (stock packages are single-client and break on concurrent
-sessions). **[docker/n8n/mcp-src/PATCHES.md](docker/n8n/mcp-src/PATCHES.md)**
-documents the why, the per-package capability matrix, and how to make more
-packages gateway-ready. Built npm tarballs of all servers are attached to the
-repo's **GitHub Releases** so students can grab and reuse them directly.
-
----
-
-## 🚀 Hardening & Operations
-
-This stack is built for **lab and demo** use. Before exposing it more widely, apply the hardening below and read the [Production Deployment Guide](docs/operations/PRODUCTION_DEPLOYMENT.md) (which starts with its own "for production, additional hardening is required" warning). The repo ships operational helpers to support that:
-
-### Checklist
-
-1. **Generate Secure Configuration**
-   ```bash
-   ./setup.sh
-   ./scripts/validate-env.sh
-   ```
-
-2. **Run Health Checks**
-   ```bash
-   ./scripts/health-check.sh --profile cpu
-   ```
-
-3. **Set Up Automated Backups**
-   ```bash
-   # Add to crontab for daily backups
-   0 2 * * * /path/to/scripts/backup-volumes.sh --retention-days 30
-   ```
-
-4. **Enable CI/CD**
-   - GitHub Actions workflows are in `.github/workflows/`
-   - Automated testing and security scanning on every push
-
-### Production Documentation
-
-- **[Production Deployment Guide](docs/operations/PRODUCTION_DEPLOYMENT.md)** - Comprehensive guide covering:
-  - Security hardening & SSL/TLS configuration
-  - Secret management (Docker Secrets, Vault, etc.)
-  - Scaling & high availability
-  - Monitoring & observability
-  - Compliance (SOC2, GDPR, etc.)
-
-- **[Backup & Recovery Guide](docs/operations/BACKUP_RECOVERY.md)** - Complete backup strategy:
-  - Automated volume backups
-  - Disaster recovery procedures
-  - RTO/RPO definitions
-  - Point-in-time recovery
-
-### Automated Testing
-
-Run integration tests locally:
-
-```bash
-# Run full test suite
-./tests/integration-test.sh
-
-# Test specific profile
-PROFILE=cpu ./tests/integration-test.sh
-```
-
-CI/CD automatically runs tests on every push and pull request.
-
----
-
-## Security Best Practices
-
-1.  **Use the Setup Script**: Always use `./setup.sh` to generate strong, random passwords for your environment.
-2.  **Protect `.env`**: Your `.env` file contains sensitive credentials. Never commit it to version control.
-3.  **API Keys**: Be careful when entering API keys. Ensure you trust the environment where you are running this stack.
-4.  **Network Isolation**: This stack is designed for local development. If deploying to a shared network, ensure proper firewall rules are in place.
-
+[MIT](LICENSE) © Check Point Software Technologies Ltd.
