@@ -520,18 +520,10 @@ services:
       # framing middleware. (Add a flowise-hubframe like n8n's only if a future
       # version starts sending X-Frame-Options.)
       - "traefik.enable=true"
-      # Two explicit routers (same pattern as PolicyPilot): the Cloudflare tunnel fronts every
-      # host to entrypoint web (:80), and a router carrying TLS config never matches plain HTTP —
-      # Traefik 3.6 splits a web,websecure router and propagates certresolver onto BOTH, so the
-      # single-router form 404s through the tunnel.
-      - "traefik.http.routers.flowise-web.rule=Host(`flowise.${DOMAIN}`)"
-      - "traefik.http.routers.flowise-web.entrypoints=web"
-      - "traefik.http.routers.flowise-web.service=flowise-svc"
-      - "traefik.http.routers.flowise-websecure.rule=Host(`flowise.${DOMAIN}`)"
-      - "traefik.http.routers.flowise-websecure.entrypoints=websecure"
-      - "traefik.http.routers.flowise-websecure.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.flowise-websecure.service=flowise-svc"
-      - "traefik.http.services.flowise-svc.loadbalancer.server.port=${FLOWISE_PORT}"
+      # Routing (host + web/websecure split) is owned by the installer's Dokploy
+      # exposure for flowise, exactly like n8n. Declaring routers HERE too created a
+      # SECOND router set for the same host, so Traefik picked non-deterministically
+      # -> intermittent 404s. Keep only enable + the network hint; Dokploy owns routing.
       - "traefik.docker.network=dokploy-network"
 
   # ──────────────── Flowise DB bootstrap ────────────────
@@ -583,18 +575,10 @@ services:
 
     labels:
       - "traefik.enable=true"
-      # Two explicit routers (same pattern as PolicyPilot): the Cloudflare tunnel fronts every
-      # host to entrypoint web (:80), and a router carrying TLS config never matches plain HTTP —
-      # Traefik 3.6 splits a web,websecure router and propagates certresolver onto BOTH, so the
-      # single-router form 404s through the tunnel.
-      - "traefik.http.routers.open-webui-web.rule=Host(`chat.${DOMAIN}`)"
-      - "traefik.http.routers.open-webui-web.entrypoints=web"
-      - "traefik.http.routers.open-webui-web.service=open-webui-svc"
-      - "traefik.http.routers.open-webui-websecure.rule=Host(`chat.${DOMAIN}`)"
-      - "traefik.http.routers.open-webui-websecure.entrypoints=websecure"
-      - "traefik.http.routers.open-webui-websecure.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.open-webui-websecure.service=open-webui-svc"
-      - "traefik.http.services.open-webui-svc.loadbalancer.server.port=8080"
+      # Routing (host + web/websecure split) is owned by the installer's Dokploy
+      # exposure for chat.${DOMAIN}, exactly like n8n. Declaring routers HERE too
+      # created a SECOND router set for the same host, so Traefik picked
+      # non-deterministically -> intermittent 404s. Keep only enable + the network hint.
       - "traefik.docker.network=dokploy-network"
 
     depends_on:
@@ -656,24 +640,16 @@ services:
       - ollama-pull-models-cpu
     labels:
       - "traefik.enable=true"
-      # Two explicit routers (same pattern as PolicyPilot): the Cloudflare tunnel fronts every
-      # host to entrypoint web (:80), and a router carrying TLS config never matches plain HTTP —
-      # Traefik 3.6 splits a web,websecure router and propagates certresolver onto BOTH, so the
-      # single-router form 404s through the tunnel.
-      - "traefik.http.routers.langflow-web.rule=Host(`langflow.${DOMAIN}`)"
-      - "traefik.http.routers.langflow-web.entrypoints=web"
-      - "traefik.http.routers.langflow-web.service=langflow-svc"
-      - "traefik.http.routers.langflow-websecure.rule=Host(`langflow.${DOMAIN}`)"
-      - "traefik.http.routers.langflow-websecure.entrypoints=websecure"
-      - "traefik.http.routers.langflow-websecure.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.langflow-websecure.service=langflow-svc"
-      - "traefik.http.services.langflow-svc.loadbalancer.server.port=7860"
+      # Routing (host + web/websecure split) is owned by the installer's Dokploy
+      # exposure for langflow.${DOMAIN}, exactly like n8n. Declaring routers HERE too
+      # created a SECOND router set for the same host, so Traefik picked
+      # non-deterministically -> intermittent 404s. Worse, the framing middleware was
+      # attached to a bare "langflow" router (no rule/service) which Traefik reported
+      # as "cannot be linked automatically with multiple Services". The installer's
+      # global hubframe@file middleware (applied on the web + websecure entrypoints)
+      # already strips X-Frame-Options and sets frame-ancestors for the hub, so the
+      # dev-hub still embeds Langflow. Keep only enable + the network hint.
       - "traefik.docker.network=dokploy-network"
-      # Let the dev-hub desktop embed Langflow in an iframe (strip X-Frame-Options,
-      # allow the hub in frame-ancestors).
-      - "traefik.http.routers.langflow.middlewares=langflow-hubframe"
-      - "traefik.http.middlewares.langflow-hubframe.headers.customresponseheaders.X-Frame-Options="
-      - "traefik.http.middlewares.langflow-hubframe.headers.customresponseheaders.Content-Security-Policy=frame-ancestors 'self' https://hub.${DOMAIN} https://*.${DOMAIN}"
 
   # ──────────────── Langfuse DB bootstrap (one-shot) ────────────────
   # Creates a dedicated `langfuse` database inside the stack Postgres if it
