@@ -45,8 +45,8 @@ Built for **lab and demo** use. See [Deployment](#deployment) and the
 | **Langfuse** | `langfuse/langfuse:2` | LLM observability / tracing UI (`trace.<domain>`) |
 | **LiteLLM** | `berriai/litellm` | Internal OpenAI-compatible proxy — routes n8n + Langflow → Langfuse |
 | **Qdrant** | `qdrant/qdrant:v1.12.4` | Vector DB for the Visible RAG demo |
-| **AI-Infra-Guard** | built from [Tencent/AI-Infra-Guard](https://github.com/Tencent/AI-Infra-Guard) | AI red-teaming: MCP security scan + jailbreak eval (`aig.<domain>`) |
-| **MCP sidecars** | `custom-mcp-n8n:custom` | 14 Check Point MCP servers as internal HTTP services |
+| **AI-Infra-Guard** | `ghcr.io/alshawwaf/cp-agentic-aig-{webserver,agent}` (prebuilt from [Tencent/AI-Infra-Guard](https://github.com/Tencent/AI-Infra-Guard)) | AI red-teaming: MCP security scan + jailbreak eval (`aig.<domain>`) |
+| **MCP sidecars** | `ghcr.io/alshawwaf/cp-agentic-n8n` (one shared image, prebuilt by CI) | 14 Check Point MCP servers as internal HTTP services |
 | **MCP Gateway** | `docker/mcp-gateway` | Aggregates the MCP fleet behind one Bearer-auth endpoint |
 
 One-shot helpers run on every `docker compose up` and then exit: `n8n-provision` (creates the n8n
@@ -93,12 +93,14 @@ Ollama model pulls). For the GPU profile: an NVIDIA GPU with the NVIDIA Containe
 # 1. Generate a .env with secure secrets (or copy .env-example yourself)
 ./setup.sh
 
-# 2. Build the custom n8n image (bakes in the Check Point MCP CLIs)
-docker compose build n8n
-
-# 3. Start the core CPU stack
+# 2. Start the core CPU stack — images are PREBUILT and pulled from GHCR
+#    (the custom n8n image with the Check Point MCP CLIs is published by
+#    .github/workflows/publish-image.yml on every push; nothing builds here)
 docker compose up -d
 ```
+
+> Developing the custom n8n image locally? The `build:` block is kept commented
+> in `docker-compose.yml` — uncomment it and run `docker compose build n8n`.
 
 Wait 30–60 s for Postgres, n8n, the provisioners, and the importers to settle, then browse to n8n.
 Log in with the owner credentials from `.env`. The core stack (n8n, Postgres, Ollama CPU, Open
