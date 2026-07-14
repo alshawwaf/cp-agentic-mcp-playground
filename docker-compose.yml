@@ -228,10 +228,13 @@ services:
   n8n:
     <<: *service-n8n
     container_name: n8n
-    build:
-      context: ./docker/n8n
-      dockerfile: Dockerfile
-    image: custom-mcp-n8n:custom
+    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest
+    pull_policy: always
+    # build disabled: prebuilt + published by .github/workflows/publish-image.yml; uncomment to build locally.
+    # build:
+    #   context: ./docker/n8n
+    #   dockerfile: Dockerfile
+    # image: custom-mcp-n8n:custom
     restart: unless-stopped
     networks:
       - demo
@@ -744,7 +747,8 @@ services:
 
   # ─────────── Documentation MCP over HTTP ───────────
   mcp-documentation:
-    image: custom-mcp-n8n:custom
+    # was: custom-mcp-n8n:custom (built on the box by the n8n service; all sidecars now share the prebuilt tag pulled by n8n)
+    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest
     container_name: mcp-documentation
     networks: [ "demo" ]
     depends_on:
@@ -771,7 +775,7 @@ services:
     restart: unless-stopped
 
   mcp-https-inspection:
-    image: custom-mcp-n8n:custom
+    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
     container_name: mcp-https-inspection
     networks: [ "demo" ]
     depends_on:
@@ -788,7 +792,7 @@ services:
     restart: unless-stopped
 
   mcp-quantum-management:
-    image: custom-mcp-n8n:custom
+    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
     container_name: mcp-quantum-management
     networks: [ "demo" ]
     depends_on:
@@ -812,7 +816,7 @@ services:
     restart: unless-stopped
 
   mcp-management-logs:
-    image: custom-mcp-n8n:custom
+    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
     container_name: mcp-management-logs
     networks: [ "demo" ]
     depends_on:
@@ -829,7 +833,7 @@ services:
     restart: unless-stopped
 
   threat-emulation-mcp:
-    image: custom-mcp-n8n:custom
+    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
     container_name: threat-emulation-mcp
     networks: [ "demo" ]
     volumes:
@@ -847,7 +851,7 @@ services:
     restart: unless-stopped
 
   threat-prevention-mcp:
-    image: custom-mcp-n8n:custom
+    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
     container_name: threat-prevention-mcp
     networks: [ "demo" ]
     depends_on:
@@ -864,7 +868,7 @@ services:
     restart: unless-stopped
 
   spark-management-mcp:
-    image: custom-mcp-n8n:custom
+    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
     container_name: spark-management-mcp
     networks: [ "demo" ]
     depends_on:
@@ -883,7 +887,7 @@ services:
     restart: unless-stopped
 
   reputation-service-mcp:
-    image: custom-mcp-n8n:custom
+    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
     container_name: reputation-service-mcp
     networks: [ "demo" ]
     depends_on:
@@ -899,7 +903,7 @@ services:
     restart: unless-stopped
 
   harmony-sase-mcp:
-    image: custom-mcp-n8n:custom
+    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
     container_name: harmony-sase-mcp
     networks: [ "demo" ]
     depends_on:
@@ -917,7 +921,7 @@ services:
     restart: unless-stopped
 
   quantum-gw-cli-mcp:
-    image: custom-mcp-n8n:custom
+    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
     container_name: quantum-gw-cli-mcp
     networks: [ "demo" ]
     depends_on:
@@ -934,7 +938,7 @@ services:
     restart: unless-stopped
 
   quantum-gw-connection-analysis-mcp:
-    image: custom-mcp-n8n:custom
+    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
     container_name: quantum-gw-connection-analysis-mcp
     networks: [ "demo" ]
     depends_on:
@@ -951,7 +955,7 @@ services:
     restart: unless-stopped
 
   quantum-gaia-mcp:
-    image: custom-mcp-n8n:custom
+    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
     container_name: quantum-gaia-mcp
     networks: [ "demo" ]
     depends_on:
@@ -978,7 +982,7 @@ services:
     restart: unless-stopped
 
   cpinfo-analysis-mcp:
-    image: custom-mcp-n8n:custom
+    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
     container_name: cpinfo-analysis-mcp
     networks: [ "demo" ]
     depends_on:
@@ -1002,7 +1006,7 @@ services:
   # mcp-quantum-management (resolve layer/rule names) and with PolicyPilot's cleanup rail.
   # Needs Management API v2.1 (R82.10+) and Policy Insights enabled on the SMS.
   policy-insights-mcp:
-    image: custom-mcp-n8n:custom
+    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
     container_name: policy-insights-mcp
     networks: [ "demo" ]
     depends_on:
@@ -1186,9 +1190,12 @@ services:
   # analysis, and jailbreak evaluation. Web UI at port 8088.
   # https://github.com/Tencent/AI-Infra-Guard
   aig-webserver:
-    build:
-      context: https://github.com/Tencent/AI-Infra-Guard.git
-      dockerfile: Dockerfile
+    image: ghcr.io/alshawwaf/cp-agentic-aig-webserver:latest
+    pull_policy: always
+    # build disabled: prebuilt + published by .github/workflows/publish-image.yml; uncomment to build locally.
+    # build:
+    #   context: https://github.com/Tencent/AI-Infra-Guard.git
+    #   dockerfile: Dockerfile
     container_name: aig-webserver
     networks: [ "demo", "dokploy-network" ]
     restart: unless-stopped
@@ -1224,9 +1231,12 @@ services:
       - "traefik.docker.network=dokploy-network"
 
   aig-agent:
-    build:
-      context: https://github.com/Tencent/AI-Infra-Guard.git
-      dockerfile: Dockerfile_Agent
+    image: ghcr.io/alshawwaf/cp-agentic-aig-agent:latest
+    pull_policy: always
+    # build disabled: prebuilt + published by .github/workflows/publish-image.yml; uncomment to build locally.
+    # build:
+    #   context: https://github.com/Tencent/AI-Infra-Guard.git
+    #   dockerfile: Dockerfile_Agent
     container_name: aig-agent
     networks: [ "demo" ]
     restart: unless-stopped
@@ -1306,10 +1316,13 @@ services:
   # Run: docker compose --profile exercises up -d --build ips-cve-mcp
   # See docs/guides/Build_Your_Own_MCP_Exercise.md.
   ips-cve-mcp:
-    build:
-      context: ./exercises/build-your-own-mcp
-      dockerfile: Dockerfile
-    image: ips-cve-mcp:exercise
+    image: ghcr.io/alshawwaf/cp-agentic-ips-cve-mcp:latest
+    pull_policy: always
+    # build disabled: prebuilt + published by .github/workflows/publish-image.yml; uncomment to build locally.
+    # build:
+    #   context: ./exercises/build-your-own-mcp
+    #   dockerfile: Dockerfile
+    # image: ips-cve-mcp:exercise
     container_name: ips-cve-mcp
     profiles: [ "exercises" ]
     networks: [ "demo" ]
