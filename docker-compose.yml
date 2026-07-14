@@ -110,9 +110,18 @@ x-init-ollama: &init-ollama
       # Model list comes from OLLAMA_MODELS in the env (comma-separated).
       MODELS="${OLLAMA_MODELS:-gemma4:e2b,qwen3.5:4b}"
       echo "Ollama is ready. Pulling: $${MODELS}"
+      # The install triggers this download and MOVES ON (fire-and-forget), so a
+      # transient network failure must not silently strand a model: retry each
+      # pull up to 5 times with a 15s pause before giving up on that model.
       for m in $$(echo "$${MODELS}" | tr ',' ' '); do
         echo ">> pulling $${m}"
-        OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull "$${m}" || echo "WARN: pull failed for $${m} (continuing)"
+        n=0
+        until OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull "$${m}"; do
+          n=$$((n+1))
+          if [ "$$n" -ge 5 ]; then echo "WARN: giving up on $${m} after 5 attempts"; break; fi
+          echo ">> pull failed for $${m} — retry $${n}/5 in 15s"
+          sleep 15
+        done
       done
       echo "LLM Models pulled successfully!!!"
       # keep the container alive so logs stay visible
@@ -206,9 +215,17 @@ services:
         # Model list comes from OLLAMA_MODELS in the env (comma-separated).
         MODELS="${OLLAMA_MODELS:-gemma4:e2b,qwen3.5:4b}"
         echo "Ollama is up. Pulling: $${MODELS}"
+        # Fire-and-forget contract: the install triggers this download and moves
+        # on, so retry transient failures instead of silently stranding a model.
         for m in $$(echo "$${MODELS}" | tr ',' ' '); do
           echo ">> pulling $${m}"
-          OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull "$${m}" || echo "WARN: pull failed for $${m} (continuing)"
+          n=0
+          until OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull "$${m}"; do
+            n=$$((n+1))
+            if [ "$$n" -ge 5 ]; then echo "WARN: giving up on $${m} after 5 attempts"; break; fi
+            echo ">> pull failed for $${m} — retry $${n}/5 in 15s"
+            sleep 15
+          done
         done
         echo "All models pulled!!!"
         # keep the container alive so logs stay visible
