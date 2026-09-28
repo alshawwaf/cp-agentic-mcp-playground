@@ -47,7 +47,7 @@ main() {
   # Test 2: Build custom n8n image
   log_info "Test Group: Image Build"
   log_info "Building custom n8n image..."
-  docker compose build n8n --quiet
+  docker build --quiet -f docker/n8n/Dockerfile docker/n8n > /dev/null
   assert_true $? "Custom n8n image builds successfully"
   echo ""
   

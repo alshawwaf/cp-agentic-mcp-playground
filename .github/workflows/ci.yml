@@ -28,8 +28,10 @@ jobs:
       - name: Validate docker-compose.yml
         run: docker compose config --quiet
 
+      # compose pulls the prebuilt GHCR image (its build: block is commented out),
+      # so `docker compose build n8n` would build nothing — build the Dockerfile directly.
       - name: Build custom n8n / MCP image
-        run: docker compose build n8n
+        run: docker build -f docker/n8n/Dockerfile docker/n8n
 
   # Heavyweight live-stack smoke test. NOT a merge gate: bringing up the full
   # stack pulls large images and the management-backed MCP sidecars need a real

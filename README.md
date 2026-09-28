@@ -292,8 +292,11 @@ Traefik + Let's Encrypt (via Dokploy) · Python (stdlib-only integration scripts
 ## Development
 
 ```bash
-# Rebuild the custom n8n image (after changing MCP CLI versions or Dockerfile)
-docker compose build --pull n8n     # do NOT `docker compose pull n8n` — it's a local image
+# Pull the latest prebuilt n8n / MCP image from GHCR
+docker compose pull n8n
+
+# Build the custom n8n image locally (after changing MCP CLI versions or the Dockerfile)
+docker build -t ghcr.io/alshawwaf/cp-agentic-n8n:latest -f docker/n8n/Dockerfile docker/n8n
 
 # Health check / env validation
 ./scripts/health-check.sh
@@ -331,6 +334,21 @@ documented in [docs/development/](docs/development/) (`DEVELOPER_GUIDE.md`, `DIR
   [Capstone: Zero-Trust Onboarding](docs/guides/Capstone_Zero_Trust_Onboarding.md).
 - Operations: [Production Deployment](docs/operations/PRODUCTION_DEPLOYMENT.md) ·
   [Backup & Recovery](docs/operations/BACKUP_RECOVERY.md).
+
+## From lab to production
+
+The playground is where you **learn and prototype** — every builder, every MCP server, local
+models, tracing, all on one box. When an agent pattern is ready for a customer environment, the
+same Check Point MCP servers run on managed cloud agent platforms with identity, secret isolation,
+and a governed gateway built in:
+
+| Target | Reference implementation |
+|--------|--------------------------|
+| AWS Bedrock AgentCore | [checkpoint-mcp-on-aws-agentcore](https://github.com/alshawwaf/checkpoint-mcp-on-aws-agentcore) — 15 MCP servers behind one authenticated AgentCore Gateway |
+| Microsoft Foundry | [checkpoint-mcp-on-azure-foundry](https://github.com/alshawwaf/checkpoint-mcp-on-azure-foundry) — Foundry Hosted Agent, Entra ID, per-server Key Vault secrets |
+
+The [code-first agent](integrations/code-agent/) is the bridge: the same gateway calls as the
+low-code flows, in plain Python, ready to lift into either platform.
 
 ## Troubleshooting
 
