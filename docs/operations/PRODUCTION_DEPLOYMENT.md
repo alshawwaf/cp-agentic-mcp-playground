@@ -486,7 +486,7 @@ For production issues:
 
 1. Check logs: `docker compose logs -f`
 2. Run health check: `../scripts/health-check.sh`
-3. Review [Troubleshooting](../../README.md#troubleshooting) in main README
+3. Review [Troubleshooting](../REFERENCE.md#troubleshooting) in the reference
 4. Open GitHub issue with:
    - Environment details
    - Error logs

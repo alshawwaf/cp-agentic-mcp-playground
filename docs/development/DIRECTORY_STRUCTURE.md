@@ -69,7 +69,7 @@ cp-agentic-mcp-playground/
 └── README.md             # Main documentation
 ```
 
-> Runtime-only bind-mount dirs (`langflow/`, `open-webui/`, `flowise_data/`) are created when the stack starts and are not committed. The MCP server source lives at `docker/n8n/mcp-src/` (there is no top-level `mcp-servers-source/`).
+> Runtime-only bind-mount dirs (`langflow/`, `flowise_data/`) are created when the stack starts and are not committed. The MCP server source lives at `docker/n8n/mcp-src/` (there is no top-level `mcp-servers-source/`).
 
 ---
 
