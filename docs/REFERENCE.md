@@ -350,6 +350,8 @@ A standard agent has this shape:
 5. Imports the 12 credentials in [`credentials_public/`](../n8n/backup/credentials_public/) and all 34 workflows.
 6. Publishes (activates) every workflow. n8n registers their webhooks on its next start.
 
+Every committed workflow has a fixed `id`, and `n8n import:workflow` upserts by ID. Each deploy therefore replaces edits to a seeded workflow with the repo version. The old version stays in the workflow's history. To keep a change, duplicate the workflow under a new name, or commit the change to `n8n/backup/workflows/`. This differs from `builders-import`, which skips flows that already exist.
+
 The Ollama credential (`ollama.json`) carries no secret. It points at `http://ollama-cpu:11434`.
 
 `setup.sh` also copies `credentials_public/` to `n8n/backup/credentials/`. Nothing reads that copy.

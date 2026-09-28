@@ -61,9 +61,20 @@ python3 integrations/observability/gen_secrets.py --with-keys
 # Paste that output over the blank Langfuse lines in .env, then set the values below
 docker network create dokploy-network   # compose expects this external network
 docker compose up -d                    # the first start pulls images and models
-docker compose ps -a n8n-import         # wait until it shows Exited (0)
+docker compose ps -a n8n-import builders-import   # wait until both show Exited (0)
 docker compose restart n8n              # first run only: registers the chat webhooks
 ```
+
+**Seeded on every deploy.** One-shot importers load the example agents into each app:
+
+| App | Seeded by | What it loads |
+|---|---|---|
+| n8n | `n8n-import` | 34 workflows and 12 credentials, then activates the workflows |
+| Flowise | `builders-import` | 33 flows, the admin account, a credential per model key, and Langfuse tracing |
+| Langflow | `builders-import` | The same 33 flows, with model keys as global variables |
+| Open WebUI | `openwebui-provision` | The admin account only. No agents ship for Open WebUI |
+
+n8n re-imports by workflow ID, so each deploy replaces your edits to a seeded workflow. Save a copy under a new name first. Flowise and Langflow skip any flow that already exists, so your edits stay.
 
 | Set in `.env` | What it does |
 |---|---|
@@ -84,7 +95,7 @@ docker compose restart n8n              # first run only: registers the chat web
 | Open WebUI | `https://chat.<domain>` |
 | AI-Infra-Guard | `https://aig.<domain>` |
 
-**First chat.** With the Management and Azure keys set, open the n8n agent `CP Quantum Management — AI Agent (Gateway)` and click **Open chat**. With no keys yet, chat with a local model in Open WebUI.
+**First chat.** Every builder has the agent `CP Quantum Management — AI Agent (Gateway)`. With the Management key set, open it in n8n (needs the Azure key) and click **Open chat**, or in Flowise or Langflow (needs `OPENAI_API_KEY`). With no keys yet, chat with a local model in Open WebUI.
 
 > [!WARNING]
 > This is a lab. The n8n chat endpoints are public, several defaults are published training values, and the `security-lab` profile is intentionally vulnerable. Read the [security notes](docs/REFERENCE.md#security-notes) before you share a URL.
