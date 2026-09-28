@@ -32,7 +32,7 @@ RUN npm init -y >/dev/null 2>&1 && \
   npm install --omit=dev /opt/artifacts/*.tgz @chkp/policy-insights-mcp@0.3.5
 
 # ============== FINAL STAGE ==============
-FROM n8nio/n8n:2.28.6
+FROM n8nio/n8n:2.40.7
 
 USER root
 

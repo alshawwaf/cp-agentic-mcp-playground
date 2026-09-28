@@ -89,7 +89,10 @@ if [ ! -f "$ENV_FILE" ]; then
         POSTGRES_PASSWORD=$(generate_secret)
         N8N_ENCRYPTION_KEY=$(generate_secret)
         N8N_JWT_SECRET=$(generate_secret)
-        N8N_ADMIN_PASSWORD=$(generate_secret)
+        # The admin login is shared by n8n and Flowise. n8n wants a digit and an
+        # uppercase letter; Flowise also wants a lowercase letter and a symbol.
+        # Plain hex has no uppercase or symbol, so add a fixed "Aa1-" prefix.
+        N8N_ADMIN_PASSWORD="Aa1-$(generate_secret)"
         N8N_BASIC_AUTH_PASSWORD=$(generate_secret)
         
         # Use sed to replace placeholders or keys

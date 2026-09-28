@@ -41,7 +41,7 @@ volumes:
 
     # ──────────────── n8n Base ────────────────
 x-n8n: &service-n8n
-  image: n8nio/n8n:2.28.6
+  image: n8nio/n8n:2.40.7
   networks: [ "demo" ]
   environment:
     - DB_TYPE=postgresdb
@@ -64,6 +64,12 @@ x-n8n: &service-n8n
     - N8N_BASIC_AUTH_ACTIVE=true
     - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
     - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
+    # n8n 2.40 reads N8N_WEBHOOK_URL for production AND test webhook URLs; without
+    # it, test URLs fall back to N8N_EDITOR_BASE_URL. Older images read only
+    # WEBHOOK_URL, so both are set from the same .env value. n8n 2.40 logs a
+    # deprecation warning for WEBHOOK_URL; remove the WEBHOOK_URL line below once
+    # the published :latest image is n8n 2.40+.
+    - N8N_WEBHOOK_URL=${WEBHOOK_URL}
     - WEBHOOK_URL=${WEBHOOK_URL}
     - N8N_EDITOR_BASE_URL=${N8N_EDITOR_BASE_URL}
     - N8N_PUSH_BACKEND=${N8N_PUSH_BACKEND}
@@ -299,7 +305,12 @@ services:
 
   # ──────────────── n8n Import Utility ────────────────
   n8n-import:
-    image: n8nio/n8n:2.28.6
+    # Same image as the n8n service, so the CLI and the server always run the same
+    # n8n version. Every n8n CLI command migrates the shared Postgres schema on start,
+    # so a newer CLI next to an older server would upgrade the DB under it. Like the
+    # MCP sidecars, it reuses the tag the n8n service pulls (pull_policy: always).
+    # If you switch n8n to a local build, point this at the same tag.
+    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest
     container_name: n8n-import
     networks: [ "demo" ]
     entrypoint: /bin/sh
@@ -577,8 +588,10 @@ services:
 
   # ──────────────── Open WebUI ────────────────
   open-webui:
-    # pinned by digest (was rolling :main) to the version running on the lab
-    image: ghcr.io/open-webui/open-webui@sha256:a26effeb220e132482bf7e0560b3404843e7bc40d23051144e062960df8df6b0
+    # pinned to v0.11.4 by multi-arch index digest (the tag is for readability; the
+    # digest wins). Previous pin sha256:a26effeb... was the :main build of v0.10.2.
+    # 0.11.x runs one-way DB migrations: back up the open-webui volume before bumping.
+    image: ghcr.io/open-webui/open-webui:v0.11.4@sha256:9591b13f13843c7721c2b8eaf7382846c81b3ffe126526d1888d1fed50c6a33f
     pull_policy: missing
     container_name: open-webui
     networks: [ "demo", "dokploy-network" ]
@@ -586,8 +599,9 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
+      # Pipes/Functions live in Open WebUI's DB (added via the UI or
+      # POST /api/v1/functions/create), not as files, so no pipe bind mount.
       - open-webui:/app/backend/data
-      - ./open-webui/pipes/n8n_pipe.py:/app/backend/data/pipes/n8n_pipe.py:ro
     environment:
       - OLLAMA_BASE_URL=http://ollama-cpu:11434
       # Default model(s) for new users/chats — set via the agentic env.
@@ -607,12 +621,13 @@ services:
   # ──────────────── Open WebUI PROVISIONER (first admin) ────────────────
   # One-shot (same pattern as n8n-provision): pre-seeds the admin account so the
   # publicly routed chat.<domain> never sits in "first signup becomes admin".
-  # Idempotent — 400 "already registered" and 403 "signups disabled" are treated
+  # Idempotent — 403 "signups disabled" and 400 "already registered" are treated
   # as no-ops, so re-deploys against an already-provisioned (or live) instance
-  # change nothing. The exposure is that ENABLE_SIGNUP is left on here, so whoever
-  # signs up first becomes admin; this one-shot claims that slot during deploy.
-  # Operators may additionally set ENABLE_SIGNUP=false on open-webui to close
-  # signups entirely, but that default is left untouched.
+  # change nothing. The first signup is promoted to admin and Open WebUI itself
+  # then persists ui.enable_signup=False, so the exposure window is only until
+  # that first signup; this one-shot claims the slot during deploy. ENABLE_SIGNUP
+  # on open-webui only seeds the setting on first boot (the DB value wins after
+  # that unless ENABLE_PERSISTENT_CONFIG=false), and it is left untouched here.
   openwebui-provision:
     image: curlimages/curl:8.9.1
     container_name: openwebui-provision

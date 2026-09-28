@@ -1,11 +1,13 @@
 #!/usr/bin/env sh
 # This script provisions the first (admin) user in Open WebUI so the publicly
 # exposed chat UI never sits in the "first signup becomes admin" state.
-# Endpoint contract verified against the pinned image's upstream open-webui
-# auths router: POST /api/v1/auths/signup {name,email,password} — the first user
-# is auto-promoted to the admin role. Re-deploys are idempotent via the signup
-# status alone: 400 EMAIL_TAKEN ("already registered") once the admin exists, or
-# 403 ACCESS_PROHIBITED if signups have since been disabled — both no-ops here.
+# Endpoint contract verified against the pinned image's (v0.11.4) upstream
+# open-webui auths router: POST /api/v1/auths/signup {name,email,password} — the
+# first user is auto-promoted to the admin role, and Open WebUI itself then
+# persists ui.enable_signup=False. Re-deploys are idempotent via the signup status
+# alone: normally 403 ACCESS_PROHIBITED (signups closed once the admin exists), or
+# 400 EMAIL_TAKEN ("already registered") only if signups were re-enabled — both
+# no-ops here.
 # Author: Khalid Alshawwaf
 
 set -e
@@ -71,18 +73,19 @@ while :; do
   # 200 → first user created and auto-promoted to admin
   [ "$SIGNUP_STATUS" = "200" ] && { echo "admin created!!!!!"; exit 0; }
 
-  # 400 "already registered" → the admin exists from a previous deploy — no-op
+  # 400 "already registered" → the admin exists from a previous deploy and signups
+  # were re-enabled afterwards (e.g. in the admin settings) — no-op
   if [ "$SIGNUP_STATUS" = "400" ] && echo "$SIGNUP_BODY" | grep -qi "already registered"; then
     echo "admin already exists — nothing to do."
     exit 0
   fi
 
-  # 403 → the signup route is disabled (an operator set ENABLE_SIGNUP=false; it is
-  # NOT disabled by default, and Open WebUI does not auto-disable it after the first
-  # user). If signups were turned off, an admin was necessarily created earlier (or
-  # the operator will create one another way), so provisioning has nothing to do —
-  # treat as a no-op rather than failing the deploy.
-  [ "$SIGNUP_STATUS" = "403" ] && { echo "signup route disabled (ENABLE_SIGNUP=false) — assuming admin already provisioned. Nothing to do."; exit 0; }
+  # 403 → signups are closed. This is the normal re-deploy case: Open WebUI persists
+  # ui.enable_signup=False as soon as the first user (the admin) signs up, and the
+  # DB value wins over the ENABLE_SIGNUP env after first boot. Either an admin was
+  # created earlier or an operator closed signups deliberately, so provisioning has
+  # nothing to do — treat as a no-op rather than failing the deploy.
+  [ "$SIGNUP_STATUS" = "403" ] && { echo "signups disabled (403) — assuming admin already provisioned. Nothing to do."; exit 0; }
 
   # any other 400 is NOT idempotent-success (e.g. password policy reject) — surface it
   if [ "$SIGNUP_STATUS" = "400" ]; then
