@@ -1,6 +1,6 @@
 # HTTPS Inspection
 
-> Demo content for the Visible RAG lab — a short, paraphrased primer, NOT official Check Point documentation.
+> Training content for the Visible RAG lab — a short, paraphrased primer, NOT official Check Point documentation.
 
 HTTPS Inspection lets a Security Gateway decrypt, inspect, and re-encrypt TLS traffic so
 that blades like Application Control, IPS, Anti-Virus, and Threat Emulation can see inside

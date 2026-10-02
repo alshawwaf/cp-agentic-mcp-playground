@@ -1,6 +1,6 @@
 # Access Control Layers
 
-> Demo content for the Visible RAG lab — a short, paraphrased primer, NOT official Check Point documentation.
+> Training content for the Visible RAG lab — a short, paraphrased primer, NOT official Check Point documentation.
 
 An Access Control Policy is built from ordered layers, and each layer holds a rulebase that
 is evaluated top-to-bottom until a rule matches. Ordered layers run in sequence: a packet

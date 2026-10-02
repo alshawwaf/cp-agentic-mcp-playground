@@ -1,6 +1,6 @@
 # Application Control and URL Filtering
 
-> Demo content for the Visible RAG lab — a short, paraphrased primer, NOT official Check Point documentation.
+> Training content for the Visible RAG lab — a short, paraphrased primer, NOT official Check Point documentation.
 
 Application Control identifies thousands of applications and widgets regardless of port or
 protocol, while URL Filtering categorizes web destinations so you can allow, block, or limit

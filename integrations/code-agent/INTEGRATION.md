@@ -1,79 +1,50 @@
-# INTEGRATION — Code-First Agent
+# Code-first agent: integration notes
 
-Everything an integrator must add to the shared files lives here, so this feature
-merges cleanly alongside the others. **This feature adds no compose service** —
-`mcp_gateway_client.py` and `agent_loop.py` are runnable examples, not
-long-running services. There is nothing to add to `docker-compose.yml`.
+How the code-first agent fits into the lab. To run it, see [README.md](README.md).
 
----
+## What it adds to the lab
 
-## 1. `docker-compose.yml`
+Nothing runs permanently. `mcp_gateway_client.py` and `agent_loop.py` are examples you start on
+demand in a throwaway `python:3.12-alpine` container. There is no compose service, no web UI, no
+route and no published port.
 
-**No changes.** No new service, no Traefik labels (there is no web UI). The
-scripts run on demand with `docker run` against the existing `mcp-gateway`
-service on the `demo` network.
+| Part | Uses |
+|------|------|
+| MCP tools | `mcp-gateway` at `http://mcp-gateway:8080/mcp`, Bearer `MCP_GATEWAY_TOKEN` |
+| Model | `litellm` at `http://litellm:4000/v1`, model `lab-chat`, Bearer `LITELLM_MASTER_KEY` |
+| Network | `<project>_lab`, the lab network (both services are on it, neither has a host port) |
+| Tracing | Every `lab-chat` call is traced in Langfuse by LiteLLM, like the builders' model calls |
 
----
+## Settings
 
-## 2. `.env-example` — keys to add
+No new setting. The scripts read two values that `./setup.sh` already writes to `.env`:
 
-The gateway URL and token are already covered by the existing
-`MCP_GATEWAY_TOKEN` key (default `cp-mcp-gateway-training-token`). The only new
-key is the Anthropic API key that `agent_loop.py` uses for the LLM brain. Append
-under an appropriate section (e.g. near the other model keys):
+| Variable | Needed by |
+|----------|-----------|
+| `MCP_GATEWAY_TOKEN` | `mcp_gateway_client.py`, `agent_loop.py` |
+| `LITELLM_MASTER_KEY` | `agent_loop.py` |
 
-```dotenv
-# ---------------- Code-first agent (integrations/code-agent) ----------------
-# Used ONLY by integrations/code-agent/agent_loop.py (the code-first LLM tool-use
-# loop) to call the Anthropic Messages API. Leave blank if you only run the raw
-# MCP client (mcp_gateway_client.py), which needs no LLM key. Never commit a real key.
-ANTHROPIC_API_KEY=
-# Optional override; defaults to claude-opus-4-8.
-ANTHROPIC_MODEL=claude-opus-4-8
+The provider key (`AZURE_OPENAI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`)
+stays in the `litellm` container. The scripts never need it. Pass the two values above, and nothing
+else, into the container: the commands in the README read them from `.env` by name, or let
+`op run` resolve 1Password references. The folder is mounted read-only.
+
+## Verify
+
+```sh
+tests/acceptance/run.sh --only CODE-AGENT
 ```
 
-No secrets are committed anywhere; the scripts read these from the environment
-at runtime.
+The check runs the client (handshake and `tools/list`, 190 tools) and, when model calls are on, the
+agent loop (one tool call through the gateway, then an answer). Both passed on the lab's end-to-end runs,
+with the local Ollama model and with Azure OpenAI behind `lab-chat`.
 
----
+## Offline tests
 
-## 3. One-time / on-demand run commands
-
-The gateway has **no published host port** — reach it container-to-container on
-the `demo` network. First find the actual network name (compose prefixes it with
-the project, e.g. `cp-agentic-mcp-playground_demo`):
-
-```bash
-docker network ls | grep demo
+```sh
+.github/scripts/py-isolated.sh -- python3 integrations/code-agent/test_code_agent.py
 ```
 
-Then, from this folder (`integrations/code-agent/`), mount it into a stock
-Python image and run either example. Replace `<demo>` with the network name.
-
-```bash
-# Raw MCP client — full handshake + tools/list + one read-only reputation_ip call
-docker run --rm --network <demo> \
-  -v "$PWD":/app \
-  -e MCP_GATEWAY_TOKEN=cp-mcp-gateway-training-token \
-  python:3.12-alpine python /app/mcp_gateway_client.py
-```
-
-```bash
-# Code-first agent loop — Anthropic brain + MCP tools over the same gateway
-docker run --rm --network <demo> \
-  -v "$PWD":/app \
-  -e MCP_GATEWAY_TOKEN=cp-mcp-gateway-training-token \
-  -e ANTHROPIC_API_KEY=sk-ant-... \
-  python:3.12-alpine python /app/agent_loop.py
-```
-
-Notes:
-
-- On a stock stack the `-e MCP_GATEWAY_TOKEN=...` flag is optional — the scripts
-  default to `cp-mcp-gateway-training-token` and `GATEWAY_URL`
-  `http://mcp-gateway:8080/mcp`. Pass `-e GATEWAY_URL=...` to target a
-  differently-named gateway.
-- If `tools/list` shows 0 tools on a running stack, the gateway enumerated
-  before its sidecars were ready — `docker restart mcp-gateway` and re-run.
-- No `pip install` is performed or required; both scripts are stdlib-only, so
-  the plain `python:3.12-alpine` image is enough.
+They cover Server-Sent Events and plain JSON replies, Bearer auth, JSON-RPC errors, pagination, a
+new session after HTTP 404, `DELETE` on close, tool scoping, and a failing tool call that goes back
+to the model instead of stopping the loop.
