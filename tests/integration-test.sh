@@ -1,164 +1,112 @@
-#!/bin/bash
-###############################################################################
-# Integration Test Suite
-# Tests the full Docker Compose stack
-###############################################################################
+#!/bin/sh
+# tests/integration-test.sh: integration test of the Check Point AI agent lab.
+#
+#   1. docker compose config --quiet         the compose file and .env are valid
+#   2. docker compose up -d                  only with --up: starts or updates the lab
+#   3. wait until no service is starting     (--wait SECONDS, default 900)
+#   4. tests/acceptance/run.sh [options]     the acceptance tests; every option this script does
+#                                            not know (and everything after --) is passed on
+#
+# Safe on a lab in use: it never stops the lab and never removes containers, volumes or images.
+# Needs only sh and docker. Exit status: 0 = every step passed, 1 = a step or check failed,
+# 2 = the test could not run.
+#
+#   tests/integration-test.sh                         check the running lab
+#   tests/integration-test.sh --up --no-model         start it (CI), then check it without model calls
+#   tests/integration-test.sh --up -- --json result.json --mock-provider
 
-set -euo pipefail
+set -u
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd -P) || exit 2
+REPO_ROOT=$(cd "$SCRIPT_DIR/.." && pwd -P) || exit 2
+LAB_ROOT=$REPO_ROOT
+# shellcheck source=SCRIPTDIR/test-helpers.sh
+. "$SCRIPT_DIR/test-helpers.sh"
+# shellcheck source=SCRIPTDIR/../scripts/lib/labenv.sh
+. "$REPO_ROOT/scripts/lib/labenv.sh"
 
-# Source test helpers
-# shellcheck source=test-helpers.sh
-source "$SCRIPT_DIR/test-helpers.sh"
+usage() {
+  cat <<'EOF'
+Usage: tests/integration-test.sh [--up] [--wait SECONDS] [--project-dir DIR] [--] [acceptance options]
 
-PROFILE="${PROFILE:-cpu}"
-SKIP_CLEANUP="${SKIP_CLEANUP:-0}"
+  --up               Start or update the lab first (docker compose up -d). Nothing is removed.
+  --wait SECONDS     How long to wait for services that are still starting (default 900).
+  --project-dir DIR  Lab directory holding docker-compose.yml and .env (default: this repository).
+                     Passed on to the acceptance tests.
+  -h, --help
 
-# Trap to ensure cleanup on exit
-cleanup() {
-  local exit_code=$?
-  
-  if [[ $SKIP_CLEANUP -eq 0 ]]; then
-    cleanup_stack "$PROFILE"
-  else
-    log_warning "Skipping cleanup (SKIP_CLEANUP=1)"
-  fi
-  
-  exit $exit_code
+Other options go to tests/acceptance/run.sh (see tests/acceptance/run.sh --help), for example
+--no-model, --only IDS, --json FILE, --mock-provider. This script never stops the lab.
+EOF
 }
 
-trap cleanup EXIT INT TERM
+up=0
+wait_s=900
+project_args=
+while [ $# -gt 0 ]; do
+  case $1 in
+    --up) up=1 ;;
+    --wait) [ $# -ge 2 ] || lab_die "--wait needs a number of seconds" 2; wait_s=$2; shift ;;
+    --project-dir) [ $# -ge 2 ] || lab_die "--project-dir needs a directory" 2
+      LAB_ROOT=$(cd "$2" && pwd -P) || lab_die "no such directory: $2" 2
+      project_args=$LAB_ROOT; shift ;;
+    -h | --help) usage; exit 0 ;;
+    --) shift; break ;;
+    *) break ;;
+  esac
+  shift
+done
+case $wait_s in '' | *[!0-9]*) lab_die "--wait needs a number of seconds" 2 ;; esac
+lab_have_docker || lab_die "docker is not installed or not on PATH" 2
+lab_docker_up || lab_die "Docker is not running" 2
 
-main() {
-  log_info "=== Integration Test Suite ==="
-  log_info "Profile: $PROFILE"
-  echo ""
-  
-  cd "$PROJECT_DIR"
-  
-  # Test 1: Validate docker-compose.yml
-  log_info "Test Group: Docker Compose Configuration"
-  docker compose config --quiet
-  assert_true $? "docker-compose.yml is valid"
-  echo ""
-  
-  # Test 2: Build custom n8n image
-  log_info "Test Group: Image Build"
-  log_info "Building custom n8n image..."
-  docker build --quiet -f docker/n8n/Dockerfile docker/n8n > /dev/null
-  assert_true $? "Custom n8n image builds successfully"
-  echo ""
-  
-  # Test 3: Start the stack
-  log_info "Test Group: Stack Startup"
-  log_info "Starting Docker Compose stack..."
-  docker compose --profile "$PROFILE" up -d
-  assert_true $? "Stack starts without errors"
-  echo ""
-  
-  # Test 4: Wait for core services
-  log_info "Test Group: Core Service Health"
-  
-  wait_for_container "postgres" 60
-  assert_container_running "postgres"
-  
-  wait_for_container "n8n" 90
-  assert_container_running "n8n"
-  
-  wait_for_http "http://localhost:5678/healthz" 120 "n8n"
-  assert_http_ok "http://localhost:5678/healthz"
-  
-  # Test Postgres connectivity
-  docker exec postgres pg_isready -U admin -d n8n > /dev/null 2>&1
-  assert_true $? "PostgreSQL accepts connections"
-  
-  echo ""
-  
-  # Test 5: Ollama
-  log_info "Test Group: Ollama Service"
-  
-  if [[ "$PROFILE" == "cpu" ]]; then
-    wait_for_container "ollama-cpu" 60
-    assert_container_running "ollama-cpu"
-    
-    sleep 10  # Give Ollama a moment to fully initialize
-    docker exec ollama-cpu sh -c 'OLLAMA_HOST=http://127.0.0.1:11434 ollama list' > /dev/null 2>&1
-    assert_true $? "Ollama API is responsive"
-  fi
-  
-  echo ""
-  
-  # Test 6: AI Services (profile-dependent)
-  if [[ "$PROFILE" == "cpu" ]]; then
-    log_info "Test Group: AI Services"
-    
-    wait_for_container "open-webui" 60
-    assert_container_running "open-webui"
-    
-    wait_for_container "langflow" 60
-    assert_container_running "langflow"
-    
-    wait_for_http "http://localhost:3000" 90 "Open WebUI"
-    assert_http_ok "http://localhost:3000"
-    
-    wait_for_http "http://localhost:7860" 90 "Langflow"
-    assert_http_ok "http://localhost:7860"
-    
-    echo ""
-  fi
-  
-  # Test 7: Flowise and Qdrant
-  log_info "Test Group: Additional Services"
-  
-  wait_for_container "flowise" 60
-  assert_container_running "flowise"
-  
-  wait_for_http "http://localhost:3001" 90 "Flowise"
-  assert_http_ok "http://localhost:3001"
-  
-  wait_for_container "qdrant" 60
-  assert_container_running "qdrant"
-  
-  wait_for_http "http://localhost:6333/healthz" 60 "Qdrant"
-  assert_http_ok "http://localhost:6333/healthz"
-  
-  echo ""
-  
-  # Test 8: MCP Servers (sample of critical ones)
-  log_info "Test Group: MCP Servers (Sample)"
-  
-  declare -a critical_mcp_servers=(
-    "mcp-documentation:7300"
-    "threat-emulation-mcp:7304"
-    "spark-management-mcp:7306"
-  )
-  
-  for server_info in "${critical_mcp_servers[@]}"; do
-    IFS=':' read -r container port <<< "$server_info"
-    
-    wait_for_container "$container" 60
-    assert_container_running "$container"
-    
-    wait_for_http "http://localhost:${port}" 30 "$container"
-    assert_http_ok "http://localhost:${port}"
-  done
-  
-  echo ""
-  
-  # Test 9: n8n provisioning (check if owner was created)
-  log_info "Test Group: n8n Provisioning"
-  
-  # Check if n8n-provision container completed successfully
-  local provision_status
-  provision_status=$(docker inspect n8n-provision --format='{{.State.ExitCode}}' 2>/dev/null || echo "255")
-  assert_equals "0" "$provision_status" "n8n provisioner completed successfully"
-  
-  echo ""
-  
-  # Print summary
-  print_test_summary
+# pending_services: running services that are still starting (health "starting", or a one-shot job
+# that has not finished yet).
+pending_services() {
+  _pp=$(lab_project_name)
+  _ids=$(docker ps -q --no-trunc --filter "label=com.docker.compose.project=$_pp" \
+    --filter "label=com.docker.compose.oneoff=False" 2>/dev/null </dev/null | tr '\n' ' ')
+  [ -n "$(printf '%s' "$_ids" | tr -d ' ')" ] || return 0
+  # shellcheck disable=SC2086
+  docker inspect -f '{{index .Config.Labels "com.docker.compose.service"}}|{{.State.Status}}|{{if .State.Health}}{{.State.Health.Status}}{{end}}|{{.HostConfig.RestartPolicy.Name}}' \
+    $_ids 2>/dev/null </dev/null |
+    awk -F'|' '$3 == "starting" || ($2 == "running" && $3 == "" && ($4 == "no" || $4 == "")) { printf "%s ", $1 }'
 }
 
-main
+log_info "Check Point AI agent lab: integration test (lab directory $LAB_ROOT)"
+
+log_info "Step 1: docker compose config"
+lab_compose config --quiet </dev/null
+assert_true $? "docker-compose.yml and .env are valid (docker compose config --quiet)"
+
+if [ "$up" = 1 ]; then
+  log_info "Step 2: docker compose up -d (starts or updates the lab; nothing is removed)"
+  lab_compose up -d </dev/null
+  assert_true $? "the lab starts (docker compose up -d)"
+else
+  log_info "Step 2: skipped (the lab is already running; --up starts it)"
+fi
+
+log_info "Step 3: waiting up to ${wait_s}s for services that are still starting"
+_tries=$(( (wait_s + 9) / 10 ))
+_pending=$(pending_services)
+while [ -n "$_pending" ] && [ "$_tries" -gt 0 ]; do
+  log_info "  still starting: $_pending"
+  sleep 10
+  _tries=$((_tries - 1))
+  _pending=$(pending_services)
+done
+assert_equals "" "$_pending" "no service is still starting"
+
+log_info "Step 4: acceptance tests (tests/acceptance/run.sh)"
+if [ -n "$project_args" ]; then
+  "$SCRIPT_DIR/acceptance/run.sh" --project-dir "$project_args" "$@"
+else
+  "$SCRIPT_DIR/acceptance/run.sh" "$@"
+fi
+acc_rc=$?
+assert_true "$acc_rc" "acceptance tests"
+
+if print_test_summary; then exit 0; fi
+[ "$acc_rc" -eq 2 ] && exit 2
+exit 1
