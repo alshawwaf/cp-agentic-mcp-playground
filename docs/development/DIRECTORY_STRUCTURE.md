@@ -86,7 +86,6 @@ cp-agentic-mcp-playground/
 │   ├── development/             DEVELOPER_GUIDE.md, DIRECTORY_STRUCTURE.md (this file)
 │   └── assets/                  Architecture diagrams (light and dark), used by README.md
 │
-├── assets/                      Four example n8n tool workflows
 └── .vscode/settings.json        Editor settings
 ```
 
