@@ -141,7 +141,7 @@ Start an MCP scan with these settings:
 
 The scan runs in `aig-agent`, which reaches `vuln-mcp` over `security-lab`. Scan only `vuln-mcp`. The lab pins AI-Infra-Guard v4.6.3, the release with the upstream fix for a code-execution flaw in its MCP scan.
 
-**Expected findings.** In the lab test, the scan flagged `read_local_file` (high risk: file read) and `weather_lookup` (prompt injection in its description). The report came back in Chinese although English was selected. Tool names, risk levels and evidence stay readable; translate the text if you need to.
+**Expected findings.** The model decides what to test, so the findings vary from run to run. In the lab tests, English scans reported two to five issues per run, among them prompt injection in the `weather_lookup` description, injected text in `fetch_ticket` results and the file-read scope of `read_local_file`. The report is in English: the lab sets the language of every scan to English (see [AI-Infra-Guard](../REFERENCE.md#ai-infra-guard-profile-ai-red-team)). A finding can quote a short Chinese status line from the scanner's built-in prompts.
 
 **Rug-pull re-scan.** A scan reads the descriptions that `tools/list` returns at that moment. Scan once with the rug pull clean, call `currency_convert` from the agent, then scan again: the second scan sees the poisoned `currency_convert` description.
 
@@ -225,6 +225,6 @@ Treat every tool description and every tool result as untrusted input:
 | `AIG` fails with `aig-webserver is not running` | The profile is on, but the containers stopped | `docker compose up -d`, then `docker compose ps aig-webserver aig-agent` |
 | `AIG` fails with `web UI no answer (... Name does not resolve)` | The test container could not join the `ai-red-team` network (the run prints `warning: could not join the test container ...`) | `docker compose ps aig-webserver aig-agent`, then `tests/acceptance/run.sh --only AIG` |
 | `http://localhost:8088` does not open | No port is published on `aig-ui`, or `aig-ui` is not running | Add the override above, then `docker compose up -d aig-ui` and `docker compose ps aig-ui` |
-| The scan report is in Chinese | Seen in the lab test | Read the tool names and risk levels, or translate the text |
+| The scan report is in Chinese | The English fix is not active in `aig-agent` | `docker compose up -d aig-agent`, then scan again. See [Troubleshooting](../REFERENCE.md#security-lab-and-ai-infra-guard-issues) |
 
 Related: `integrations/mcp-security-lab/` (the server and its tests), [Build Your Own MCP Server](Build_Your_Own_MCP_Exercise.md) (the safe server shape this lab mirrors).

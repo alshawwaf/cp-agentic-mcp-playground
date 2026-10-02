@@ -177,6 +177,7 @@ Compose prefixes named volumes with the project name, for example `cp-agentic-mc
 | `./integrations` | `builders-import`, `evals-run` (read-only). Sub-folders: `litellm` into `litellm`, `rag-cp-docs` into `rag-ingest`, `mcp-security-lab` into `vuln-mcp` (all read-only) | Seeded flows, LiteLLM config script, RAG corpus, security lab server |
 | `./certs` | The MCP servers at `/certs` (read-only), except `threat-emulation-mcp` and `cpinfo-analysis-mcp` | Certificates for self-signed servers (see [Certificates](#certificates-for-self-signed-servers)) |
 | `./mcp-gateway/catalog.yaml` | `mcp-gateway` (read-only) | The gateway catalog |
+| `./aig` | `aig-ui` (`ui-nginx.conf`), `aig-agent` (`scanner-uv.sh`); single files, read-only | The AI-Infra-Guard UI proxy and the English-report fix |
 | `/var/run/docker.sock` | `docker-socket-proxy` only (read-only) | Docker API, read through the proxy |
 
 ### Images and versions
@@ -419,6 +420,7 @@ Each product is optional. An agent whose product is not set answers that it is n
 | `CPINFO_LOG_LEVEL` | `info` | `cpinfo-analysis-mcp` | |
 | `# EVALS_BASE_URL` | `http://n8n:5678` | `evals-run` | For a remote lab, an `https://` URL |
 | `# AIG_LLM_MODEL`, `# AIG_LLM_BASE_URL`, `# AIG_LLM_API_KEY` | `lab-chat`, `http://litellm:4000/v1`, `LITELLM_MASTER_KEY` | `aig-agent` | The scanner's model. Keep the defaults |
+| `# AIG_SCAN_LANGUAGE` | `en` | `aig-agent` (through `aig/scanner-uv.sh`) | Language of scan reports: `en` or `zh` |
 
 Compose also reads one setting that `.env-example` does not list: `RUG_PULL_RESET_SECONDS` (default `600`, `vuln-mcp`), the seconds after the last `currency_convert` call before the Security Lab rug pull turns clean again.
 
@@ -1017,7 +1019,7 @@ Nothing from the security lab or a scan may reach the Docker host or the interne
 |---|---|---|
 | `vuln-mcp` | `security-lab` (internal) only | No ports, read-only file system, uid 65534, `cap_drop: ALL`, `no-new-privileges`, code mounted read-only, no host data mounts |
 | `aig-webserver` | `ai-red-team` (internal) only | No ports, no route, `no-new-privileges` |
-| `aig-agent` | `ai-red-team` and `security-lab` (both internal) | No ports, no `SYS_ADMIN`, no `seccomp=unconfined`, `no-new-privileges` |
+| `aig-agent` | `ai-red-team` and `security-lab` (both internal) | No ports, `cap_drop: ALL` plus `KILL`, `SETGID` and `SETUID` for its root entrypoint only (the scanners run as uid 1000 with no capabilities), no `SYS_ADMIN`, no `seccomp=unconfined`, `no-new-privileges`, read-only file system (tmpfs for temporary files, uploads and logs), `pids_limit` 512 |
 | `aig-provision` | `ai-red-team` (internal) only | Read-only, `cap_drop: ALL`, `no-new-privileges` |
 | `aig-ui` | `aig-ui-access` and `ai-red-team` | No port by default. Read-only, `cap_drop: ALL`, `no-new-privileges`, uid 101, IP forwarding off. Forwards only to `http://aig-webserver:8088` |
 
@@ -1060,7 +1062,9 @@ Guide: [MCP Security Lab](guides/MCP_Security_Lab.md).
 - `aig-provision` registers `lab-chat` as a model in AI-Infra-Guard (`aig-provision: registered model lab-chat (lab-chat through LiteLLM). Select it when you start a scan.`). It leaves an existing `lab-chat` model as it is. Select `lab-chat` when you start a scan
 - Scan target for the lab: `http://vuln-mcp:3099`
 - Tested scan: an MCP scan of `vuln-mcp` through the AI-Infra-Guard task API, from inside `aig-agent`, with `lab-chat` on Azure OpenAI. It found `read_local_file` (high risk, file read) and `weather_lookup` (prompt injection in the description)
-- **Report language.** The scan report came back in Chinese although the task asked for English (language `en`). Translate the findings if needed
+- **Report language: English.** AI-Infra-Guard v4.6.3 falls back to Chinese when a task has no language, and its task API drops the `language` of MCP scans. The lab fixes both: `aig-ui` opens the UI with `?lang=en`, and `aig-agent` starts the scanners through [`aig/scanner-uv.sh`](../aig/scanner-uv.sh) (`AIG_UV_BIN`), which sets their language to `AIG_SCAN_LANGUAGE` (default `en`; set `AIG_SCAN_LANGUAGE=zh` in `.env` for Chinese). A finding can still quote a short Chinese status line from the scanner's built-in prompts. In the lab tests, English MCP scans of `vuln-mcp` found two to five issues per run
+- `aig-agent` runs its entrypoint as root only to start the API checker and the agent as uid 1000 (gosu) and to restart and stop them: `KILL`, `SETGID`, `SETUID`. Its `chown` of `/api-checker-data` logs `Operation not permitted` at start; that is expected (the folder already belongs to uid 1000). The scanners, nmap included (TCP connect scans), run with no capabilities, so `NET_RAW` is dropped
+- **Logs hold the scanner key.** AI-Infra-Guard v4.6.3 logs the full scanner command line in `aig-agent` (`--api_key ...`) and, for task API scans, the task message with the model token in `aig-webserver`. That token is the key `aig-provision` registered for `lab-chat` (`LITELLM_MASTER_KEY` by default). Never paste `docker compose logs aig-agent` or `aig-webserver` output into tickets or chats
 - `SYS_ADMIN` and `seccomp=unconfined` are upstream settings for Chromium screenshots of scanned web services. The MCP scan does not need them, so the lab leaves them out
 
 ### Turning them on and off
@@ -1271,7 +1275,7 @@ Start with `./scripts/doctor.sh --preflight` (settings) or `./scripts/doctor.sh 
 | `SECLAB`: the n8n Security Lab agent is not published | `vuln-mcp` was not running at import time | `docker compose run --rm n8n-import` |
 | The AI-Infra-Guard web UI does not open in a browser | By design: no route and no published port by default | Publish `127.0.0.1:8088:8088` on `aig-ui` in a local override, then `docker compose up -d aig-ui` (see [AI-Infra-Guard](#ai-infra-guard-profile-ai-red-team)) |
 | A scan cannot select a model | `aig-provision` did not run | `docker compose logs aig-provision`, then `docker compose up -d aig-provision` |
-| The scan report is in Chinese | Upstream report language | Translate the findings |
+| The scan report is in Chinese | The English fix is not active: `aig-agent` was not recreated, or `aig/scanner-uv.sh` is not executable | `docker compose up -d aig-agent`, then `docker compose exec aig-agent sh -c 'echo $AIG_UV_BIN; ls -l /opt/lab/scanner-uv'` (`chmod 755 aig/scanner-uv.sh` and `docker compose up -d aig-agent` if it is not executable) |
 
 ### Host and tools
 
