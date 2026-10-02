@@ -1,151 +1,178 @@
 ###############################################################################
-# Multi-Service Stack
-# - n8n (workflow automation)
-# - PostgreSQL (n8n backend)
-# - Ollama (local LLMs) CPU/GPU
-# - Langflow (AI flow builder)
-# - Open-WebUI (AI chat interface)
-# - Flowise (LLM orchestration UI)
-# - Qdrant (vector database)
-# - AI-Infra-Guard (AI Red Teaming platform)
+# Check Point AI agent lab: Docker Compose stack
+#
+#   ./setup.sh               writes .env (keys, generated secrets) and creates missing networks
+#   docker compose up -d     starts the default lab (or: op run --env-file=.env -- docker compose up -d)
+#   ./scripts/doctor.sh --post-start    checks it, 5 to 10 minutes later
+#
+# RESOURCE-SAFE DEFAULT
+# The default stack (Standard lab) is sized for Docker with 4 CPUs and 8 GB of memory (Docker
+# Desktop: give it at least 4 CPUs and 8 GB). Every long-running service has a CPU and a
+# memory cap, so a busy service is throttled or restarted instead of starving the host.
+# The memory caps of the default stack add up to about 7.6 GB (actual use is much lower).
+# Heavy or optional parts are profiles. Turn them on in .env, comma-separated:
+#   COMPOSE_PROFILES=langflow,local-chat        (or once: docker compose --profile langflow up -d)
+#
+# Profile        Services                                         Why it is opt-in
+# (default)      postgres, n8n (+ n8n-provision, n8n-import),     The promised core: n8n, Flowise,
+#                flowise (+ flowise-db-init), litellm (lab-chat), the lab-chat model endpoint,
+#                langfuse (+ langfuse-db-init), qdrant +          tracing, RAG, the MCP gateway and
+#                rag-ingest, ollama-cpu + ollama-pull-models-cpu, direct MCP servers.
+#                mcp-gateway + docker-socket-proxy, the 14
+#                Check Point MCP servers, builders-import
+# langflow       langflow                                         Heaviest builder (about 1.2-2 GB).
+# local-chat     open-webui, openwebui-provision,                 Local chat runs a model on the CPU
+#                ollama-pull-chat-models                          (several GB of RAM, slow on a CPU).
+# local-models   ollama-pull-chat-models                          Pulls OLLAMA_MODELS (about 3.4 GB)
+#                                                                 even when a cloud key is set.
+# complete       langflow + local-chat                            The Complete lab (Docker with 6
+#                                                                 CPUs and 16 GB); lab hosts use it.
+# evals          evals-run (one-shot)                             Sends test prompts to the agents.
+# ai-red-team    aig-webserver, aig-agent, aig-provision,         AI-Infra-Guard scanner, no sign-in:
+#                aig-ui                                           local access only (see aig-ui).
+# exercises      ips-cve-mcp                                      Build Your Own MCP exercise.
+# security-lab   vuln-mcp                                         Intentionally vulnerable server, on
+#                                                                 its own isolated network.
+# policypilot    policypilot-mcp                                  Needs a PolicyPilot image and data.
+# gpu-nvidia     ollama-gpu                                       NVIDIA hosts only.
+#
+# Local model: the default stack pulls only nomic-embed-text (RAG embeddings, 274 MB) unless
+# lab-chat runs on Ollama (LAB_MODEL_PROVIDER=ollama, or no cloud key at all); then it also
+# pulls OLLAMA_CHAT_MODEL. Local chat needs OLLAMA_MEM_LIMIT=6g in .env and Docker with 16 GB of memory.
+#
+# Networks: "lab" is the internal lab network (no host ports are published). "dokploy-network"
+# is the lab host's reverse-proxy network; ./setup.sh creates an empty local one when it is
+# missing. "security-lab" is an internal network (no internet) for the vulnerable MCP server.
+# To open an app on a workstation, publish a port on 127.0.0.1 in a local docker-compose.override.yml.
 ###############################################################################
 
 ###############################################################################
 # Networks
 ###############################################################################
 networks:
-  demo:
+  lab:
+  # The lab host's reverse-proxy network. ./setup.sh creates it when it is missing.
   dokploy-network:
     external: true
-    ###############################################################################
-    # Volumes
-    ###############################################################################
+  # No internet and no other lab services: only the vulnerable MCP server and its clients (n8n,
+  # n8n-import, Flowise, Langflow, builders-import and the AI-Infra-Guard scanner aig-agent).
+  security-lab:
+    internal: true
+  # No internet and no route to the Docker host. Members: aig-webserver, aig-agent, aig-provision,
+  # aig-ui (the opt-in UI proxy) and LiteLLM (it joins only to serve lab-chat). The scanner aig-agent
+  # also joins security-lab, where it reaches vuln-mcp and the builders that join that network.
+  # Scans cannot leave: these networks have no default route out.
+  ai-red-team:
+    internal: true
+  # Only aig-ui joins it: the published UI port (local override) and nothing else from the lab.
+  aig-ui-access:
+
+###############################################################################
+# Volumes
+###############################################################################
 volumes:
   n8n_storage:
   postgres_storage:
   ollama_storage:
   open-webui:
-  flowise:
-  langflow:
-  vllm_storage:
+  langflow:           # Langflow database, secret key and flows (LANGFLOW_CONFIG_DIR)
   aig_data:
   aig_db:
   aig_logs:
   aig_uploads:
   policypilot_data:   # PolicyPilot MCP sidecar DB (opt-in `policypilot` profile)
-  qdrant_storage:     # Qdrant vector DB storage (RAG / rag-cp-docs)
+  # Qdrant 1.19 cannot open storage written by 1.12, so it starts on a new volume and
+  # rag-ingest refills it. The old <project>_qdrant_storage volume can be removed.
+  qdrant_data:
 
-    ###############################################################################
-    # Common Service Definitions (Anchors)
-    ###############################################################################
+###############################################################################
+# Shared settings (YAML anchors)
+###############################################################################
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
 
-    # ──────────────── n8n Base ────────────────
-x-n8n: &service-n8n
-  image: n8nio/n8n:2.40.7
-  networks: [ "demo" ]
-  environment:
-    - DB_TYPE=postgresdb
-    - DB_POSTGRESDB_HOST=postgres
-    - DB_POSTGRESDB_USER=${POSTGRES_USER}
-    - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
-    - N8N_DIAGNOSTICS_ENABLED=false
-    - N8N_PERSONALIZATION_ENABLED=false
-    # IMPORTANT for container-to-container curl
-    - N8N_SECURE_COOKIE=false
-    - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
-    - N8N_USER_MANAGEMENT_JWT_SECRET=${N8N_USER_MANAGEMENT_JWT_SECRET}
-    # we will ALSO call /rest/owner/setup in the provisioner with these:
-    - N8N_USER_MANAGEMENT_EMAIL=${N8N_ADMIN_EMAIL}
-    - N8N_USER_MANAGEMENT_FIRST_NAME=${N8N_ADMIN_FIRST_NAME}
-    - N8N_USER_MANAGEMENT_LAST_NAME=${N8N_ADMIN_LAST_NAME}
-    - N8N_USER_MANAGEMENT_PASSWORD=${N8N_ADMIN_PASSWORD}
-    - N8N_USER_MANAGEMENT_DISABLED=false
-    # basic auth (MUST match provisioner)
-    - N8N_BASIC_AUTH_ACTIVE=true
-    - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
-    - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
-    # n8n 2.40 reads N8N_WEBHOOK_URL for production AND test webhook URLs; without
-    # it, test URLs fall back to N8N_EDITOR_BASE_URL. Older images read only
-    # WEBHOOK_URL, so both are set from the same .env value. n8n 2.40 logs a
-    # deprecation warning for WEBHOOK_URL; remove the WEBHOOK_URL line below once
-    # the published :latest image is n8n 2.40+.
-    - N8N_WEBHOOK_URL=${WEBHOOK_URL}
-    - WEBHOOK_URL=${WEBHOOK_URL}
-    - N8N_EDITOR_BASE_URL=${N8N_EDITOR_BASE_URL}
-    - N8N_PUSH_BACKEND=${N8N_PUSH_BACKEND}
-    # allow community packages — no longer needed: every workflow now uses the
-    # NATIVE MCP Client Tool node that ships with n8n. Re-enable only if a
-    # future workflow needs a community node again.
-    # - N8N_COMMUNITY_PACKAGES_ENABLED=true
-    # - N8N_UNVERIFIED_PACKAGES_ENABLED=true
-    # - N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
+# Starts one Check Point MCP server from the lab image (/usr/local/bin/<service name>).
+# - MCP_REQUIRED: settings the server cannot start without. When one is blank it prints one
+#   "not configured" line and exits 0; restart: on-failure then leaves it stopped.
+# - A management host (or Smart-1 Cloud URL) without credentials would crash the server at
+#   start, so it is ignored with one warning line and the server starts without access.
+x-mcp-start: &mcp-start |
+  for v in $${MCP_REQUIRED:-}; do
+    if [ -z "$$(printenv "$$v" 2>/dev/null)" ]; then
+      echo "$${MCP_PRODUCT} MCP server is not configured. Set $${MCP_SETTINGS} in .env, then run: docker compose up -d $${MCP_SERVICE}"
+      exit 0
+    fi
+  done
+  if [ -n "$${MANAGEMENT_HOST:-}$${S1C_URL:-}" ] && [ -z "$${API_KEY:-}" ]; then
+    if [ -z "$${MANAGEMENT_HOST:-}" ]; then
+      # Smart-1 Cloud (S1C_URL without MANAGEMENT_HOST) accepts only an API key.
+      echo "WARNING: S1C_URL is set without MANAGEMENT_API_KEY. Smart-1 Cloud needs an API key, so the $${MCP_PRODUCT} MCP server starts without management access. Fix .env, then run: docker compose up -d $${MCP_SERVICE}"
+      unset MANAGEMENT_HOST S1C_URL
+    elif [ -z "$${USERNAME:-}" ] || [ -z "$${PASSWORD:-}" ]; then
+      echo "WARNING: MANAGEMENT_HOST is set without MANAGEMENT_API_KEY (or MANAGEMENT_USERNAME and MANAGEMENT_PASSWORD), so the $${MCP_PRODUCT} MCP server starts without management access. Fix .env, then run: docker compose up -d $${MCP_SERVICE}"
+      unset MANAGEMENT_HOST S1C_URL
+    fi
+  fi
+  exec "/usr/local/bin/$${MCP_SERVICE}" --transport http --transport-port "$${MCP_PORT}"
 
-# ──────────────── Ollama Base ────────────────
-
-x-ollama: &service-ollama
-  image: ollama/ollama:0.31.1
+# Every Check Point MCP server: the lab image, no host port, about 40 MB in use each.
+x-mcp-sidecar: &mcp-sidecar
+  # Built and published by .github/workflows/publish-image.yml (:latest and :<commit> on every
+  # push to main). Pin one build with LAB_IMAGE_TAG=<commit>; ./update.sh pulls new builds.
+  image: ghcr.io/alshawwaf/cp-agentic-n8n:${LAB_IMAGE_TAG:-latest}
   pull_policy: missing
-  networks: [ "demo", "dokploy-network" ]
-  restart: unless-stopped
+  networks: [ "lab" ]
+  entrypoint: [ "/bin/sh", "-c", *mcp-start ]
+  # Optional certificates for self-signed management servers and gateways (see certs/README.md).
   volumes:
-    - ollama_storage:/root/.ollama
-  # ensure the daemon is actually ready before dependents run
+    - ./certs:/certs:ro
+  # The gateway lists tools once at start, so it waits until each server it fronts accepts connections.
   healthcheck:
-    test: [ "CMD-SHELL", "OLLAMA_HOST=http://127.0.0.1:11434 ollama list >/dev/null 2>&1" ]
-    interval: 5s
+    test: [ "CMD", "node", "-e", "require('net').connect(Number(process.env.MCP_PORT),'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))" ]
+    interval: 10s
     timeout: 5s
-    retries: 20
+    retries: 18
+    start_period: 20s
+  cap_drop: [ "ALL" ]
+  security_opt: [ "no-new-privileges:true" ]
+  cpus: 0.25
+  mem_limit: 128m
+  logging: *default-logging
+  restart: unless-stopped
 
-# ──────────────── Ollama Model Puller ────────────────
-x-init-ollama: &init-ollama
-  image: ollama/ollama:0.31.1
-  pull_policy: missing
-  networks: [ "demo" ]
-  volumes:
-    - ollama_storage:/root/.ollama
-  entrypoint: /bin/sh
-  command:
-    - "-lc"
-    - |
-      echo "Waiting for Ollama @ $${OLLAMA_HOST} ..."
-      # loop until the server responds
-      until OLLAMA_HOST="$${OLLAMA_HOST}" ollama list >/dev/null 2>&1; do
-        echo "  Ollama not ready yet..."
-        sleep 3
-      done
-      # Model list comes from OLLAMA_MODELS in the env (comma-separated).
-      MODELS="${OLLAMA_MODELS:-gemma4:e2b,qwen3.5:4b}"
-      echo "Ollama is ready. Pulling: $${MODELS}"
-      # The install triggers this download and MOVES ON (fire-and-forget), so a
-      # transient network failure must not silently strand a model: retry each
-      # pull up to 5 times with a 15s pause before giving up on that model.
-      for m in $$(echo "$${MODELS}" | tr ',' ' '); do
-        echo ">> pulling $${m}"
-        n=0
-        until OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull "$${m}"; do
-          n=$$((n+1))
-          if [ "$$n" -ge 5 ]; then echo "WARN: giving up on $${m} after 5 attempts"; break; fi
-          echo ">> pull failed for $${m} — retry $${n}/5 in 15s"
-          sleep 15
-        done
-      done
-      echo "LLM Models pulled successfully!!!"
-      # keep the container alive so logs stay visible
-      tail -f /dev/null
+# Management API access for the management-backed MCP servers. Use MANAGEMENT_HOST (on-premises
+# server) or S1C_URL (Smart-1 Cloud), with an API key (or a user name and password).
+x-management-env: &management-env
+  MANAGEMENT_HOST: ${MANAGEMENT_HOST:-}
+  MANAGEMENT_PORT: ${MANAGEMENT_PORT:-443}
+  S1C_URL: ${S1C_URL:-}
+  API_KEY: ${MANAGEMENT_API_KEY:-}
+  USERNAME: ${MANAGEMENT_USERNAME:-}
+  PASSWORD: ${MANAGEMENT_PASSWORD:-}
+  # Self-signed management server: put its certificate in ./certs and set MANAGEMENT_CA_CERT=/certs/<file>.pem.
+  # TLS verification is always on; MANAGEMENT_TLS_SERVERNAME sets the name to check when you connect by IP.
+  MANAGEMENT_CA_CERT: ${MANAGEMENT_CA_CERT:-}
+  MANAGEMENT_TLS_SERVERNAME: ${MANAGEMENT_TLS_SERVERNAME:-}
 
 ###############################################################################
 # Services
 ###############################################################################
 services:
-  # ──────────────── PostgreSQL ────────────────
+  # ──────────────── PostgreSQL (n8n, Flowise, Langfuse) ────────────────
+  # 16 is what existing labs were created with; a major upgrade needs a dump and restore.
+  # n8n 2.40 logs that Postgres 16 gets "compatibility support only"; plan the move to 17.
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16.15-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    pull_policy: missing
     container_name: postgres
-    networks: [ "demo" ]
+    networks: [ "lab" ]
     restart: unless-stopped
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set. Run ./setup.sh}
       - POSTGRES_DB=${POSTGRES_DB}
     volumes:
       - postgres_storage:/var/lib/postgresql/data
@@ -154,39 +181,63 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    cpus: 1.0
+    mem_limit: 512m
+    logging: *default-logging
 
-  # ──────────────── Ollama CPU/GPU ────────────────
+  # ──────────────── Ollama (local models) ────────────────
+  # Default use: the RAG embedding model only (small). Running a chat model locally needs
+  # OLLAMA_MEM_LIMIT=6g (and Docker with 16 GB of memory); with the default 1 GB cap Ollama refuses to
+  # load a chat model instead of starving the host.
   ollama-cpu:
-    image: ollama/ollama:0.31.1
+    image: ollama/ollama:0.31.1@sha256:f1a705f2bd113fb8d15f85f7c217f0dc5f6bebda6b0cc42b82c3ad165ffcb9dc
     pull_policy: missing
     container_name: ollama-cpu
-    # dokploy-network too, so standalone Dokploy apps (e.g. Lakera Demo) can
-    # reach Ollama by name at http://ollama-cpu:11434 — no host-IP hairpin,
-    # no published port, works across redeploys.
-    networks: [ "demo", "dokploy-network" ]
+    # dokploy-network too, so standalone apps on a lab host (for example a standalone Lakera Guard app)
+    # can reach Ollama by name at http://ollama-cpu:11434 without a published port.
+    networks: [ "lab", "dokploy-network" ]
     restart: unless-stopped
     volumes:
       - ollama_storage:/root/.ollama
     environment:
       - OLLAMA_HOST=0.0.0.0:11434
-      - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE}
-      # RAM guard: at most N models resident at once (CPU box, several 9B models).
+      # Unload an idle model after this long (default 10m), so it does not hold RAM all day.
+      - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE:-10m}
+      # RAM guard: at most this many models in memory at once, one request at a time each.
+      - OLLAMA_MAX_LOADED_MODELS=${OLLAMA_MAX_LOADED_MODELS:-2}
+      - OLLAMA_NUM_PARALLEL=1
+    healthcheck:
+      test: [ "CMD-SHELL", "ollama list >/dev/null 2>&1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    cpus: ${OLLAMA_CPUS:-2}
+    mem_limit: ${OLLAMA_MEM_LIMIT:-1g}
+    logging: *default-logging
+
+  # NVIDIA hosts: a second Ollama with GPU access, sharing the model volume (models pulled
+  # through ollama-cpu appear here too). Point lab-chat and Open WebUI at it in .env:
+  #   OLLAMA_API_BASE=http://ollama-gpu:11434
+  ollama-gpu:
+    profiles: [ "gpu-nvidia" ]
+    image: ollama/ollama:0.31.1@sha256:f1a705f2bd113fb8d15f85f7c217f0dc5f6bebda6b0cc42b82c3ad165ffcb9dc
+    pull_policy: missing
+    container_name: ollama-gpu
+    networks: [ "lab", "dokploy-network" ]
+    restart: unless-stopped
+    volumes:
+      - ollama_storage:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+      - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE:-10m}
       - OLLAMA_MAX_LOADED_MODELS=${OLLAMA_MAX_LOADED_MODELS:-2}
     healthcheck:
       test: [ "CMD-SHELL", "ollama list >/dev/null 2>&1" ]
       interval: 5s
       timeout: 5s
       retries: 20
-
-  ollama-gpu:
-    profiles: [ "gpu-nvidia" ]
-    <<: *service-ollama
-    container_name: ollama-gpu
-    environment:
-      - OLLAMA_HOST=0.0.0.0:11434
-      - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE}
-      # RAM guard: at most N models resident at once (CPU box, several 9B models).
-      - OLLAMA_MAX_LOADED_MODELS=${OLLAMA_MAX_LOADED_MODELS:-2}
+    cpus: 4.0
+    mem_limit: 8g
     deploy:
       resources:
         reservations:
@@ -194,318 +245,245 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [ gpu ]
+    logging: *default-logging
 
-  # ──────────────── Ollama Model Pullers ────────────────
+  # ──────────────── Ollama model pulls (one-shot) ────────────────
+  # Pulls go through the Ollama API (the server writes the model volume). Exit 0 when every
+  # model is present, 1 when a model could not be pulled after 5 tries.
   ollama-pull-models-cpu:
-    image: ollama/ollama:0.31.1
+    image: ollama/ollama:0.31.1@sha256:f1a705f2bd113fb8d15f85f7c217f0dc5f6bebda6b0cc42b82c3ad165ffcb9dc
     pull_policy: missing
     container_name: ollama-pull-models-cpu
-    networks: [ "demo" ]
-    volumes:
-      - ollama_storage:/root/.ollama
+    networks: [ "lab" ]
+    depends_on:
+      ollama-cpu:
+        condition: service_healthy
     environment:
       - OLLAMA_HOST=http://ollama-cpu:11434
-    depends_on:
-      # let it start, the script will wait in a loop
-      - ollama-cpu
+      - LAB_MODEL_PROVIDER=${LAB_MODEL_PROVIDER:-auto}
+      - LAB_CHAT_MODEL=${OLLAMA_CHAT_MODEL:-qwen3.5:4b}
+      - LAB_OLLAMA_MEM_LIMIT=${OLLAMA_MEM_LIMIT:-1g}
+      # "1" when a cloud provider is configured (only this flag reaches the container, never a key).
+      - LAB_CLOUD_PROVIDER_SET=${OPENAI_API_KEY:+1}${ANTHROPIC_API_KEY:+1}${GEMINI_API_KEY:+1}${AZURE_OPENAI_API_KEY:+${AZURE_OPENAI_ENDPOINT:+${AZURE_OPENAI_DEPLOYMENT:+1}}}
     entrypoint: /bin/sh
     command:
-      - -lc
+      - -c
       - |
-        echo ">> Waiting for Ollama at $${OLLAMA_HOST} ..."
-        # loop until Ollama answers
-        until OLLAMA_HOST="$${OLLAMA_HOST}" ollama list >/dev/null 2>&1; do
-          echo "  ...still waiting for Ollama ($${OLLAMA_HOST})"
-          sleep 3
-        done
-        # Model list comes from OLLAMA_MODELS in the env (comma-separated).
-        MODELS="${OLLAMA_MODELS:-gemma4:e2b,qwen3.5:4b}"
-        echo "Ollama is up. Pulling: $${MODELS}"
-        # Fire-and-forget contract: the install triggers this download and moves
-        # on, so retry transient failures instead of silently stranding a model.
-        for m in $$(echo "$${MODELS}" | tr ',' ' '); do
-          echo ">> pulling $${m}"
+        models="nomic-embed-text"
+        case "$${LAB_MODEL_PROVIDER}" in
+          ollama) local_chat=1 ;;
+          auto|"") if [ -z "$${LAB_CLOUD_PROVIDER_SET}" ]; then local_chat=1; else local_chat=0; fi ;;
+          *) local_chat=0 ;;
+        esac
+        if [ "$$local_chat" = 1 ]; then
+          models="$$models $${LAB_CHAT_MODEL}"
+          echo "lab-chat runs on the local model $${LAB_CHAT_MODEL} (no cloud key is set). It needs OLLAMA_MEM_LIMIT=6g in .env (now $${LAB_OLLAMA_MEM_LIMIT}) and runs slowly on a CPU."
+        else
+          echo "A cloud model provider is set, so only the RAG embedding model is pulled. Local chat models: add local-chat to COMPOSE_PROFILES."
+        fi
+        failed=0
+        for m in $$models; do
           n=0
-          until OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull "$${m}"; do
+          until ollama pull "$$m" >/dev/null; do
             n=$$((n+1))
-            if [ "$$n" -ge 5 ]; then echo "WARN: giving up on $${m} after 5 attempts"; break; fi
-            echo ">> pull failed for $${m} — retry $${n}/5 in 15s"
+            if [ "$$n" -ge 5 ]; then echo "ERROR: could not pull $$m after 5 tries (network?). Retry: docker compose up -d ollama-pull-models-cpu"; failed=1; break; fi
+            echo "Pull of $$m failed, retry $$n of 5 in 15 s"
             sleep 15
           done
+          [ "$$n" -lt 5 ] && echo "Model ready: $$m"
         done
-        echo "All models pulled!!!"
-        # keep the container alive so logs stay visible
-        tail -f /dev/null
+        exit "$$failed"
+    restart: "no"
+    security_opt: [ "no-new-privileges:true" ]
+    cpus: 0.5
+    mem_limit: 128m
+    logging: *default-logging
 
-  ollama-pull-models-gpu:
-    profiles: [ "gpu-nvidia" ]
-    <<: *init-ollama
-    container_name: ollama-pull-models-gpu
-    environment:
-      - OLLAMA_HOST=http://ollama-gpu:11434
+  # Chat models for Open WebUI (profile local-chat) or for local agents (profile local-models).
+  ollama-pull-chat-models:
+    profiles: [ "local-chat", "local-models", "complete" ]
+    image: ollama/ollama:0.31.1@sha256:f1a705f2bd113fb8d15f85f7c217f0dc5f6bebda6b0cc42b82c3ad165ffcb9dc
+    pull_policy: missing
+    container_name: ollama-pull-chat-models
+    networks: [ "lab" ]
     depends_on:
-      ollama-gpu:
+      ollama-cpu:
         condition: service_healthy
+    environment:
+      - OLLAMA_HOST=http://ollama-cpu:11434
+      - MODELS=${OLLAMA_MODELS:-qwen3.5:4b,nomic-embed-text}
+      - LAB_OLLAMA_MEM_LIMIT=${OLLAMA_MEM_LIMIT:-1g}
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        echo "Pulling local models: $${MODELS}. Running a chat model needs OLLAMA_MEM_LIMIT=6g in .env (now $${LAB_OLLAMA_MEM_LIMIT})."
+        failed=0
+        for m in $$(echo "$${MODELS}" | tr ',' ' '); do
+          n=0
+          until ollama pull "$$m" >/dev/null; do
+            n=$$((n+1))
+            if [ "$$n" -ge 5 ]; then echo "ERROR: could not pull $$m after 5 tries. Retry: docker compose up -d ollama-pull-chat-models"; failed=1; break; fi
+            echo "Pull of $$m failed, retry $$n of 5 in 15 s"
+            sleep 15
+          done
+          [ "$$n" -lt 5 ] && echo "Model ready: $$m"
+        done
+        exit "$$failed"
+    restart: "no"
+    security_opt: [ "no-new-privileges:true" ]
+    cpus: 0.5
+    mem_limit: 128m
+    logging: *default-logging
 
   # ──────────────── n8n ────────────────
   n8n:
-    <<: *service-n8n
+    # The lab image: n8n plus the Check Point MCP servers (docker/n8n/Dockerfile), also used by
+    # n8n-import and every MCP server. To run a local build instead:
+    #   docker build -t ghcr.io/alshawwaf/cp-agentic-n8n:local docker/n8n   and set LAB_IMAGE_TAG=local
+    image: ghcr.io/alshawwaf/cp-agentic-n8n:${LAB_IMAGE_TAG:-latest}
+    pull_policy: missing
     container_name: n8n
-    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest
-    pull_policy: always
-    # build disabled: prebuilt + published by .github/workflows/publish-image.yml; uncomment to build locally.
-    # build:
-    #   context: ./docker/n8n
-    #   dockerfile: Dockerfile
-    # image: custom-mcp-n8n:custom
+    # security-lab: lets the MCP Security Lab agent reach vuln-mcp (when that profile is on).
+    networks: [ "lab", "security-lab" ]
     restart: unless-stopped
-    networks:
-      - demo
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_PERSONALIZATION_ENABLED=false
+      # The lab serves n8n over plain HTTP inside the network (and on http://localhost).
+      - N8N_SECURE_COOKIE=false
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:?N8N_ENCRYPTION_KEY is not set. Run ./setup.sh}
+      - N8N_USER_MANAGEMENT_JWT_SECRET=${N8N_USER_MANAGEMENT_JWT_SECRET:?N8N_USER_MANAGEMENT_JWT_SECRET is not set. Run ./setup.sh}
+      # n8n 2.40 reads N8N_WEBHOOK_URL; images before 2.40 read only WEBHOOK_URL (and 2.40 logs a
+      # deprecation notice for it). Remove WEBHOOK_URL once every lab runs a 2.40+ image.
+      - N8N_WEBHOOK_URL=${WEBHOOK_URL}
+      - WEBHOOK_URL=${WEBHOOK_URL}
+      - N8N_EDITOR_BASE_URL=${N8N_EDITOR_BASE_URL}
+      - N8N_PUSH_BACKEND=${N8N_PUSH_BACKEND:-websocket}
+      # Time zone of schedule triggers (n8n's own default is America/New_York).
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE:-UTC}
+      - TZ=${GENERIC_TIMEZONE:-UTC}
     volumes:
       - n8n_storage:/home/node/.n8n
-      - ./n8n/backup:/backup
       - ./n8n/shared:/data/shared
-      - ./n8n/custom-nodes:/home/node/.n8n/custom
     depends_on:
       postgres:
         condition: service_healthy
+    # /healthz/readiness answers only after the database is connected and migrated. n8n 2.41 opens
+    # its port (and /healthz) before migrations finish; setting up the owner that early is undone.
     healthcheck:
-      test: [ "CMD-SHELL", "wget -qO- http://localhost:5678/healthz || exit 1" ]
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:5678/healthz/readiness || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 30
       start_period: 30s
+    cpus: 1.5
+    mem_limit: 1g
+    logging: *default-logging
 
-  # ──────────────── n8n PROVISIONER (owner + login + MCP install) ────────────────
+  # ──────────────── n8n owner setup (one-shot) ────────────────
+  # Creates the n8n owner from N8N_ADMIN_EMAIL / N8N_ADMIN_PASSWORD on the first start and checks
+  # that it can sign in (scripts/n8n-provision.sh, mode "owner").
   n8n-provision:
-    image: curlimages/curl:8.9.1
+    image: curlimages/curl:8.22.0@sha256:58adaa4e8dca9c988bae2aba4ab3434a0bb2da16bbe3f92dec39ec7785166777
+    pull_policy: missing
     container_name: n8n-provision
-    networks: [ "demo" ]
+    networks: [ "lab" ]
     depends_on:
       n8n:
         condition: service_healthy
     volumes:
       - ./scripts:/scripts:ro
+    # Temporary files (session cookie) vanish with the container.
+    tmpfs:
+      - /tmp:size=16m
     environment:
-      # n8n from inside the network
       - N8N_URL=http://n8n:5678
-      # owner info (must match what you want in n8n)
       - N8N_ADMIN_EMAIL=${N8N_ADMIN_EMAIL}
-      - N8N_ADMIN_FIRST_NAME=${N8N_ADMIN_FIRST_NAME}
-      - N8N_ADMIN_LAST_NAME=${N8N_ADMIN_LAST_NAME}
+      - N8N_ADMIN_FIRST_NAME=${N8N_ADMIN_FIRST_NAME:-Lab}
+      - N8N_ADMIN_LAST_NAME=${N8N_ADMIN_LAST_NAME:-Admin}
       - N8N_ADMIN_PASSWORD=${N8N_ADMIN_PASSWORD}
-      # package to install — none by default: the workflows use n8n's native
-      # MCP Client Tool node. Uncomment to install a community package again.
+      # Optional community package to install. None is needed: the agents use n8n's native MCP Client Tool node.
       # - N8N_COMMUNITY_PACKAGE=n8n-nodes-mcp
-      # must match n8n basic auth above
-      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
-      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
     command: [ "sh", "/scripts/n8n-provision.sh" ]
     restart: "no"
+    security_opt: [ "no-new-privileges:true" ]
+    cpus: 0.25
+    mem_limit: 64m
+    logging: *default-logging
 
-  # ──────────────── n8n Import Utility ────────────────
+  # ──────────────── n8n import (one-shot) ────────────────
+  # scripts/n8n-provision.sh, mode "import": fills the credential placeholders from .env (.env is
+  # the source of truth), fills {{DOMAIN}}, imports the workflows (edited ones are kept unless
+  # N8N_SEED_OVERWRITE=1) and publishes them through the n8n REST API.
+  # Re-run after changing .env:  docker compose run --rm n8n-import
   n8n-import:
-    # Same image as the n8n service, so the CLI and the server always run the same
-    # n8n version. Every n8n CLI command migrates the shared Postgres schema on start,
-    # so a newer CLI next to an older server would upgrade the DB under it. Like the
-    # MCP sidecars, it reuses the tag the n8n service pulls (pull_policy: always).
-    # If you switch n8n to a local build, point this at the same tag.
-    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest
+    # Same image as the n8n service: every n8n CLI command migrates the shared database schema,
+    # so the CLI and the server must run the same n8n version.
+    image: ghcr.io/alshawwaf/cp-agentic-n8n:${LAB_IMAGE_TAG:-latest}
+    pull_policy: missing
     container_name: n8n-import
-    networks: [ "demo" ]
+    # security-lab: the Security Lab agent is published only when vuln-mcp answers.
+    networks: [ "lab", "security-lab" ]
     entrypoint: /bin/sh
-    command:
-      - "-c"
-      - |
-        echo "Waiting for Postgres..."
-        until nc -z -w 3 postgres 5432; do
-          echo "Postgres not ready, waiting..."
-          sleep 3
-        done
-
-        echo "Waiting for n8n..."
-        until nc -z -w 3 n8n 5678; do
-          echo "n8n not ready, waiting..."
-          sleep 5
-        done
-
-        echo "Preparing credentials (injecting secrets from env, keeping them out of git)..."
-        # The committed credential backups carry placeholders, never real secrets
-        # (this repo is public). Copy to a writable temp dir and substitute the
-        # real values from .env at import time. Escape sed-special chars in the
-        # password so any password is safe.
-        # $$ escapes compose interpolation so these are evaluated by the
-        # container shell (not substituted at compose-parse time).
-        cp -r /backup /tmp/import
-        ESCAPED_PG=$$(printf '%s' "$$POSTGRES_PASSWORD" | sed -e 's/[\/&|]/\\&/g')
-        sed -i "s|__POSTGRES_PASSWORD__|$$ESCAPED_PG|g" /tmp/import/credentials_public/postgres.json
-
-        # PolicyPilot + DevHub agent MCP bearer tokens (same placeholder pattern).
-        # If a token env is empty, DROP that credential file so a broken (still
-        # placeholder) credential is never imported, and warn instead.
-        if [ -n "$$PILOT_MCP_TOKEN" ]; then
-          ESCAPED_PILOT=$$(printf '%s' "$$PILOT_MCP_TOKEN" | sed -e 's/[\/&|]/\\&/g')
-          sed -i "s|__PILOT_MCP_TOKEN__|$$ESCAPED_PILOT|g" /tmp/import/credentials_public/policypilot-bearer.json
-        else
-          echo "WARNING: PILOT_MCP_TOKEN is empty — skipping the PolicyPilot bearer credential (the PolicyPilot agent won't authenticate until an mcp key is set)."
-          rm -f /tmp/import/credentials_public/policypilot-bearer.json
-        fi
-        if [ -n "$$DEVHUB_MCP_TOKEN" ]; then
-          ESCAPED_DEVHUB=$$(printf '%s' "$$DEVHUB_MCP_TOKEN" | sed -e 's/[\/&|]/\\&/g')
-          sed -i "s|__DEVHUB_MCP_TOKEN__|$$ESCAPED_DEVHUB|g" /tmp/import/credentials_public/devhub-bearer.json
-        else
-          echo "WARNING: DEVHUB_MCP_TOKEN is empty — skipping the DevHub bearer credential (the DevHub agent won't authenticate until an API key is set)."
-          rm -f /tmp/import/credentials_public/devhub-bearer.json
-        fi
-
-        # MCP Gateway bearer (native MCP Client Tool auth for the *-via-gateway
-        # agents). MCP_GATEWAY_TOKEN always has a compose default, so this
-        # substitution always lands.
-        ESCAPED_GW=$$(printf '%s' "$$MCP_GATEWAY_TOKEN" | sed -e 's/[\/&|]/\\&/g')
-        sed -i "s|__MCP_GATEWAY_TOKEN__|$$ESCAPED_GW|g" /tmp/import/credentials_public/gateway-bearer.json
-
-        # LLM provider keys (bring-your-own). Substitute each placeholder when
-        # the key is supplied; otherwise keep the credential importable with its
-        # placeholder and warn — the operator fills it in the n8n UI later. The
-        # credential is NOT dropped because every agent workflow references it.
-        subst_llm_key() {
-          VAR_NAME="$$1"; VAR_VALUE="$$2"; CRED_FILE="$$3"
-          if [ -n "$$VAR_VALUE" ]; then
-            ESCAPED=$$(printf '%s' "$$VAR_VALUE" | sed -e 's/[\/&|]/\\&/g')
-            sed -i "s|__$${VAR_NAME}__|$$ESCAPED|g" "/tmp/import/credentials_public/$$CRED_FILE"
-          else
-            echo "WARNING: $$VAR_NAME is empty — the matching n8n credential imports with a placeholder key; set it in the n8n UI (or .env + re-import) to use that model."
-          fi
-        }
-        # The OpenAI + Azure credentials point at the internal LiteLLM proxy
-        # (http://litellm:4000) so every n8n LLM call is traced to Langfuse;
-        # LiteLLM holds the real provider keys server-side. Only the proxy's
-        # master key is substituted here — it always has a compose default.
-        # All four provider credentials point at the LiteLLM proxy (for Langfuse tracing),
-        # so each carries the proxy master key, not a provider key. The provider (OpenAI /
-        # Azure / Anthropic / Gemini) upstream keys live only on the litellm service. The
-        # base URL / host in each credential JSON is a literal http://litellm:4000[/...].
-        subst_llm_key LITELLM_MASTER_KEY "$$LITELLM_MASTER_KEY" "openai.json"
-        subst_llm_key LITELLM_MASTER_KEY "$$LITELLM_MASTER_KEY" "azure-OpenAI.json"
-        subst_llm_key LITELLM_MASTER_KEY "$$LITELLM_MASTER_KEY" "anthropic.json"
-        subst_llm_key LITELLM_MASTER_KEY "$$LITELLM_MASTER_KEY" "Google Gemini(PaLM) Api account.json"
-
-        # Integration credentials — same pattern: set the env once (answers.env /
-        # .env, persisted across redeploys) and every deploy injects it into the
-        # imported n8n credential; never hand-edit creds in the n8n UI.
-        subst_llm_key LAKERA_API_KEY "$$LAKERA_API_KEY" "Lakera.json"
-        subst_llm_key IDP_SCIM_TOKEN "$$IDP_SCIM_TOKEN" "CP-SCIM-IdP-Token.json"
-        subst_llm_key QDRANT_API_KEY "$$QDRANT_API_KEY" "quadrant.json"
-
-        # Rewrite the domain placeholder in the agent workflows to the real
-        # deployment domain, so each MCP endpoint URL (policypilot.<domain>/mcp,
-        # hub.<domain>/api/mcp) is correct on a fresh deploy. Prefer an explicit
-        # DOMAIN; otherwise derive it from N8N_HOST (n8n.<domain> -> <domain>).
-        DOMAIN_VALUE="$$DOMAIN"
-        if [ -z "$$DOMAIN_VALUE" ]; then
-          DOMAIN_VALUE=$$(printf '%s' "$$N8N_HOST" | sed -e 's/^n8n\.//')
-        fi
-        # Assemble the double-brace DOMAIN token from parts so this compose file
-        # never contains the literal token — the deploy-time templating that fills
-        # the Traefik domain labels would otherwise rewrite this pattern too. The
-        # mounted workflow JSONs are not compose text, so they keep the placeholder
-        # until this step resolves it.
-        OB='{'; CB='}'
-        DOMAIN_PH="$${OB}$${OB}DOMAIN$${CB}$${CB}"
-        if [ -n "$$DOMAIN_VALUE" ]; then
-          ESCAPED_DOMAIN=$$(printf '%s' "$$DOMAIN_VALUE" | sed -e 's/[\/&|]/\\&/g')
-          # Resolve {{DOMAIN}} in EVERY workflow (PolicyPilot/DevHub MCP endpoints,
-          # the Identity Provider (IdP) SCIM URL, and anything added later) — not just a hand-listed few.
-          for wf in /tmp/import/workflows/*.json; do
-            sed -i "s|$$DOMAIN_PH|$$ESCAPED_DOMAIN|g" "$$wf"
-          done
-        else
-          echo "WARNING: neither DOMAIN nor N8N_HOST is set — agent MCP endpoint URLs keep the unresolved domain placeholder."
-        fi
-
-        # (Lakera project id is intentionally NOT sent by the guard workflows —
-        # the Lakera key is project-scoped, so Guard uses the key's own project.
-        # LAKERA_PROJECT_ID is still passed to apps that need it, e.g. the
-        # AI Guardrails demo.)
-
-        echo "Importing n8n credentials & workflows..."
-        n8n import:credentials --separate --input=/tmp/import/credentials_public && \
-        n8n import:workflow --separate --input=/tmp/import/workflows
-
-        # import:workflow leaves every workflow INACTIVE, so the chat/webhook agents have
-        # no registered webhook after a deploy (they 404 until published). Publish them all
-        # so the DB is active; the n8n container registers active webhooks on its next start
-        # (a Dokploy redeploy recreates n8n, so this converges automatically). The RAG
-        # retriever sub-workflow also REQUIRES active to be callable via toolWorkflow.
-        echo "Publishing (activating) all workflows so their webhooks register on n8n start..."
-        for wid in $$(n8n list:workflow --onlyId 2>/dev/null); do
-          n8n publish:workflow --id="$$wid" >/dev/null 2>&1 && echo "  published $$wid" || echo "  (skip $$wid)"
-        done
-
-        echo "N8N Import completed!!!"
-
+    command: [ "/scripts/n8n-provision.sh", "import" ]
     environment:
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
       - DB_POSTGRESDB_USER=${POSTGRES_USER}
       - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
-      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
-      # available to the credential-injection step in command: above
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      # agent MCP bearer tokens + the deployment domain, consumed by the
-      # credential-injection / workflow-domain step in command: above. Empty is
-      # tolerated (the step warns and skips), so this stays a no-op until the
-      # installer bootstrap provides the tokens. DOMAIN falls back to N8N_HOST
-      # (n8n.<domain>) when unset.
-      - PILOT_MCP_TOKEN=${PILOT_MCP_TOKEN:-}
-      - DEVHUB_MCP_TOKEN=${DEVHUB_MCP_TOKEN:-}
-      # gateway bearer for the *-via-gateway agents (native MCP node auth)
-      - MCP_GATEWAY_TOKEN=${MCP_GATEWAY_TOKEN:-cp-mcp-gateway-training-token}
-      # bring-your-own LLM keys — land in the imported n8n credentials so the
-      # model row works on a fresh deploy without hand-editing credentials.
-      # (OpenAI + Azure route via the LiteLLM proxy — see litellm service — so
-      # those two credentials carry the proxy master key, not provider keys.)
-      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-sk-cp-litellm-training-key}
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
-      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
-      # integration creds (set once, injected every deploy)
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_ADMIN_EMAIL=${N8N_ADMIN_EMAIL}
+      - N8N_ADMIN_PASSWORD=${N8N_ADMIN_PASSWORD}
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-}
+      - MCP_GATEWAY_TOKEN=${MCP_GATEWAY_TOKEN:-}
       - LAKERA_API_KEY=${LAKERA_API_KEY:-}
       - LAKERA_PROJECT_ID=${LAKERA_PROJECT_ID:-}
       - IDP_SCIM_TOKEN=${IDP_SCIM_TOKEN:-}
       - QDRANT_API_KEY=${QDRANT_API_KEY:-}
+      - DEVHUB_MCP_TOKEN=${DEVHUB_MCP_TOKEN:-}
+      - PILOT_MCP_TOKEN=${PILOT_MCP_TOKEN:-}
       - DOMAIN=${DOMAIN:-}
-      - N8N_HOST=${N8N_HOST}
-      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
-      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
-      - N8N_USER_MANAGEMENT_DISABLED=false
+      - N8N_HOST=${N8N_HOST:-}
+      - NIGHTLY_SELF_QA=${NIGHTLY_SELF_QA:-0}
+      - N8N_SEED_OVERWRITE=${N8N_SEED_OVERWRITE:-0}
     volumes:
-      - ./n8n/backup:/backup
-      - ./n8n/custom-nodes:/home/node/.n8n/custom
+      - ./n8n/backup:/backup:ro
+      - ./scripts:/scripts:ro
       - n8n_storage:/home/node/.n8n
+    # The filled-in credential files live only in this memory-backed /tmp.
+    tmpfs:
+      - /tmp:size=64m
     depends_on:
       postgres:
-        condition: service_started
+        condition: service_healthy
       n8n:
-        condition: service_started
+        condition: service_healthy
       n8n-provision:
         condition: service_completed_successfully
     restart: "no"
+    cpus: 1.0
+    mem_limit: 768m
+    logging: *default-logging
 
   # ──────────────── Flowise ────────────────
   flowise:
-    # pinned by digest (was floating :latest) — flowise has no stable version tag here
-    image: flowiseai/flowise@sha256:85038c3b0c71e30c41408e9ef8fd76fa5d532b1bd3ca82aa35c8e0f62af79439
+    # 3.1.4 fixes the Custom MCP command-execution advisory (GHSA-vcwp-f9rq-3887) in its node
+    # package, and the image runs as the unprivileged "node" user. Upstream bug (Flowise issue
+    # #6688): this image cannot start on SQLite (connect-sqlite3 0.9.17) and still reports server
+    # version 3.1.2, so Flowise always uses the lab Postgres (database "flowise").
+    image: flowiseai/flowise:3.1.4@sha256:3922767afb52a5777759fd8b28a3c9eee864daea96018a791f2429eae2a76571
     pull_policy: missing
     container_name: flowise
-    # dokploy-network lets Traefik reach it (like open-webui / n8n); demo is the
-    # internal stack network. Routing lived in the Dokploy UI before — now it's here
-    # so a fresh spin-up serves flowise.<domain> without manual setup.
-    networks: [ "demo", "dokploy-network" ]
+    # dokploy-network: the lab host's reverse proxy; security-lab: the Security Lab agent.
+    networks: [ "lab", "dokploy-network", "security-lab" ]
     restart: unless-stopped
     depends_on:
       postgres:
@@ -513,216 +491,223 @@ services:
       flowise-db-init:
         condition: service_completed_successfully
     environment:
-      - PORT=${FLOWISE_PORT}
-      # Flowise's SSRF guard denies the whole private-IP range (incl. the
-      # 172.16.0.0/12 Docker network) by default, which blocks the Custom MCP
-      # node from reaching the internal MCP gateway (mcp-gateway:8080) with
-      # "isDeniedIP: Access to this host is denied by policy". HTTP_DENY_LIST
-      # can only ADD entries, so the only way to allow an internal host is to
-      # disable the default deny list. Safe here: Flowise is internal-only
-      # (behind Traefik auth) and the gateway lives on the private demo network.
+      - PORT=${FLOWISE_PORT:-3020}
+      # Flowise's default address guard denies every private range, including the Docker network
+      # that the gateway, the MCP servers, LiteLLM and Qdrant use. HTTP_SECURITY_CHECK=false
+      # drops that default list; HTTP_DENY_LIST keeps loopback, link-local (cloud metadata) and
+      # multicast addresses denied, so flows can still reach only the lab network and the internet.
       - HTTP_SECURITY_CHECK=false
-      # Storage backend toggle. Default = SQLite (Flowise's own default, on the
-      # ./flowise_data volume). Set FLOWISE_DATABASE_TYPE=postgres in the env to
-      # store data in the stack Postgres instead (dedicated `flowise` DB, created
-      # idempotently by flowise-db-init) — SQLite serialises writes and returns
-      # SQLITE_BUSY under concurrent load (e.g. a full class using the agents at
-      # once). The DATABASE_HOST/PORT/NAME/USER/PASSWORD values below are ignored
-      # by Flowise while the type is sqlite, so they are safe to leave set. The
-      # credential encryption key stays on ./flowise_data either way, and
-      # seed_builders registers the stack admin on a fresh DB, so flipping the
-      # toggle on a NEW deploy still comes up fully seeded. NOTE: flipping it on
-      # an EXISTING deploy does not move data by itself — migrate first (or
-      # re-seed via builders-import and accept losing chat history).
-      - DATABASE_TYPE=${FLOWISE_DATABASE_TYPE:-sqlite}
+      - HTTP_DENY_LIST=0.0.0.0,127.0.0.0/8,::1,localhost,ip6-localhost,169.254.0.0/16,fd00:ec2::254,fe80::/10,224.0.0.0/4,240.0.0.0/4,255.255.255.255/32,ff00::/8
+      # Custom MCP over HTTP only; never start local MCP commands (npx, docker) from a flow.
+      - CUSTOM_MCP_PROTOCOL=sse
+      - DISABLE_FLOWISE_TELEMETRY=true
+      - DATABASE_TYPE=postgres
       - DATABASE_HOST=postgres
       - DATABASE_PORT=5432
       - DATABASE_NAME=flowise
       - DATABASE_USER=${POSTGRES_USER}
       - DATABASE_PASSWORD=${POSTGRES_PASSWORD}
       - DATABASE_SSL=false
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     volumes:
-      - ./flowise_data:/root/.flowise
-    entrypoint: /bin/sh -c "sleep 5; flowise start"
+      # Encryption key, session secrets and uploads (git-ignored; back it up with the volumes).
+      - ./flowise_data:/home/node/.flowise
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:$${PORT}/api/v1/ping || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
     labels:
-      # Flowise already permits iframe embedding, so it needs a route, not a
-      # framing middleware. (Add a flowise-hubframe like n8n's only if a future
-      # version starts sending X-Frame-Options.)
+      # Routing (host + web/websecure split) is owned by the lab host installer's Dokploy exposure
+      # for flowise, like n8n. Declaring routers here as well created a second router set for the
+      # same host (intermittent 404s), so only enable + the network hint stay here.
       - "traefik.enable=true"
-      # Routing (host + web/websecure split) is owned by the installer's Dokploy
-      # exposure for flowise, exactly like n8n. Declaring routers HERE too created a
-      # SECOND router set for the same host, so Traefik picked non-deterministically
-      # -> intermittent 404s. Keep only enable + the network hint; Dokploy owns routing.
       - "traefik.docker.network=dokploy-network"
+    cpus: 1.0
+    mem_limit: 1g
+    logging: *default-logging
 
-  # ──────────────── Flowise DB bootstrap ────────────────
-  # Creates the `flowise` database in the stack Postgres before Flowise starts (same
-  # idempotent pattern as langfuse-db-init). Runs on every deploy regardless of the
-  # FLOWISE_DATABASE_TYPE toggle — on SQLite deploys it just leaves an empty unused DB,
-  # which keeps the postgres opt-in a single-knob flip. Uses the already-pulled
-  # postgres:16-alpine, so no extra image.
+  # ──────────────── Flowise DB bootstrap (one-shot) ────────────────
+  # Creates the `flowise` database in the lab Postgres (idempotent) and gives ./flowise_data to
+  # the image's "node" user (uid 1000): older Flowise images ran as root and left root-owned files.
   flowise-db-init:
-    image: postgres:16-alpine
+    image: postgres:16.15-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    pull_policy: missing
     container_name: flowise-db-init
-    networks: [ "demo" ]
+    networks: [ "lab" ]
     restart: "no"
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      # POSTGRES_USER is passed explicitly: $${POSTGRES_USER} in the command is
-      # shell-expanded INSIDE the container, so it must exist in the container env.
+      # POSTGRES_USER is passed explicitly: $${POSTGRES_USER} in the command is expanded by the
+      # container shell, so it must exist in the container environment.
       - POSTGRES_USER=${POSTGRES_USER}
       - PGPASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - ./flowise_data:/flowise-data
     entrypoint: /bin/sh
     command:
-      - -lc
+      - -c
       - |
+        set -e
         echo ">> Ensuring 'flowise' database exists ..."
         psql -h postgres -U "$${POSTGRES_USER}" -d postgres -tc \
           "SELECT 1 FROM pg_database WHERE datname='flowise'" | grep -q 1 \
           || psql -h postgres -U "$${POSTGRES_USER}" -d postgres -c "CREATE DATABASE flowise"
+        find /flowise-data ! -user 1000 -exec chown 1000:1000 {} + 2>/dev/null \
+          || echo "note: could not change the owner of ./flowise_data (Flowise runs as uid 1000)."
         echo ">> Done."
+    cpus: 0.25
+    mem_limit: 128m
+    logging: *default-logging
 
-  # ──────────────── Open WebUI ────────────────
+  # ──────────────── Open WebUI (profile local-chat) ────────────────
   open-webui:
-    # pinned to v0.11.4 by multi-arch index digest (the tag is for readability; the
-    # digest wins). Previous pin sha256:a26effeb... was the :main build of v0.10.2.
-    # 0.11.x runs one-way DB migrations: back up the open-webui volume before bumping.
+    profiles: [ "local-chat", "complete" ]
+    # v0.11.4 by multi-arch index digest. 0.11.x runs one-way DB migrations: back up the
+    # open-webui volume before bumping.
     image: ghcr.io/open-webui/open-webui:v0.11.4@sha256:9591b13f13843c7721c2b8eaf7382846c81b3ffe126526d1888d1fed50c6a33f
     pull_policy: missing
     container_name: open-webui
-    networks: [ "demo", "dokploy-network" ]
+    networks: [ "lab", "dokploy-network" ]
     restart: unless-stopped
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     volumes:
       # Pipes/Functions live in Open WebUI's DB (added via the UI or
       # POST /api/v1/functions/create), not as files, so no pipe bind mount.
       - open-webui:/app/backend/data
     environment:
-      - OLLAMA_BASE_URL=http://ollama-cpu:11434
-      # Default model(s) for new users/chats — set via the agentic env.
-      - DEFAULT_MODELS=${OPEN_WEBUI_DEFAULT_MODELS:-gemma4:e2b}
-
+      - OLLAMA_BASE_URL=${OLLAMA_API_BASE:-http://ollama-cpu:11434}
+      # Default model for new chats (must be one of OLLAMA_MODELS).
+      - DEFAULT_MODELS=${OPEN_WEBUI_DEFAULT_MODELS:-qwen3.5:4b}
+      # Signs sessions, so recreating the container does not sign everyone out (./setup.sh generates it).
+      - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY:-}
+      # Extra model calls after every answer queue behind chats on a CPU-only Ollama.
+      - ENABLE_FOLLOW_UP_GENERATION=false
+      - ENABLE_TAGS_GENERATION=false
+      - ENABLE_AUTOCOMPLETE_GENERATION=false
+    depends_on:
+      ollama-cpu:
+        condition: service_healthy
     labels:
+      # Routing for chat.<DOMAIN> is owned by the lab host installer's Dokploy exposure (see flowise).
       - "traefik.enable=true"
-      # Routing (host + web/websecure split) is owned by the installer's Dokploy
-      # exposure for chat.${DOMAIN}, exactly like n8n. Declaring routers HERE too
-      # created a SECOND router set for the same host, so Traefik picked
-      # non-deterministically -> intermittent 404s. Keep only enable + the network hint.
       - "traefik.docker.network=dokploy-network"
+    cpus: 1.0
+    mem_limit: 2g
+    logging: *default-logging
 
-    depends_on:
-      - ollama-pull-models-cpu
-
-  # ──────────────── Open WebUI PROVISIONER (first admin) ────────────────
-  # One-shot (same pattern as n8n-provision): pre-seeds the admin account so the
-  # publicly routed chat.<domain> never sits in "first signup becomes admin".
-  # Idempotent — 403 "signups disabled" and 400 "already registered" are treated
-  # as no-ops, so re-deploys against an already-provisioned (or live) instance
-  # change nothing. The first signup is promoted to admin and Open WebUI itself
-  # then persists ui.enable_signup=False, so the exposure window is only until
-  # that first signup; this one-shot claims the slot during deploy. ENABLE_SIGNUP
-  # on open-webui only seeds the setting on first boot (the DB value wins after
-  # that unless ENABLE_PERSISTENT_CONFIG=false), and it is left untouched here.
+  # ──────────────── Open WebUI admin (one-shot, profile local-chat) ────────────────
+  # Pre-creates the admin account so Open WebUI never sits in "first sign-up becomes admin".
+  # Idempotent: "signups disabled" and "already registered" count as done.
   openwebui-provision:
-    image: curlimages/curl:8.9.1
+    profiles: [ "local-chat", "complete" ]
+    image: curlimages/curl:8.22.0@sha256:58adaa4e8dca9c988bae2aba4ab3434a0bb2da16bbe3f92dec39ec7785166777
+    pull_policy: missing
     container_name: openwebui-provision
-    networks: [ "demo" ]
+    networks: [ "lab" ]
     depends_on:
-      - open-webui
+      open-webui:
+        condition: service_healthy
     volumes:
       - ./scripts:/scripts:ro
+    # Temporary files (sign-up response with a session token) vanish with the container.
+    tmpfs:
+      - /tmp:size=16m
     environment:
-      # Open WebUI from inside the network
       - OPEN_WEBUI_URL=http://open-webui:8080
-      # admin creds (rendered into the env by the installer bootstrap);
-      # when unset the script logs a warning and skips instead of failing
+      # Blank = the lab admin (N8N_ADMIN_*).
       - OPEN_WEBUI_ADMIN_EMAIL=${OPEN_WEBUI_ADMIN_EMAIL:-}
       - OPEN_WEBUI_ADMIN_PASSWORD=${OPEN_WEBUI_ADMIN_PASSWORD:-}
+      - N8N_ADMIN_EMAIL=${N8N_ADMIN_EMAIL:-}
+      - N8N_ADMIN_PASSWORD=${N8N_ADMIN_PASSWORD:-}
     command: [ "sh", "/scripts/openwebui-provision.sh" ]
     restart: "no"
+    security_opt: [ "no-new-privileges:true" ]
+    cpus: 0.25
+    mem_limit: 64m
+    logging: *default-logging
 
-  # ──────────────── Langflow ────────────────
+  # ──────────────── Langflow (profile langflow) ────────────────
   langflow:
-    # PINNED (not :latest) — CVE-2026-33017 (unauth RCE) compromised this host on a
-    # pre-1.9 build (see the ubuntu-dokploy-ai incident report); 1.10.1 is patched.
-    # Bump this deliberately when a newer patched tag ships — don't float on :latest.
-    image: langflowai/langflow:1.10.1
+    profiles: [ "langflow", "complete" ]
+    # PINNED (not :latest): CVE-2026-33017 (unauthenticated RCE) affected pre-1.9 builds; 1.10.1
+    # is patched and is the version the lab flows are validated against. Bump deliberately.
+    image: langflowai/langflow:1.10.1@sha256:bb52d9bc6f413e1a73235497c75cab334d05b7c3db0818515f54771b17376be5
+    pull_policy: missing
     container_name: langflow
-    # dokploy-network lets Traefik reach it (like open-webui / aig); demo is the
-    # internal stack network. Previously demo-only, so Traefik had no route → 404.
-    networks: [ "demo", "dokploy-network" ]
+    # dokploy-network: the lab host's reverse proxy; security-lab: the Security Lab agent.
+    networks: [ "lab", "dokploy-network", "security-lab" ]
     restart: unless-stopped
     environment:
-      # Auth ON by default now that Langflow is publicly routed (Traefik below).
-      # The superuser is provisioned from the stack admin creds already in the env
-      # — no hardcoded secret, and it boots cleanly. For a deliberate no-auth demo,
-      # explicitly set LANGFLOW_AUTO_LOGIN=true.
+      # Sign-in is on: the superuser is the lab admin. LANGFLOW_AUTO_LOGIN=true only for a
+      # single-user workstation that nobody else can reach.
       - LANGFLOW_AUTO_LOGIN=${LANGFLOW_AUTO_LOGIN:-false}
       - LANGFLOW_SUPERUSER=${N8N_ADMIN_EMAIL}
       - LANGFLOW_SUPERUSER_PASSWORD=${N8N_ADMIN_PASSWORD}
-      # ── Langfuse tracing (added) ──
-      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
-      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY}
-      - LANGFUSE_HOST=http://langfuse:3000
+      # Database, secret key and flows in the langflow volume (they were in the container layer
+      # and were lost whenever the container was recreated).
+      - LANGFLOW_CONFIG_DIR=/app/langflow
+      - LANGFLOW_SAVE_DB_IN_CONFIG_DIR=true
+      - LANGFLOW_DO_NOT_TRACK=true
+      # No Langfuse variables here: Langflow 1.10 bundles the Langfuse v3 SDK, which fails
+      # against the lab's Langfuse v2. Langflow model calls are traced through LiteLLM.
     volumes:
-      - ./langflow/flows:/app/flows
-    depends_on:
-      - ollama-pull-models-cpu
+      - langflow:/app/langflow
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:7860/health', timeout=4)" ]
+      interval: 15s
+      timeout: 6s
+      retries: 20
+      start_period: 60s
     labels:
+      # Routing for langflow.<DOMAIN> is owned by the lab host installer's Dokploy exposure; its
+      # global hubframe middleware lets the hub embed Langflow. Keep only enable + the network hint.
       - "traefik.enable=true"
-      # Routing (host + web/websecure split) is owned by the installer's Dokploy
-      # exposure for langflow.${DOMAIN}, exactly like n8n. Declaring routers HERE too
-      # created a SECOND router set for the same host, so Traefik picked
-      # non-deterministically -> intermittent 404s. Worse, the framing middleware was
-      # attached to a bare "langflow" router (no rule/service) which Traefik reported
-      # as "cannot be linked automatically with multiple Services". The installer's
-      # global hubframe@file middleware (applied on the web + websecure entrypoints)
-      # already strips X-Frame-Options and sets frame-ancestors for the hub, so the
-      # dev-hub still embeds Langflow. Keep only enable + the network hint.
       - "traefik.docker.network=dokploy-network"
+    cpus: 1.5
+    mem_limit: 2560m
+    logging: *default-logging
 
   # ──────────────── Langfuse DB bootstrap (one-shot) ────────────────
-  # Creates a dedicated `langfuse` database inside the stack Postgres if it
-  # doesn't exist yet. Idempotent; exits 0 on reruns. Uses the already-pulled
-  # postgres:16-alpine image, so no extra pull. Skip this service entirely if
-  # LANGFUSE_DATABASE_URL points at a Postgres where the DB already exists.
+  # Creates a dedicated `langfuse` database in the lab Postgres (idempotent). Not needed when
+  # LANGFUSE_DATABASE_URL points at a Postgres where the database already exists.
   langfuse-db-init:
-    image: postgres:16-alpine
+    image: postgres:16.15-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    pull_policy: missing
     container_name: langfuse-db-init
-    networks: [ "demo" ]
+    networks: [ "lab" ]
     restart: "no"
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      # POSTGRES_USER is passed explicitly: $${POSTGRES_USER} in the command is
-      # shell-expanded INSIDE the container, so it must exist in the container env.
+      # POSTGRES_USER is passed explicitly: $${POSTGRES_USER} in the command is expanded by the
+      # container shell, so it must exist in the container environment.
       - POSTGRES_USER=${POSTGRES_USER}
       - PGPASSWORD=${POSTGRES_PASSWORD}
     entrypoint: /bin/sh
     command:
-      - -lc
+      - -c
       - |
         echo ">> Ensuring 'langfuse' database exists ..."
         psql -h postgres -U "$${POSTGRES_USER}" -d postgres -tc \
           "SELECT 1 FROM pg_database WHERE datname='langfuse'" | grep -q 1 \
           || psql -h postgres -U "$${POSTGRES_USER}" -d postgres -c "CREATE DATABASE langfuse"
         echo ">> Done."
+    cpus: 0.25
+    mem_limit: 128m
+    logging: *default-logging
 
-  # ──────────────── Langfuse (LLM observability / tracing) ────────────────
+  # ──────────────── Langfuse (LLM tracing) ────────────────
   langfuse:
-    # v2 line — single Postgres-backed container. Pinned to the v2 major; bump to
-    # a specific patch (e.g. langfuse/langfuse:2.95.4) for full reproducibility.
-    image: langfuse/langfuse:2
+    # v2 line (one Postgres-backed container). v3 needs ClickHouse, Redis and object storage,
+    # too heavy for the Standard lab. 2.95.11 is the last v2 release.
+    image: langfuse/langfuse:2.95.11@sha256:85c278dcab96c15db94191a5c1664f85aba2d7fb6771a00e99681c902c4b7015
+    pull_policy: missing
     container_name: langfuse
-    # demo = internal stack net (Langflow/Flowise reach http://langfuse:3000 here);
-    # dokploy-network = Traefik can route trace.<domain> to it.
-    networks: [ "demo", "dokploy-network" ]
+    # lab: LiteLLM and Flowise reach http://langfuse:3000; dokploy-network: trace.<domain>.
+    networks: [ "lab", "dokploy-network" ]
     restart: unless-stopped
     depends_on:
       postgres:
@@ -730,38 +715,47 @@ services:
       langfuse-db-init:
         condition: service_completed_successfully
     environment:
-      # Build the URL HERE (compose expands nested ${} in a file default) — a bare
-      # LANGFUSE_DATABASE_URL=postgresql://${POSTGRES_USER}... in .env would NOT be
-      # re-expanded (compose doesn't recurse into .env values). Set LANGFUSE_DATABASE_URL
-      # to a full URL only to point at a different Postgres.
+      # Built here so the default can use POSTGRES_* (set LANGFUSE_DATABASE_URL to a full
+      # postgresql:// URL only to use another Postgres).
       - DATABASE_URL=${LANGFUSE_DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/langfuse}
-      - NEXTAUTH_URL=https://trace.${DOMAIN}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - SALT=${SALT}
-      - ENCRYPTION_KEY=${LANGFUSE_ENCRYPTION_KEY}
-      # MUST bind all interfaces or Traefik can't reach it (default is localhost).
+      # The address people open Langfuse at; sign-in redirects go there. ./setup.sh sets
+      # LANGFUSE_URL=http://localhost:3100 on a workstation (publish 127.0.0.1:3100:3000 locally).
+      - NEXTAUTH_URL=${LANGFUSE_URL:-https://trace.${DOMAIN}}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:?NEXTAUTH_SECRET is not set. Run ./setup.sh}
+      - SALT=${SALT:?SALT is not set. Run ./setup.sh}
+      - ENCRYPTION_KEY=${LANGFUSE_ENCRYPTION_KEY:?LANGFUSE_ENCRYPTION_KEY is not set. Run ./setup.sh}
+      # The lab admin is created below; nobody else can sign up.
+      - AUTH_DISABLE_SIGNUP=true
+      # MUST bind all interfaces or the reverse proxy cannot reach it (default is localhost).
       - HOSTNAME=0.0.0.0
       - PORT=3000
       - TELEMETRY_ENABLED=${LANGFUSE_TELEMETRY_ENABLED:-false}
-      # ── Optional headless bootstrap: create org/project/user + API keys on
-      # first boot so the builders' keys work with NO manual UI step. Safe to
-      # omit — if you leave these out, create the project in the UI instead.
-      - LANGFUSE_INIT_ORG_ID=cp-playground
-      - LANGFUSE_INIT_ORG_NAME=Check Point Playground
+      # Headless bootstrap on first start: organization, project, API keys and the lab admin,
+      # so the builders' keys work with no manual step. Langfuse creates the organization only
+      # when its ID does not exist yet and never renames one. A lab set up before the naming pass
+      # keeps its organization: ./setup.sh writes LANGFUSE_ORG_ID=cp-playground (its former ID)
+      # into that lab's .env. Another ID would only add a second, empty organization; the project
+      # and its keys stay where they are, so tracing keeps working either way.
+      - LANGFUSE_INIT_ORG_ID=${LANGFUSE_ORG_ID:-check-point-agentic-lab}
+      - LANGFUSE_INIT_ORG_NAME=Check Point Agentic Lab
       - LANGFUSE_INIT_PROJECT_ID=agents
       - LANGFUSE_INIT_PROJECT_NAME=Agents
       - LANGFUSE_INIT_PROJECT_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY}
       - LANGFUSE_INIT_PROJECT_SECRET_KEY=${LANGFUSE_SECRET_KEY}
       - LANGFUSE_INIT_USER_EMAIL=${N8N_ADMIN_EMAIL}
-      - LANGFUSE_INIT_USER_NAME=${N8N_ADMIN_FIRST_NAME}
+      - LANGFUSE_INIT_USER_NAME=${N8N_ADMIN_FIRST_NAME:-Lab}
       - LANGFUSE_INIT_USER_PASSWORD=${N8N_ADMIN_PASSWORD}
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/api/public/health || exit 1" ]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
     labels:
       - "traefik.enable=true"
-      # Two explicit routers (same pattern as flowise/langflow/open-webui): the
-      # Cloudflare tunnel fronts every host to entrypoint web (:80), and a router
-      # carrying TLS config never matches plain HTTP — Traefik 3.6 splits a
-      # web,websecure router and propagates certresolver onto BOTH, so the
-      # single-router form 404s through the tunnel.
+      # Two explicit routers: the Cloudflare tunnel fronts every host on entrypoint web (:80), and
+      # a router carrying TLS config never matches plain HTTP (Traefik 3.6 splits a web,websecure
+      # router and puts the certresolver on both, so the single-router form 404s through the tunnel).
       - "traefik.http.routers.langfuse-web.rule=Host(`trace.${DOMAIN}`)"
       - "traefik.http.routers.langfuse-web.entrypoints=web"
       - "traefik.http.routers.langfuse-web.service=langfuse-svc"
@@ -771,413 +765,327 @@ services:
       - "traefik.http.routers.langfuse-websecure.service=langfuse-svc"
       - "traefik.http.services.langfuse-svc.loadbalancer.server.port=3000"
       - "traefik.docker.network=dokploy-network"
-      # Let the dev-hub desktop embed Langfuse in an iframe (strip X-Frame-Options,
-      # allow the hub in frame-ancestors) — same trick as the langflow service.
+      # Let only the lab hub embed Langfuse in an iframe (no other app on the domain).
       - "traefik.http.routers.langfuse-websecure.middlewares=langfuse-hubframe"
       - "traefik.http.middlewares.langfuse-hubframe.headers.customresponseheaders.X-Frame-Options="
-      - "traefik.http.middlewares.langfuse-hubframe.headers.customresponseheaders.Content-Security-Policy=frame-ancestors 'self' https://hub.${DOMAIN} https://*.${DOMAIN}"
+      - "traefik.http.middlewares.langfuse-hubframe.headers.customresponseheaders.Content-Security-Policy=frame-ancestors 'self' https://hub.${DOMAIN}"
+    cpus: 0.5
+    mem_limit: 512m
+    logging: *default-logging
 
-  # ─────────── Documentation MCP over HTTP ───────────
+  # ──────────────── Check Point MCP servers (direct path) ────────────────
+  # Internal HTTP on the lab network, fronted by mcp-gateway (except Spark Management, SASE and
+  # Gateway Connection Analysis). A server whose product is not set answers that it is not configured.
   mcp-documentation:
-    # was: custom-mcp-n8n:custom (built on the box by the n8n service; all sidecars now share the prebuilt tag pulled by n8n)
-    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest
+    <<: *mcp-sidecar
     container_name: mcp-documentation
-    networks: [ "demo" ]
-    depends_on:
-      - n8n
-    entrypoint: [ "/usr/local/bin/mcp-documentation" ]
     environment:
-      - CLIENT_ID=${DOC_CLIENT_ID}
-      - SECRET_KEY=${DOC_SECRET_KEY}
-      - REGION=${DOC_REGION}
-    command:
-      - "--transport"
-      - "http"
-      - "--transport-port"
-      - "3000"
-    # Lets the MCP gateway wait for a LISTENING server: the gateway enumerates
-    # tools once at startup, and a sidecar that isn't up yet is silently dropped
-    # (0 tools) until the gateway restarts.
-    healthcheck:
-      test: [ "CMD", "node", "-e", "require('net').connect(3000,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))" ]
-      interval: 10s
-      timeout: 5s
-      retries: 18
-      start_period: 20s
-    restart: unless-stopped
+      MCP_SERVICE: mcp-documentation
+      MCP_PORT: "3000"
+      MCP_PRODUCT: Documentation
+      CLIENT_ID: ${DOC_CLIENT_ID:-}
+      SECRET_KEY: ${DOC_SECRET_KEY:-}
+      REGION: ${DOC_REGION:-EU}
 
   mcp-https-inspection:
-    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
+    <<: *mcp-sidecar
     container_name: mcp-https-inspection
-    networks: [ "demo" ]
-    depends_on:
-      - n8n
-    entrypoint: [ "/usr/local/bin/mcp-https-inspection" ]
     environment:
-      - MANAGEMENT_HOST=${MANAGEMENT_HOST}
-      - API_KEY=${MANAGEMENT_API_KEY}
-    command:
-      - "--transport"
-      - "http"
-      - "--transport-port"
-      - "3001"
-    restart: unless-stopped
+      <<: *management-env
+      MCP_SERVICE: mcp-https-inspection
+      MCP_PORT: "3001"
+      MCP_PRODUCT: HTTPS Inspection
 
   mcp-quantum-management:
-    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
+    <<: *mcp-sidecar
     container_name: mcp-quantum-management
-    networks: [ "demo" ]
-    depends_on:
-      - n8n
-    entrypoint: [ "/usr/local/bin/mcp-quantum-management" ]
     environment:
-      - MANAGEMENT_HOST=${MANAGEMENT_HOST}
-      - API_KEY=${MANAGEMENT_API_KEY}
-    command:
-      - "--transport"
-      - "http"
-      - "--transport-port"
-      - "3002"
-    # See mcp-documentation: gateway startup must find this server listening.
-    healthcheck:
-      test: [ "CMD", "node", "-e", "require('net').connect(3002,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))" ]
-      interval: 10s
-      timeout: 5s
-      retries: 18
-      start_period: 20s
-    restart: unless-stopped
+      <<: *management-env
+      MCP_SERVICE: mcp-quantum-management
+      MCP_PORT: "3002"
+      MCP_PRODUCT: Management
 
   mcp-management-logs:
-    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
+    <<: *mcp-sidecar
     container_name: mcp-management-logs
-    networks: [ "demo" ]
-    depends_on:
-      - n8n
-    entrypoint: [ "/usr/local/bin/mcp-management-logs" ]
     environment:
-      - MANAGEMENT_HOST=${MANAGEMENT_HOST}
-      - API_KEY=${MANAGEMENT_API_KEY}
-    command:
-      - "--transport"
-      - "http"
-      - "--transport-port"
-      - "3003"
-    restart: unless-stopped
+      <<: *management-env
+      MCP_SERVICE: mcp-management-logs
+      MCP_PORT: "3003"
+      MCP_PRODUCT: Management Logs
 
   threat-emulation-mcp:
-    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
+    <<: *mcp-sidecar
     container_name: threat-emulation-mcp
-    networks: [ "demo" ]
+    # Files to scan: put them in ./n8n/shared on the host (/data/shared in the server). The server
+    # reads only regular files under TE_ALLOWED_DIRS (mcp-src/PATCHES.md §12); the share is read-only.
     volumes:
-      - ./n8n/shared:/data/shared
-    depends_on:
-      - n8n
-    entrypoint: [ "/usr/local/bin/threat-emulation-mcp" ]
+      - ./n8n/shared:/data/shared:ro
     environment:
-      - API_KEY=${TE_API_KEY}
-    command:
-      - "--transport"
-      - "http"
-      - "--transport-port"
-      - "3004"
-    restart: unless-stopped
+      MCP_SERVICE: threat-emulation-mcp
+      MCP_PORT: "3004"
+      MCP_PRODUCT: Threat Emulation
+      API_KEY: ${TE_API_KEY:-}
+      TE_ALLOWED_DIRS: /data/shared
 
   threat-prevention-mcp:
-    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
+    <<: *mcp-sidecar
     container_name: threat-prevention-mcp
-    networks: [ "demo" ]
-    depends_on:
-      - n8n
-    entrypoint: [ "/usr/local/bin/threat-prevention-mcp" ]
     environment:
-      - MANAGEMENT_HOST=${MANAGEMENT_HOST}
-      - API_KEY=${MANAGEMENT_API_KEY}
-    command:
-      - "--transport"
-      - "http"
-      - "--transport-port"
-      - "3005"
-    restart: unless-stopped
+      <<: *management-env
+      MCP_SERVICE: threat-prevention-mcp
+      MCP_PORT: "3005"
+      MCP_PRODUCT: Threat Prevention
 
+  # Stops with one "not configured" line while SPARK_MGMT_CLIENT_ID / SECRET_KEY are blank.
   spark-management-mcp:
-    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
+    <<: *mcp-sidecar
     container_name: spark-management-mcp
-    networks: [ "demo" ]
-    depends_on:
-      - n8n
-    entrypoint: [ "/usr/local/bin/spark-management-mcp" ]
+    restart: on-failure
     environment:
-      - CLIENT_ID=${SPARK_MGMT_CLIENT_ID}
-      - SECRET_KEY=${SPARK_MGMT_SECRET_KEY}
-      - REGION=${SPARK_MGMT_REGION}
-      - INFINITY_PORTAL_URL=${SPARK_MGMT_INFINITY_PORTAL_URL}
-    command:
-      - "--transport"
-      - "http"
-      - "--transport-port"
-      - "3006"
-    restart: unless-stopped
+      MCP_SERVICE: spark-management-mcp
+      MCP_PORT: "3006"
+      MCP_PRODUCT: Spark Management
+      MCP_REQUIRED: CLIENT_ID SECRET_KEY
+      MCP_SETTINGS: SPARK_MGMT_CLIENT_ID and SPARK_MGMT_SECRET_KEY
+      CLIENT_ID: ${SPARK_MGMT_CLIENT_ID:-}
+      SECRET_KEY: ${SPARK_MGMT_SECRET_KEY:-}
+      REGION: ${SPARK_MGMT_REGION:-US}
+      INFINITY_PORTAL_URL: ${SPARK_MGMT_INFINITY_PORTAL_URL:-https://cloudinfra-gw-us.portal.checkpoint.com/auth/external}
 
   reputation-service-mcp:
-    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
+    <<: *mcp-sidecar
     container_name: reputation-service-mcp
-    networks: [ "demo" ]
-    depends_on:
-      - n8n
-    entrypoint: [ "/usr/local/bin/reputation-service-mcp" ]
     environment:
-      - API_KEY=${REPUTATION_API_KEY}
-    command:
-      - "--transport"
-      - "http"
-      - "--transport-port"
-      - "3007"
-    restart: unless-stopped
+      MCP_SERVICE: reputation-service-mcp
+      MCP_PORT: "3007"
+      MCP_PRODUCT: Reputation Service
+      API_KEY: ${REPUTATION_API_KEY:-}
 
+  # Stops with one "not configured" line until the API key, management host and origin are set.
   harmony-sase-mcp:
-    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
+    <<: *mcp-sidecar
     container_name: harmony-sase-mcp
-    networks: [ "demo" ]
-    depends_on:
-      - n8n
-    entrypoint: [ "/usr/local/bin/harmony-sase-mcp" ]
+    restart: on-failure
     environment:
-      - API_KEY=${HARMONY_SASE_API_KEY}
-      - MANAGEMENT_HOST=${HARMONY_SASE_MANAGEMENT_HOST}
-      - REGION=${HARMONY_SASE_REGION}
-    command:
-      - "--transport"
-      - "http"
-      - "--transport-port"
-      - "3008"
-    restart: unless-stopped
+      MCP_SERVICE: harmony-sase-mcp
+      MCP_PORT: "3008"
+      MCP_PRODUCT: SASE
+      MCP_REQUIRED: API_KEY MANAGEMENT_HOST ORIGIN
+      MCP_SETTINGS: HARMONY_SASE_API_KEY, HARMONY_SASE_MANAGEMENT_HOST and HARMONY_SASE_ORIGIN
+      API_KEY: ${HARMONY_SASE_API_KEY:-}
+      MANAGEMENT_HOST: ${HARMONY_SASE_MANAGEMENT_HOST:-}
+      ORIGIN: ${HARMONY_SASE_ORIGIN:-}
 
   quantum-gw-cli-mcp:
-    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
+    <<: *mcp-sidecar
     container_name: quantum-gw-cli-mcp
-    networks: [ "demo" ]
-    depends_on:
-      - n8n
-    entrypoint: [ "/usr/local/bin/quantum-gw-cli-mcp" ]
     environment:
-      - MANAGEMENT_HOST=${MANAGEMENT_HOST}
-      - API_KEY=${MANAGEMENT_API_KEY}
-    command:
-      - "--transport"
-      - "http"
-      - "--transport-port"
-      - "3009"
-    restart: unless-stopped
+      <<: *management-env
+      MCP_SERVICE: quantum-gw-cli-mcp
+      MCP_PORT: "3009"
+      MCP_PRODUCT: Gateway CLI
 
   quantum-gw-connection-analysis-mcp:
-    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
+    <<: *mcp-sidecar
     container_name: quantum-gw-connection-analysis-mcp
-    networks: [ "demo" ]
-    depends_on:
-      - n8n
-    entrypoint: [ "/usr/local/bin/quantum-gw-connection-analysis-mcp" ]
     environment:
-      - MANAGEMENT_HOST=${MANAGEMENT_HOST}
-      - API_KEY=${MANAGEMENT_API_KEY}
-    command:
-      - "--transport"
-      - "http"
-      - "--transport-port"
-      - "3010"
-    restart: unless-stopped
+      <<: *management-env
+      MCP_SERVICE: quantum-gw-connection-analysis-mcp
+      MCP_PORT: "3010"
+      MCP_PRODUCT: Gateway Connection Analysis
 
   quantum-gaia-mcp:
-    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
+    <<: *mcp-sidecar
     container_name: quantum-gaia-mcp
-    networks: [ "demo" ]
-    depends_on:
-      - n8n
-    entrypoint: [ "/usr/local/bin/quantum-gaia-mcp" ]
     environment:
-      - MANAGEMENT_HOST=${MANAGEMENT_HOST}
-      - API_KEY=${MANAGEMENT_API_KEY}
-      # Gaia connects to a GATEWAY's Gaia REST API (not the management server) and upstream
-      # prompts for its host/user/password via an interactive browser dialog — impossible in
-      # this headless sidecar. These bring-your-own vars are the env-credential fallback (see
-      # packages/gaia/src/gaia-auth.ts): set them to a reachable gateway and the Gaia agent
-      # works with no UI. Leave blank to keep the tools inert (they error clearly instead of
-      # hanging). GAIA_GATEWAY_IP may be an IP or hostname; port defaults to 443.
-      - GAIA_GATEWAY_IP=${GAIA_GATEWAY_IP:-}
-      - GAIA_GATEWAY_PORT=${GAIA_GATEWAY_PORT:-443}
-      - GAIA_USERNAME=${GAIA_USERNAME:-}
-      - GAIA_PASSWORD=${GAIA_PASSWORD:-}
-    command:
-      - "--transport"
-      - "http"
-      - "--transport-port"
-      - "3011"
-    restart: unless-stopped
+      MCP_SERVICE: quantum-gaia-mcp
+      MCP_PORT: "3011"
+      MCP_PRODUCT: Gaia
+      # Gaia talks to one Security Gateway's Gaia REST API (not the management server). The
+      # upstream server asks for host, user and password in a browser dialog, impossible here,
+      # so these are the headless fallback (packages/gaia/src/gaia-auth.ts). Blank = the tools
+      # answer that Gaia is not configured. GAIA_GATEWAY_IP may be an IP address or a host name.
+      GAIA_GATEWAY_IP: ${GAIA_GATEWAY_IP:-}
+      GAIA_GATEWAY_PORT: ${GAIA_GATEWAY_PORT:-443}
+      GAIA_USERNAME: ${GAIA_USERNAME:-}
+      GAIA_PASSWORD: ${GAIA_PASSWORD:-}
+      # Credentials are sent only to GAIA_GATEWAY_IP and the gateways in GAIA_ALLOWED_GATEWAYS (comma-separated).
+      GAIA_ALLOWED_GATEWAYS: ${GAIA_ALLOWED_GATEWAYS:-}
+      GAIA_CA_CERT: ${GAIA_CA_CERT:-}
+      GAIA_TLS_SERVERNAME: ${GAIA_TLS_SERVERNAME:-}
 
+  # Reads CPInfo files from ./n8n/shared (no management credentials: it never reads them).
   cpinfo-analysis-mcp:
-    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
+    <<: *mcp-sidecar
     container_name: cpinfo-analysis-mcp
-    networks: [ "demo" ]
-    depends_on:
-      - n8n
-    entrypoint: [ "/usr/local/bin/cpinfo-analysis-mcp" ]
-    environment:
-      - MANAGEMENT_HOST=${MANAGEMENT_HOST}
-      - API_KEY=${MANAGEMENT_API_KEY}
-      - LOG_LEVEL=${CPINFO_LOG_LEVEL}
-    command:
-      - "--transport"
-      - "http"
-      - "--transport-port"
-      - "3012"
     volumes:
       - ./n8n/shared:/data/cpinfo
-    restart: unless-stopped
-
-  # Official Policy Insights MCP (@chkp/policy-insights-mcp) — AI policy-tightening suggestions
-  # (zero-hit / over-permissive / disabled rules) from Infinity Cloud Services. Pairs with
-  # mcp-quantum-management (resolve layer/rule names) and with PolicyPilot's cleanup rail.
-  # Needs Management API v2.1 (R82.10+) and Policy Insights enabled on the SMS.
-  policy-insights-mcp:
-    image: ghcr.io/alshawwaf/cp-agentic-n8n:latest # was: custom-mcp-n8n:custom
-    container_name: policy-insights-mcp
-    networks: [ "demo" ]
-    depends_on:
-      - n8n
-    entrypoint: [ "/usr/local/bin/policy-insights-mcp" ]
     environment:
-      - MANAGEMENT_HOST=${MANAGEMENT_HOST}
-      - API_KEY=${MANAGEMENT_API_KEY}
-    command:
-      - "--transport"
-      - "http"
-      - "--transport-port"
-      - "3013"
-    # Registered in the gateway catalog: the gateway enumerates tools once at startup, so it must
-    # only start after this server accepts connections (see the gateway's depends_on).
-    healthcheck:
-      test: [ "CMD", "node", "-e", "require('net').connect(3013,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))" ]
-      interval: 10s
-      timeout: 5s
-      retries: 18
-      start_period: 20s
-    restart: unless-stopped
+      MCP_SERVICE: cpinfo-analysis-mcp
+      MCP_PORT: "3012"
+      MCP_PRODUCT: CPInfo Analysis
+      LOG_LEVEL: ${CPINFO_LOG_LEVEL:-info}
 
-  # ──────────────── Agent-builder import (Flowise + Langflow) ────────────────
-  # One-shot importer, parity with n8n-import: every deploy seeds the committed
-  # integrations/ flows into the RUNNING builders, idempotently (a same-named
-  # flow is never imported twice; an unparseable flow list refuses to import
-  # rather than duplicate). No manual API keys needed: Flowise authenticates
-  # with the stack admin account (its first-setup account uses the same creds)
-  # and Langflow with its provisioned superuser — set FLOWISE_API_KEY /
-  # LANGFLOW_API_KEY in .env only to override. The script waits for each
-  # builder itself, so plain start-order dependencies are enough.
+  # Policy Insights MCP, vendored from upstream 0.3.5 (mcp-src/PATCHES.md §11): policy-tightening suggestions
+  # (zero-hit, over-permissive and disabled rules). Needs Management API v2.1 (R82.10 or later)
+  # and Policy Insights enabled on the Security Management Server.
+  policy-insights-mcp:
+    <<: *mcp-sidecar
+    container_name: policy-insights-mcp
+    environment:
+      <<: *management-env
+      MCP_SERVICE: policy-insights-mcp
+      MCP_PORT: "3013"
+      MCP_PRODUCT: Policy Insights
+
+  # ──────────────── Builders import: Flowise + Langflow (one-shot) ────────────────
+  # Seeds the committed integrations/ agents into the running builders and re-syncs the
+  # credentials and variables from .env on every run (integrations/seed_builders.py). Agents you
+  # changed are kept unless SEED_OVERWRITE=1. Langflow is seeded when its profile is on.
+  # Re-run after changing .env:  docker compose run --rm builders-import
   builders-import:
-    image: python:3.12-alpine
+    image: python:3.12.14-alpine@sha256:4c47124a8391cb7a9f571164147d154777cf012a4ece5f86097130d7a4478111
+    pull_policy: missing
     container_name: builders-import
-    networks: [ "demo" ]
+    # security-lab: the Security Lab agents are flagged when vuln-mcp does not answer.
+    networks: [ "lab", "security-lab" ]
     depends_on:
-      - flowise
-      - langflow
+      flowise:
+        condition: service_healthy
+      langflow:
+        condition: service_healthy
+        required: false
     volumes:
       - ./integrations:/integrations:ro
+    tmpfs:
+      - /tmp:size=32m
     environment:
       - FLOWISE_URL=http://flowise:${FLOWISE_PORT:-3020}
       - LANGFLOW_URL=http://langflow:7860
+      # Langflow is a profile: when it is not running, skip it instead of failing.
+      - LANGFLOW_OPTIONAL=1
       - ADMIN_EMAIL=${N8N_ADMIN_EMAIL}
       - ADMIN_PASSWORD=${N8N_ADMIN_PASSWORD}
       - FLOWISE_API_KEY=${FLOWISE_API_KEY:-}
       - LANGFLOW_API_KEY=${LANGFLOW_API_KEY:-}
-      # Same default as the mcp-gateway service, so the imported agent authenticates out of the box.
-      - MCP_GATEWAY_TOKEN=${MCP_GATEWAY_TOKEN:-cp-mcp-gateway-training-token}
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
-      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
-      - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT:-}
-      # Credential catalogue + Langfuse analytics + LiteLLM-routed Langflow flows:
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-}
+      - MCP_GATEWAY_TOKEN=${MCP_GATEWAY_TOKEN:-}
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
       - LANGFUSE_HOST=${LANGFUSE_HOST:-http://langfuse:3000}
-      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-sk-cp-litellm-training-key}
-      # External MCP agents (DevHub / PolicyPilot): endpoint domain + bearer tokens.
-      # DOMAIN falls back to N8N_HOST minus the n8n. prefix inside the script.
+      - LAKERA_API_KEY=${LAKERA_API_KEY:-}
+      - QDRANT_API_KEY=${QDRANT_API_KEY:-}
+      # External MCP agents (DevHub, PolicyPilot) and the SCIM agent: endpoint domain + tokens.
+      # Blank DOMAIN: the seeder uses N8N_HOST without its "n8n." prefix (same rule as n8n-import).
       - DOMAIN=${DOMAIN:-}
       - N8N_HOST=${N8N_HOST:-}
       - DEVHUB_MCP_TOKEN=${DEVHUB_MCP_TOKEN:-}
       - PILOT_MCP_TOKEN=${PILOT_MCP_TOKEN:-}
-      # SCIM identity agent (HTTP-tool flow → idp.<domain>/scim/v2/Users bearer)
       - IDP_SCIM_TOKEN=${IDP_SCIM_TOKEN:-}
+      - SEED_OVERWRITE=${SEED_OVERWRITE:-0}
     entrypoint: [ "python3", "/integrations/seed_builders.py" ]
     restart: "no"
+    security_opt: [ "no-new-privileges:true" ]
+    cpus: 0.5
+    mem_limit: 256m
+    logging: *default-logging
 
-  # ──────────────── LiteLLM proxy (n8n + Langflow → Langfuse tracing) ────────────────
-  # Internal-only OpenAI-compatible proxy (demo network, no host port). n8n's
-  # OpenAI/Azure credentials and every Langflow flow's OpenAI model point here;
-  # LiteLLM forwards to the real provider with the server-side keys below and
-  # logs every request/response pair to Langfuse. This is what makes n8n and
-  # Langflow visible in Langfuse — neither has a native callback that works
-  # against the lean Langfuse v2 server (Langflow 1.10 bundles langfuse SDK v3,
-  # which requires a v3 server). Flowise traces natively instead (per-chatflow
-  # analytics, richer agent spans) and does NOT route through this proxy.
-  # Auth: clients send LITELLM_MASTER_KEY; the training default mirrors the
-  # MCP_GATEWAY_TOKEN pattern and is overridden by the installer bootstrap.
+  # ──────────────── LiteLLM: the one model endpoint (lab-chat) ────────────────
+  # Every agent calls http://litellm:4000/v1, model "lab-chat", key LITELLM_MASTER_KEY.
+  # integrations/litellm/render_config.py picks the provider from .env at start
+  # (LAB_MODEL_PROVIDER, default auto) and writes the config to a tmpfs. Only this
+  # container gets provider keys. No host port. After editing .env: docker compose up -d litellm
+  # Validate settings: docker compose run --rm --no-deps litellm --check
   litellm:
-    image: ghcr.io/berriai/litellm:main-v1.66.0-stable
+    image: ghcr.io/berriai/litellm:v1.103.1@sha256:df15400b5b80925c45d3fd53f8f7a6c0eaa8a25a86833e1b358002e129018943
     pull_policy: missing
     container_name: litellm
-    networks: [ "demo" ]
+    networks: [ "lab", "ai-red-team" ]  # ai-red-team: model access for AI-Infra-Guard only
+    entrypoint: [ "python", "/lab/litellm/render_config.py", "--exec" ]
+    command: [ "--port", "4000" ]
     volumes:
-      - ./integrations/observability/litellm_config.yaml:/etc/litellm/config.yaml:ro
-    command: [ "--config", "/etc/litellm/config.yaml", "--port", "4000" ]
+      - ./integrations/litellm:/lab/litellm:ro
+    tmpfs:
+      - /tmp/lab-litellm:mode=0700,size=1m
     environment:
-      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-}
+      - LAB_MODEL_PROVIDER=${LAB_MODEL_PROVIDER:-auto}
       - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY:-}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT:-}
+      - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT:-}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION:-}
+      - LAB_REASONING_EFFORT=${LAB_REASONING_EFFORT:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      # Upstream keys for the n8n Claude / Gemini nodes (bring-your-own). Empty = that
-      # provider's node stays unconfigured; the default Azure path is unaffected.
+      - OPENAI_MODEL=${OPENAI_MODEL:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - ANTHROPIC_MODEL=${ANTHROPIC_MODEL:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-}
+      - OLLAMA_CHAT_MODEL=${OLLAMA_CHAT_MODEL:-}
+      - OLLAMA_API_BASE=${OLLAMA_API_BASE:-}
+      - OLLAMA_NUM_CTX=${OLLAMA_NUM_CTX:-}
+      - OLLAMA_THINK=${OLLAMA_THINK:-}
       - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
       - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
       - LANGFUSE_HOST=${LANGFUSE_HOST:-http://langfuse:3000}
-      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-sk-cp-litellm-training-key}
+      - LITELLM_LOCAL_MODEL_COST_MAP=True
+      - DISABLE_ADMIN_UI=True
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4000/health/liveliness', timeout=4)" ]
+      interval: 15s
+      timeout: 6s
+      retries: 5
+      start_period: 60s
+    cpus: 1.0
+    mem_limit: 1g
     restart: unless-stopped
+    logging: *default-logging
 
-  # ──────────────── Qdrant (vector DB for RAG) ────────────────
+  # ──────────────── Qdrant (vector database for RAG) ────────────────
   qdrant:
-    image: qdrant/qdrant:v1.12.4
+    # 1.19.1: fixes GHSA-f632-vm87-2m2f (file write through /logger, 1.9.3 to 1.15.5).
+    image: qdrant/qdrant:v1.19.1@sha256:12364fe851b9f17356fc88189fc06d1b521262e04659ec7345975b00c9246a10
     pull_policy: missing
     container_name: qdrant
-    networks: [ "demo" ]
+    networks: [ "lab" ]
     restart: unless-stopped
     volumes:
-      - qdrant_storage:/qdrant/storage
+      - qdrant_data:/qdrant/storage
+    # Authentication follows QDRANT_API_KEY: set it in .env to require the key (every lab client
+    # sends it), leave it blank for no authentication on the internal network. An empty
+    # QDRANT__SERVICE__API_KEY would mean "a key that is empty" and reject every client.
     environment:
-      # Qdrant treats an EMPTY QDRANT__SERVICE__API_KEY as "auth on with an empty
-      # key" (rejects unauthenticated requests with 401), so we do NOT pass it when
-      # blank. Internal-only on the demo net = no auth by default. To require a key,
-      # set QDRANT_API_KEY in .env AND uncomment the line below (the ingester +
-      # retriever already send it as the api-key header when QDRANT_API_KEY is set).
-      # - QDRANT__SERVICE__API_KEY=${QDRANT_API_KEY}
+      - QDRANT_API_KEY=${QDRANT_API_KEY:-}
       - QDRANT__TELEMETRY_DISABLED=true
+    command:
+      - bash
+      - -c
+      - |
+        if [ -n "$${QDRANT_API_KEY:-}" ]; then export QDRANT__SERVICE__API_KEY="$${QDRANT_API_KEY}"; fi
+        unset QDRANT_API_KEY
+        exec ./entrypoint.sh
     healthcheck:
-      # Qdrant has no shell/curl; TCP-probe the REST port from the Python base image is done
-      # by dependents. This lightweight check keeps depends_on: service_healthy usable.
+      # The image has bash but no curl or wget: probe the REST port.
       test: [ "CMD-SHELL", "bash -c ':> /dev/tcp/127.0.0.1/6333' || exit 1" ]
       interval: 5s
       timeout: 5s
       retries: 20
+    cpus: 0.5
+    mem_limit: 640m
+    logging: *default-logging
 
-  # ──────────────── Visible RAG — one-shot corpus ingester ────────────────
+  # ──────────────── Visible RAG: corpus ingest (one-shot) ────────────────
+  # Embeds integrations/rag-cp-docs with nomic-embed-text (pulled on first use) into Qdrant.
   rag-ingest:
-    image: python:3.12-alpine
+    image: python:3.12.14-alpine@sha256:4c47124a8391cb7a9f571164147d154777cf012a4ece5f86097130d7a4478111
     pull_policy: missing
     container_name: rag-ingest
-    networks: [ "demo" ]
+    networks: [ "lab" ]
     restart: "no"
     working_dir: /app
-    # ingest.py is STDLIB-only (urllib) — nothing to pip install.
+    # ingest.py is STDLIB-only (urllib): nothing to pip install.
     volumes:
       - ./integrations/rag-cp-docs:/app:ro
     environment:
@@ -1186,59 +1094,80 @@ services:
       - EMBED_MODEL=nomic-embed-text
       - COLLECTION=cp_docs
       - QDRANT_API_KEY=${QDRANT_API_KEY:-}
+      - RAG_MIN_SCORE=${RAG_MIN_SCORE:-0.5}
+      - PYTHONDONTWRITEBYTECODE=1
     command: [ "python3", "ingest.py" ]
     depends_on:
       qdrant:
         condition: service_healthy
       ollama-cpu:
         condition: service_healthy
+    security_opt: [ "no-new-privileges:true" ]
+    cpus: 0.5
+    mem_limit: 256m
+    logging: *default-logging
 
-  # One-shot eval run (parity with builders-import): on `docker compose up` it
-  # POSTs the evals_cases.json cases to each agent's n8n chat webhook, scores the
-  # answers, and writes evals_report.md/.json to ./n8n/shared. Exit code is 0 if
-  # every case passes, 1 otherwise. Purely opt-in — start it explicitly with
-  # `docker compose up evals-run`; it never blocks the rest of the stack.
+  # ──────────────── Evals (one-shot, profile evals) ────────────────
+  # Sends integrations/evals/evals_cases.json to the agents' n8n chat endpoints, scores the
+  # answers and writes evals_report.md/.json to ./n8n/shared. Exit 0 when every case passes.
+  # Run: docker compose --profile evals run --rm evals-run
   evals-run:
-    image: python:3.12-alpine
+    profiles: [ "evals" ]
+    image: python:3.12.14-alpine@sha256:4c47124a8391cb7a9f571164147d154777cf012a4ece5f86097130d7a4478111
+    pull_policy: missing
     container_name: evals-run
-    networks: [ "demo" ]
+    networks: [ "lab" ]
     depends_on:
-      - n8n
+      n8n-import:
+        condition: service_completed_successfully
+      litellm:
+        condition: service_healthy
     volumes:
       - ./integrations:/integrations:ro
       - ./n8n/shared:/out
     environment:
-      # Inside the network n8n is reachable by service name; override to a public
-      # host (e.g. https://n8n.${YOUR_DOMAIN}) to eval a remote deployment.
+      # Inside the network n8n is reachable by service name; set EVALS_BASE_URL to a public
+      # host (for example https://n8n.<DOMAIN>) to evaluate a remote lab.
       - BASE_URL=${EVALS_BASE_URL:-http://n8n:5678}
       - CASES_FILE=/integrations/evals/evals_cases.json
       - OUT_DIR=/out
       - TIMEOUT=120
+      # The chat endpoints require the lab admin sign-in (HTTP Basic).
+      - N8N_ADMIN_EMAIL=${N8N_ADMIN_EMAIL}
+      - N8N_ADMIN_PASSWORD=${N8N_ADMIN_PASSWORD}
+      - PYTHONDONTWRITEBYTECODE=1
     entrypoint: [ "python3", "/integrations/evals/run_evals.py" ]
     restart: "no"
+    security_opt: [ "no-new-privileges:true" ]
+    cpus: 0.5
+    mem_limit: 256m
+    logging: *default-logging
 
-  # ──────────────── AI-Infra-Guard (AI Red Teaming Platform) ────────────────
-  # Tencent Zhuque Lab - AI infrastructure vuln scanning, MCP security
-  # analysis, and jailbreak evaluation. Web UI at port 8088.
-  # https://github.com/Tencent/AI-Infra-Guard
+  # ──────────────── AI-Infra-Guard (profile ai-red-team) ────────────────
+  # Tencent Zhuque Lab AI red-teaming platform: AI infrastructure scans, MCP server scans and
+  # jailbreak evaluation. https://github.com/Tencent/AI-Infra-Guard (upstream multi-arch images).
+  # The web UI has NO sign-in, so it has no public route. aig-webserver is only on the internal
+  # ai-red-team network, so a port published on it would not be reachable: open the UI through
+  # the aig-ui proxy below.
   aig-webserver:
-    image: ghcr.io/alshawwaf/cp-agentic-aig-webserver:latest
-    pull_policy: always
-    # build disabled: prebuilt + published by .github/workflows/publish-image.yml; uncomment to build locally.
-    # build:
-    #   context: https://github.com/Tencent/AI-Infra-Guard.git
-    #   dockerfile: Dockerfile
+    profiles: [ "ai-red-team" ]
+    image: zhuquelab/aig-server:v4.6.3@sha256:99ebb0ace2b69e28c57f0fe43ec23ebb44778cca129cf1885fb141ec74beabce
+    pull_policy: missing
     container_name: aig-webserver
-    networks: [ "demo", "dokploy-network" ]
+    # Internal network only: no internet and no route to the Docker host.
+    networks: [ "ai-red-team" ]
+    security_opt: [ "no-new-privileges:true" ]
     restart: unless-stopped
     environment:
-      - AIG_ENV=production
-      - AIG_UPLOAD_DIR=/app/uploads
-      - AIG_DB_PATH=/app/database
-      - TZ=UTC
+      - APP_ENV=production
+      - UPLOAD_DIR=/app/uploads
+      - DB_PATH=/app/db/tasks.db
+      - TZ=${GENERIC_TIMEZONE:-UTC}
+      # The model-API checker runs in the agent container.
+      - AIG_API_CHECKER_URL=http://aig-agent:8000
     volumes:
       - aig_data:/app/data
-      - aig_db:/app/database
+      - aig_db:/app/db
       - aig_logs:/app/logs
       - aig_uploads:/app/uploads
     healthcheck:
@@ -1246,154 +1175,293 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    labels:
-      - "traefik.enable=true"
-      # Two explicit routers (same pattern as PolicyPilot): the Cloudflare tunnel fronts every
-      # host to entrypoint web (:80), and a router carrying TLS config never matches plain HTTP —
-      # Traefik 3.6 splits a web,websecure router and propagates certresolver onto BOTH, so the
-      # single-router form 404s through the tunnel.
-      - "traefik.http.routers.aig-web.rule=Host(`aig.${DOMAIN}`)"
-      - "traefik.http.routers.aig-web.entrypoints=web"
-      - "traefik.http.routers.aig-web.service=aig-svc"
-      - "traefik.http.routers.aig-websecure.rule=Host(`aig.${DOMAIN}`)"
-      - "traefik.http.routers.aig-websecure.entrypoints=websecure"
-      - "traefik.http.routers.aig-websecure.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.aig-websecure.service=aig-svc"
-      - "traefik.http.services.aig-svc.loadbalancer.server.port=8088"
-      - "traefik.docker.network=dokploy-network"
+      start_period: 30s
+    cpus: 1.0
+    mem_limit: 1g
+    logging: *default-logging
+
+  # One-shot: registers lab-chat (through LiteLLM) as a model in AI-Infra-Guard, so scans started from its
+  # web UI can select it (scripts/aig-provision.sh). Internal network only, like the scanner itself.
+  aig-provision:
+    profiles: [ "ai-red-team" ]
+    image: curlimages/curl:8.22.0@sha256:58adaa4e8dca9c988bae2aba4ab3434a0bb2da16bbe3f92dec39ec7785166777
+    pull_policy: missing
+    container_name: aig-provision
+    networks: [ "ai-red-team" ]
+    depends_on:
+      aig-webserver:
+        condition: service_healthy
+    volumes:
+      - ./scripts/aig-provision.sh:/scripts/aig-provision.sh:ro
+    tmpfs:
+      - /tmp:mode=1777,size=1m
+    environment:
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY:-}
+    entrypoint: [ "/bin/sh", "/scripts/aig-provision.sh" ]
+    read_only: true
+    cap_drop: [ "ALL" ]
+    restart: "no"
+    security_opt: [ "no-new-privileges:true" ]
+    cpus: 0.25
+    mem_limit: 64m
+    logging: *default-logging
 
   aig-agent:
-    image: ghcr.io/alshawwaf/cp-agentic-aig-agent:latest
-    pull_policy: always
-    # build disabled: prebuilt + published by .github/workflows/publish-image.yml; uncomment to build locally.
-    # build:
-    #   context: https://github.com/Tencent/AI-Infra-Guard.git
-    #   dockerfile: Dockerfile_Agent
+    profiles: [ "ai-red-team" ]
+    image: zhuquelab/aig-agent:v4.6.3@sha256:ce838581d514215416c583d79756354e27b40ad37cdc171060a742f96361d70f
+    pull_policy: missing
     container_name: aig-agent
-    networks: [ "demo" ]
+    # Internal networks only: ai-red-team (the web server and LiteLLM) and security-lab (vuln-mcp).
+    # The scanner has no internet access and no route to the Docker host.
+    networks: [ "ai-red-team", "security-lab" ]
     restart: unless-stopped
     environment:
       - AIG_SERVER=aig-webserver:8088
-      - OPENROUTER_API_KEY=${AIG_LLM_API_KEY:-ollama}
-      - DEFAULT_BASE_URL=${AIG_LLM_BASE_URL:-http://ollama-cpu:11434/v1}
-      - DEFAULT_MODEL=${AIG_LLM_MODEL:-huihui_ai/deepseek-r1-abliterated:latest}
-      - THINKING_MODEL=${AIG_LLM_MODEL:-huihui_ai/deepseek-r1-abliterated:latest}
-      - CODING_MODEL=${AIG_LLM_MODEL:-huihui_ai/deepseek-r1-abliterated:latest}
-      - FAST_MODEL=${AIG_LLM_MODEL:-huihui_ai/deepseek-r1-abliterated:latest}
-    volumes:
-      - ./aig/patches/llm.py:/app/mcp-scan/utils/llm.py:ro
-    cap_add:
-      - SYS_ADMIN
-    security_opt:
-      - seccomp=unconfined
+      - TZ=${GENERIC_TIMEZONE:-UTC}
+      # Scanner model: the lab model through LiteLLM (never an abliterated model). The key
+      # defaults to LITELLM_MASTER_KEY; AIG_LLM_* in .env point it elsewhere.
+      - OPENROUTER_API_KEY=${AIG_LLM_API_KEY:-${LITELLM_MASTER_KEY:-}}
+      - DEFAULT_BASE_URL=${AIG_LLM_BASE_URL:-http://litellm:4000/v1}
+      - DEFAULT_MODEL=${AIG_LLM_MODEL:-lab-chat}
+      - THINKING_MODEL=${AIG_LLM_MODEL:-lab-chat}
+      - CODING_MODEL=${AIG_LLM_MODEL:-lab-chat}
+      - FAST_MODEL=${AIG_LLM_MODEL:-lab-chat}
+    # Upstream adds SYS_ADMIN and seccomp=unconfined only for Chromium's sandbox, which takes
+    # screenshots of scanned web services. The MCP scan used in the lab does not need them, so
+    # the lab runs the scanner without extra privileges.
+    security_opt: [ "no-new-privileges:true" ]
     shm_size: "2gb"
     depends_on:
       aig-webserver:
         condition: service_healthy
+      litellm:
+        condition: service_healthy
+    cpus: 1.5
+    mem_limit: 2g
+    logging: *default-logging
 
-  # ──────────────── MCP Gateway (pilot) ────────────────
-  # Aggregates the Check Point MCP sidecars behind one endpoint.
-  # Internal-only on `demo`, consistent with the no-host-ports posture.
+  # Opt-in way into the AI-Infra-Guard web UI (no sign-in): a reverse proxy with ONE fixed upstream,
+  # http://aig-webserver:8088 (config: aig/ui-nginx.conf). It publishes no host port. To open the UI
+  # on your workstation, publish one on 127.0.0.1 only, in a local docker-compose.override.yml:
+  #   services:
+  #     aig-ui:
+  #       ports: [ "127.0.0.1:8088:8088" ]
+  # then browse to http://localhost:8088 (on a remote lab host, through an SSH tunnel to that port).
+  # Never publish it on 0.0.0.0 or add a reverse-proxy route: anyone who reaches it can run scans.
+  # Why containment holds: the proxy joins "lab" only so that a port can be published (an internal
+  # network cannot publish one). It accepts inbound requests and forwards them to aig-webserver,
+  # nothing else: it is not a forward proxy (no CONNECT, the Host header and absolute URIs cannot
+  # pick another target), IP forwarding is off in its network namespace (sysctls below), and it
+  # holds no capabilities. aig-webserver and aig-agent stay on internal networks without a default
+  # route, so scans still cannot reach the Docker host or the internet.
+  aig-ui:
+    profiles: [ "ai-red-team" ]
+    image: nginxinc/nginx-unprivileged:1.30.5-alpine@sha256:ed04ec1ff34502c339ee5c3ae3f855442398edc1d05591e2b98981dcbbd20b1e
+    pull_policy: missing
+    container_name: aig-ui
+    # aig-ui-access: a network of its own, so no other lab container can reach the UI (it has no
+    # sign-in); the optional local port override publishes it on 127.0.0.1 only.
+    networks: [ "aig-ui-access", "ai-red-team" ]
+    depends_on:
+      aig-webserver:
+        condition: service_healthy
+    volumes:
+      - ./aig/ui-nginx.conf:/etc/nginx/nginx.conf:ro
+    # nginx runs as uid 101 and listens on 8088 (above 1024: no capability needed). Its PID file and
+    # temporary files (the cache and run paths) are on this tmpfs; the rest is read-only.
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=8m
+    cap_drop: [ "ALL" ]
+    security_opt: [ "no-new-privileges:true" ]
+    # Docker leaves IP forwarding on inside containers. Off here, so a container on ai-red-team cannot
+    # send packets for other hosts to the proxy and have them routed out through "aig-ui-access".
+    sysctls:
+      net.ipv4.ip_forward: 0
+      net.ipv6.conf.all.forwarding: 0
+    # Through the proxy to the UI, so it is healthy only when the UI answers.
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8088/" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    cpus: 0.25
+    mem_limit: 64m
+    logging: *default-logging
+
+  # ──────────────── Docker API for the MCP gateway (read-only) ────────────────
+  # The gateway only lists containers and networks. This proxy forwards those GET requests and
+  # refuses everything else (no POST: nothing can be created, started, stopped or executed).
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:v0.5.0@sha256:1f5038b54f06c3e18422902cf00ba21803d1c97805aae032e5e6673d532d3459
+    pull_policy: missing
+    container_name: docker-socket-proxy
+    networks: [ "lab" ]
+    restart: unless-stopped
+    environment:
+      - CONTAINERS=1
+      - NETWORKS=1
+      - POST=0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:2375/version || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 5s
+    security_opt: [ "no-new-privileges:true" ]
+    cpus: 0.25
+    mem_limit: 64m
+    logging: *default-logging
+
+  # ──────────────── MCP Gateway ────────────────
+  # One endpoint for the Check Point MCP servers: http://mcp-gateway:8080/mcp with
+  # "Authorization: Bearer <MCP_GATEWAY_TOKEN>". Internal only (no host port).
+  # Startup prints about 90 "audit event dropped due to backpressure" lines: harmless (outside
+  # Docker Desktop the gateway's policy audit is a no-op, and its 100-event queue is smaller
+  # than the 190 tools it lists). No gateway flag turns them off.
   mcp-gateway:
-    image: docker/mcp-gateway@sha256:97ec61bc5f38416279069800fef58ac264c81c643a73a9698ceaec876a436e3f
+    image: docker/mcp-gateway:v0.44.1@sha256:b0a3876ffbb352813d658cf25c137b8eae29bbe23db5944560a1c9059533bb16
+    pull_policy: missing
     container_name: mcp-gateway
-    networks: [ "demo" ]
+    networks: [ "lab" ]
     command:
       - "--transport=streaming"
       - "--port=8080"
-      # catalog must live under ~/.docker/mcp/catalogs/ and be referenced by name
+      # The catalog must live under ~/.docker/mcp/catalogs/ and is referenced by name.
       - "--catalog=checkpoint-mcp.yaml"
-      # a custom catalog does not auto-enable its servers; list them explicitly
+      # A custom catalog does not enable its servers; list them explicitly.
       - "--servers=documentation,quantum-management,policy-insights,cpinfo-analysis,https-inspection,management-logs,gaia,gw-cli,reputation-service,threat-emulation,threat-prevention"
+      # Pass the servers' tool schemas through unchanged (draft-07), as the agents were built against.
+      - "--preserve-tool-schema-dialect"
     environment:
-      # required when running outside Docker Desktop (Dokploy / Docker CE)
+      # Required outside Docker Desktop (lab host, Docker CE, a gateway in a container).
       - DOCKER_MCP_IN_CONTAINER=1
-      # sidecars are internal-network HTTP (not HTTPS); opt into insecure remote
-      # MCP URLs. Safe here because traffic stays on the private `demo` network.
+      # No raw Docker socket: the gateway reads containers and networks through the proxy.
+      - DOCKER_HOST=tcp://docker-socket-proxy:2375
+      # The MCP servers are plain HTTP on the private lab network.
       - DOCKER_MCP_ALLOW_INSECURE_REMOTE_URLS=1
-      # PIN the gateway Bearer token. Without this the gateway generates a NEW
-      # random token on every restart, silently invalidating any client
-      # credential (n8n) configured against the old one. Clients send:
-      #   Authorization: Bearer <token>
-      - MCP_GATEWAY_AUTH_TOKEN=${MCP_GATEWAY_TOKEN:-cp-mcp-gateway-training-token}
+      # The Bearer token clients must send. Without it the gateway would generate a new random
+      # token on every restart, so the lab refuses to start without one.
+      - MCP_GATEWAY_AUTH_TOKEN=${MCP_GATEWAY_TOKEN:?MCP_GATEWAY_TOKEN is not set. Run ./setup.sh}
     volumes:
       - ./mcp-gateway/catalog.yaml:/root/.docker/mcp/catalogs/checkpoint-mcp.yaml:ro
-      - /var/run/docker.sock:/var/run/docker.sock
-    # service_healthy (not plain startup order): the gateway enumerates each
-    # server's tools ONCE at startup. If a slow-booting sidecar isn't listening
-    # yet, the gateway logs "Can't start <server>: connection refused" and runs
-    # with 0 of its tools until manually restarted. The healthchecks make the
-    # gateway start only after both sidecars accept connections.
+    # The gateway lists each server's tools ONCE at start; a server that is not listening yet
+    # would stay at 0 tools until the gateway restarts. So it waits for every server it fronts.
     depends_on:
+      docker-socket-proxy:
+        condition: service_healthy
       mcp-documentation:
         condition: service_healthy
       mcp-quantum-management:
         condition: service_healthy
       policy-insights-mcp:
         condition: service_healthy
-    # Surfaces a wedged gateway (e.g. it came up before a sidecar and enumerated
-    # 0 tools) as 'unhealthy' in `docker ps`. The gateway image is a minimal Go
-    # image with busybox nc (no node), so probe the port with nc.
+      cpinfo-analysis-mcp:
+        condition: service_healthy
+      mcp-https-inspection:
+        condition: service_healthy
+      mcp-management-logs:
+        condition: service_healthy
+      quantum-gaia-mcp:
+        condition: service_healthy
+      quantum-gw-cli-mcp:
+        condition: service_healthy
+      reputation-service-mcp:
+        condition: service_healthy
+      threat-emulation-mcp:
+        condition: service_healthy
+      threat-prevention-mcp:
+        condition: service_healthy
+    # Proves the port is open. It does not count tools: ./scripts/doctor.sh --post-start does.
     healthcheck:
       test: [ "CMD", "nc", "-z", "127.0.0.1", "8080" ]
       interval: 15s
       timeout: 5s
       retries: 5
       start_period: 20s
+    cap_drop: [ "ALL" ]
+    security_opt: [ "no-new-privileges:true" ]
+    cpus: 0.5
+    mem_limit: 192m
     restart: unless-stopped
+    logging: *default-logging
 
-  # ─────────── Exercise: Build Your Own MCP Server (opt-in) ───────────
-  # Zero-dependency, stdlib-only MCP server wrapping the CP IPS/CVE API. Behind
-  # the `exercises` profile so it never starts with the default stack or CI.
-  # Run: docker compose --profile exercises up -d --build ips-cve-mcp
+  # ─────────── Exercise: Build Your Own MCP Server (profile exercises) ───────────
+  # Zero-dependency, stdlib-only MCP server wrapping the Check Point IPS/CVE API.
+  # Run: docker compose --profile exercises up -d ips-cve-mcp
   # See docs/guides/Build_Your_Own_MCP_Exercise.md.
   ips-cve-mcp:
-    image: ghcr.io/alshawwaf/cp-agentic-ips-cve-mcp:latest
-    pull_policy: always
-    # build disabled: prebuilt + published by .github/workflows/publish-image.yml; uncomment to build locally.
-    # build:
-    #   context: ./exercises/build-your-own-mcp
-    #   dockerfile: Dockerfile
-    # image: ips-cve-mcp:exercise
-    container_name: ips-cve-mcp
     profiles: [ "exercises" ]
-    networks: [ "demo" ]
+    # Published by .github/workflows/publish-image.yml (see the MCP servers above). To build your own
+    # version of the exercise: docker compose --profile exercises up -d --build ips-cve-mcp
+    # (IPS_CVE_VARIANT=scaffold builds the unfinished starting point instead of the solution).
+    image: ghcr.io/alshawwaf/cp-agentic-ips-cve-mcp:${LAB_IMAGE_TAG:-latest}
+    build:
+      context: ./exercises/build-your-own-mcp
+      args:
+        VARIANT: ${IPS_CVE_VARIANT:-solution}
+    pull_policy: missing
+    container_name: ips-cve-mcp
+    networks: [ "lab" ]
     environment:
-      - IPS_CLIENT_ID=${IPS_CLIENT_ID}
-      - IPS_ACCESS_KEY=${IPS_ACCESS_KEY}
-      # optional region override (auth + service host must match); blank = global default
+      - IPS_CLIENT_ID=${IPS_CLIENT_ID:-}
+      - IPS_ACCESS_KEY=${IPS_ACCESS_KEY:-}
+      # Check Point portal region: EU (default) or US. IPS_AUTH_URL / IPS_SERVICE_URL override the hosts.
+      - IPS_REGION=${IPS_REGION:-EU}
       - IPS_AUTH_URL=${IPS_AUTH_URL:-}
       - IPS_SERVICE_URL=${IPS_SERVICE_URL:-}
+      # Optional: require this Bearer token from MCP clients.
+      - MCP_BEARER_TOKEN=${IPS_MCP_BEARER_TOKEN:-}
       - MCP_PORT=3013
+    read_only: true
+    cap_drop: [ "ALL" ]
     healthcheck:
       test: [ "CMD", "python3", "-c", "import socket; socket.create_connection(('127.0.0.1',3013),3)" ]
       interval: 10s
       timeout: 5s
       retries: 12
       start_period: 10s
+    security_opt: [ "no-new-privileges:true" ]
+    cpus: 0.25
+    mem_limit: 128m
     restart: unless-stopped
+    logging: *default-logging
 
-  # ─────────── MCP Security Lab (opt-in, INTENTIONALLY VULNERABLE) ───────────
-  # ☠️ A deliberately-unsafe MCP server used ONLY to teach MCP attack/defend
-  # (tool poisoning, indirect prompt injection, over-permissioned tools,
-  # rug-pull). Everything it does is SIMULATED and clearly labelled — no real
-  # file reads, no exfiltration. Behind the `security-lab` profile so it NEVER
-  # starts with the default stack or CI, and it publishes NO host port (internal
-  # `demo` network only). Do not front a real workload with this.
+  # ─────────── MCP Security Lab (profile security-lab, INTENTIONALLY VULNERABLE) ───────────
+  # A deliberately unsafe MCP server used ONLY to teach MCP attack and defense (tool poisoning,
+  # indirect prompt injection, over-permissioned tools, rug-pull). Everything it does is
+  # SIMULATED and labelled: no real file reads, no exfiltration. It runs on the internal
+  # security-lab network only (no internet, no Postgres, no Check Point MCP servers; only the
+  # builders and the scanner can reach it), as an unprivileged user on a read-only file system.
   # Enable: COMPOSE_PROFILES=...,security-lab   (see integrations/mcp-security-lab/INTEGRATION.md)
   # Guide:  docs/guides/MCP_Security_Lab.md
   vuln-mcp:
-    image: python:3.12-alpine
-    container_name: vuln-mcp
     profiles: [ "security-lab" ]
-    networks: [ "demo" ]
+    image: python:3.12.14-alpine@sha256:4c47124a8391cb7a9f571164147d154777cf012a4ece5f86097130d7a4478111
+    pull_policy: missing
+    container_name: vuln-mcp
+    networks: [ "security-lab" ]
     working_dir: /app
+    user: "65534:65534"
+    read_only: true
+    tmpfs:
+      - /tmp:size=8m
+    cap_drop: [ "ALL" ]
+    security_opt: [ "no-new-privileges:true" ]
     volumes:
       - ./integrations/mcp-security-lab:/app:ro
     environment:
       - MCP_PORT=3099
-      # MCP_BEARER_TOKEN is intentionally left UNSET — the lab demonstrates a
-      # direct, unauthenticated sidecar (contrast the gateway's mandatory Bearer).
+      - PYTHONDONTWRITEBYTECODE=1
+      # Seconds after the last currency_convert call before the rug pull turns clean again
+      # (0 = it stays poisoned until POST /reset or a restart).
+      - RUG_PULL_RESET_SECONDS=${RUG_PULL_RESET_SECONDS:-600}
+      # MCP_BEARER_TOKEN is intentionally left UNSET: the lab demonstrates a direct,
+      # unauthenticated server (contrast the gateway's mandatory Bearer token).
     command: [ "python3", "/app/vuln_mcp_server.py" ]
     healthcheck:
       test: [ "CMD", "python3", "-c", "import socket; socket.create_connection(('127.0.0.1',3099),3)" ]
@@ -1401,23 +1469,26 @@ services:
       timeout: 5s
       retries: 12
       start_period: 10s
+    cpus: 0.25
+    mem_limit: 96m
     restart: unless-stopped
+    logging: *default-logging
 
-  # ─────────── PolicyPilot MCP (opt-in, prereqs required) ───────────
-  # PolicyPilot's own MCP server (guarded-WRITE: preview / approve / rollback)
-  # fronted by the gateway. Behind the `policypilot` profile so it never starts
-  # with the default stack or CI. RUNTIME PREREQS (see the guide): build the
-  # PolicyPilot image (its `mcp` dep installs via Artifactory), and provide a DB
-  # + PILOT_ENCRYPTION_KEY populated by the PolicyPilot portal (share its /data
-  # volume) so its tools can decrypt saved SMS/gateway creds.
+  # ─────────── PolicyPilot MCP (profile policypilot, prerequisites required) ───────────
+  # PolicyPilot's own MCP server (guarded write: preview, approve, rollback). The MCP gateway does
+  # NOT front it: it is not in mcp-gateway/catalog.yaml or the gateway's --servers list, and adding
+  # it is not part of the lab (see the guide). RUNTIME PREREQUISITES (see the guide): a PolicyPilot
+  # image, and a DB plus the key the PolicyPilot portal encrypted its saved credentials with (share
+  # its /data volume).
   # Enable: docs/guides/PolicyPilot_Gateway_Sidecar_Guide.md
   policypilot-mcp:
-    image: ${POLICYPILOT_IMAGE:-policypilot:custom}
-    container_name: policypilot-mcp
     profiles: [ "policypilot" ]
-    networks: [ "demo" ]
-    # init_db() is skipped by the standalone entrypoint — create tables first,
-    # then run the Streamable-HTTP MCP server on 0.0.0.0 (default binds 127.0.0.1).
+    image: ${POLICYPILOT_IMAGE:-policypilot:custom}
+    pull_policy: missing
+    container_name: policypilot-mcp
+    networks: [ "lab" ]
+    # init_db() is skipped by the standalone entrypoint: create the tables first, then run the
+    # Streamable-HTTP MCP server on 0.0.0.0 (its default binds 127.0.0.1).
     entrypoint: [ "sh", "-c" ]
     command:
       - "python -c 'from app.db import init_db; init_db()' && python -m app.mcp_server"
@@ -1427,7 +1498,10 @@ services:
       - PILOT_MCP_HOST=0.0.0.0
       - PILOT_MCP_PORT=3020
       - PILOT_DATABASE_URL=${PILOT_DATABASE_URL:-sqlite:////data/policypilot.db}
+      # PolicyPilot derives its encryption key from PILOT_ENCRYPTION_KEY, falling back to
+      # PILOT_SESSION_SECRET: pass whichever the portal uses.
       - PILOT_ENCRYPTION_KEY=${PILOT_ENCRYPTION_KEY:-}
+      - PILOT_SESSION_SECRET=${PILOT_SESSION_SECRET:-}
     volumes:
       - policypilot_data:/data
     healthcheck:
@@ -1436,4 +1510,7 @@ services:
       timeout: 5s
       retries: 12
       start_period: 20s
+    cpus: 0.5
+    mem_limit: 512m
     restart: unless-stopped
+    logging: *default-logging
