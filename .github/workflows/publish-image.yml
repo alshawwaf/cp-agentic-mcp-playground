@@ -1,44 +1,112 @@
-name: publish-image
+name: Publish images
+
+# Publishes the lab's own images to GHCR for linux/amd64 and linux/arm64, only from main and only
+# after CI passed on that commit:
+#   ghcr.io/<owner>/cp-agentic-n8n          n8n + every Check Point MCP server (docker/n8n)
+#   ghcr.io/<owner>/cp-agentic-ips-cve-mcp  Build Your Own MCP solution (exercises/build-your-own-mcp)
+# Tags: :<commit sha> always; :latest only while that commit is still the head of main (so a slow
+# run for an older commit never moves :latest back). AI-Infra-Guard is not built here: compose uses
+# the upstream multi-arch zhuquelab images, pinned by digest.
+
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
+
 permissions:
   contents: read
-  packages: write
+
+concurrency:
+  group: publish-images
+  cancel-in-progress: false
+
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    name: Publish ${{ matrix.image }}
+    if: >-
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
     strategy:
+      fail-fast: false
       matrix:
         include:
-          # n8n custom image (custom-mcp-n8n:custom) — also reused as-is by all
-          # 14 MCP sidecar services in docker-compose.yml, so this one image
-          # covers n8n + every sidecar.
-          - { image: cp-agentic-n8n, context: ./docker/n8n, dockerfile: ./docker/n8n/Dockerfile }
-          # AI-Infra-Guard builds from Tencent's repo (remote git build context,
-          # dockerfile path resolved inside that context) — same as compose.
-          - { image: cp-agentic-aig-webserver, context: "https://github.com/Tencent/AI-Infra-Guard.git", dockerfile: Dockerfile }
-          - { image: cp-agentic-aig-agent, context: "https://github.com/Tencent/AI-Infra-Guard.git", dockerfile: Dockerfile_Agent }
-          # Build-your-own-MCP exercise image (ips-cve-mcp:exercise)
-          - { image: cp-agentic-ips-cve-mcp, context: ./exercises/build-your-own-mcp, dockerfile: ./exercises/build-your-own-mcp/Dockerfile }
+          - image: cp-agentic-n8n
+            context: docker/n8n
+            file: docker/n8n/Dockerfile
+          - image: cp-agentic-ips-cve-mcp
+            context: exercises/build-your-own-mcp
+            file: exercises/build-your-own-mcp/Dockerfile
+    env:
+      SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - name: Check out the commit CI tested
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SHA }}
+          persist-credentials: false
+
+      - name: Tags
+        id: tags
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IMAGE: ${{ matrix.image }}
+        run: |
+          owner=$(printf '%s' "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')
+          ref="ghcr.io/$owner/$IMAGE"
+          tags="$ref:$SHA"
+          main_head=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          if [ "$main_head" = "$SHA" ]; then
+            tags="$tags,$ref:latest"
+          else
+            echo "::notice::main has moved on to $main_head; publishing $ref:$SHA without :latest"
+          fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "tags=$tags" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU (arm64)
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - id: meta
-        run: echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
-      - uses: docker/build-push-action@v6
+
+      # The n8n builder stage runs natively ($BUILDPLATFORM); only the small final stage runs under QEMU.
+      - name: Build and push (linux/amd64, linux/arm64)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: ${{ matrix.context }}
-          file: ${{ matrix.dockerfile }}
+          file: ${{ matrix.file }}
+          platforms: linux/amd64,linux/arm64
+          build-args: REVISION=${{ env.SHA }}
+          tags: ${{ steps.tags.outputs.tags }}
           push: true
-          tags: |
-            ghcr.io/${{ steps.meta.outputs.owner }}/${{ matrix.image }}:latest
-            ghcr.io/${{ steps.meta.outputs.owner }}/${{ matrix.image }}:${{ github.sha }}
-          cache-from: type=gha,scope=${{ matrix.image }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=${{ matrix.image }}-multiarch
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}-multiarch
+
+      - name: The pushed image lists both platforms
+        env:
+          REF: ${{ steps.tags.outputs.ref }}
+        run: |
+          docker buildx imagetools inspect "$REF:$SHA" > "$RUNNER_TEMP/manifest.txt"
+          for p in linux/amd64 linux/arm64; do
+            grep -q "Platform: *$p" "$RUNNER_TEMP/manifest.txt" || { echo "::error::$REF:$SHA has no $p image"; exit 1; }
+          done
+          grep 'Platform:' "$RUNNER_TEMP/manifest.txt"

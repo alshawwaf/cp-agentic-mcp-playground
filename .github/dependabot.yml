@@ -1,0 +1,14 @@
+# Keeps the commit-SHA pins of the GitHub Actions in .github/workflows current (Dependabot updates the
+# SHA and its version comment together). Image pins (docker-compose.yml, Dockerfiles) are bumped by hand:
+# n8n and database upgrades migrate data one way and need a deliberate release.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
+    commit-message:
+      prefix: ci

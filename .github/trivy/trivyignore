@@ -1,0 +1,9 @@
+# Trivy exceptions for the lab image (cp-agentic-n8n). Each entry needs a reason, an owner decision and an expiry.
+# CI fails again automatically when an exception expires.
+
+# CVE-2026-60002 — openssh 10.3_p1-r0 (fixed in 10.3_p1-r1), in the upstream n8n base image n8nio/n8n:2.41.5.
+# Packages: openssh, openssh-client-common, openssh-client-default, openssh-keygen, openssh-server,
+# openssh-server-common, openssh-sftp-server. The image has no package manager (apk is removed upstream), so the
+# lab Dockerfile cannot upgrade them. sshd is never started (containers run only n8n or one MCP server) and no
+# SSH port is exposed. Owner decision 2026-10-01: accept for 30 days; remove when n8n ships a rebased image.
+CVE-2026-60002 exp:2026-10-31

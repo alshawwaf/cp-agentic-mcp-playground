@@ -1,69 +1,258 @@
 name: CI
 
+# Merge gate: every job here must pass on a pull request. All of it is offline and needs no secrets:
+# tests run in throwaway containers with no network, a read-only root and no capabilities.
+# The full-stack acceptance run lives in live-stack.yml (nightly + manual), image publishing in
+# publish-image.yml (after this workflow passes on main), the weekly image scan in security-scan.yml.
+# No schedule here on purpose: GitHub disables scheduled workflows after 60 days without activity,
+# and a disabled workflow also stops running on pull requests.
+
 on:
   push:
-    branches: [main, develop]
-  pull_request:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  SHELLCHECK_IMAGE: koalaman/shellcheck:v0.11.0@sha256:61862eba1fcf09a484ebcc6feea46f1782532571a34ed51fedf90dd25f925a8d
+  ACTIONLINT_IMAGE: rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+  TRIVY_VERSION: v0.70.0
+
 jobs:
-  # Required gate — fast, deterministic, no secrets needed. This is what blocks a
-  # merge: the setup wizard runs unattended, the compose file is valid, and the
-  # custom MCP image (incl. the gateway-ready patches) builds.
   validate:
-    name: Validate (setup + compose config + build)
-    runs-on: ubuntu-latest
+    name: Validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Generate a throwaway .env (setup.sh --non-interactive)
+        run: ./setup.sh --non-interactive
+
+      - name: .env is private and complete (mode 600, no change_me)
+        run: |
+          test "$(stat -c %a .env)" = 600 || { echo "::error::.env is not mode 600"; exit 1; }
+          if grep -q 'change_me' .env; then echo "::error::.env still contains change_me placeholders"; exit 1; fi
+
+      - name: Compose config (default stack and every profile)
+        run: |
+          docker compose config --quiet
+          for p in $(docker compose config --profiles); do
+            echo "profile $p"
+            docker compose --profile "$p" config --quiet
+          done
+          docker compose --profile '*' config --quiet
+
+      - name: Compose policy (no host ports, limits, pinned images, attack containment)
+        run: |
+          mkdir -p "$RUNNER_TEMP/compose"
+          docker compose config --format json > "$RUNNER_TEMP/compose/default.json"
+          docker compose --profile '*' config --format json > "$RUNNER_TEMP/compose/all.json"
+          .github/scripts/py-isolated.sh -i "$RUNNER_TEMP/compose" -- \
+            python3 .github/scripts/check_compose_policy.py /input/default.json /input/all.json docker-compose.yml
+          rm -rf "$RUNNER_TEMP/compose"
+
+      - name: Builder flows (Langflow, Flowise, n8n) and workflow uniqueness
+        run: |
+          .github/scripts/py-isolated.sh -- python3 scripts/flows/langflow_fix.py check
+          .github/scripts/py-isolated.sh -- python3 scripts/flows/flowise_fix.py check
+          .github/scripts/py-isolated.sh -- python3 scripts/flows/n8n_fix.py check
+          .github/scripts/py-isolated.sh -- python3 scripts/check_workflow_uniqueness.py
+
+      - name: shellcheck (every shell script)
+        run: |
+          find . -path ./.git -prune -o -name node_modules -prune -o -type f -name '*.sh' -print0 | sort -z |
+            xargs -0 docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
+              --user 65534:65534 --cpus 1 -m 512m -v "$PWD":/mnt:ro -w /mnt "$SHELLCHECK_IMAGE" -x
+
+      - name: Workflow lint (actionlint, with shellcheck on run steps)
+        run: |
+          docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
+            --user 65534:65534 --cpus 1 -m 512m -v "$PWD":/repo:ro -w /repo "$ACTIONLINT_IMAGE" -color
+
+      - name: Python syntax (py_compile, every file)
+        run: |
+          # shellcheck disable=SC2016  # the script runs inside the container
+          .github/scripts/py-isolated.sh -- sh -c '
+            find . -path ./.git -prune -o -name node_modules -prune -o -type f -name "*.py" -print0 | xargs -0 python3 -m py_compile &&
+            echo "py_compile: $(find . -path ./.git -prune -o -name node_modules -prune -o -type f -name "*.py" -print | wc -l) files"'
+
+      - name: "Unit tests: MCP Security Lab server (simulated only)"
+        run: .github/scripts/py-isolated.sh -- python3 integrations/mcp-security-lab/test_vuln_mcp_server.py
+
+      - name: "Unit tests: Build Your Own MCP (solution, scaffold guard)"
+        run: |
+          .github/scripts/py-isolated.sh -C exercises/build-your-own-mcp/solution -- python3 ../test_byo_mcp.py ips_cve_mcp.py
+          .github/scripts/py-isolated.sh -C exercises/build-your-own-mcp -- python3 test_byo_mcp.py --scaffold-check scaffold/ips_cve_mcp.py
+
+      - name: "Unit tests: RAG ingest, evals, code-first agent"
+        run: |
+          .github/scripts/py-isolated.sh -- python3 integrations/rag-cp-docs/test_ingest.py
+          .github/scripts/py-isolated.sh -- python3 integrations/evals/test_evals.py
+          .github/scripts/py-isolated.sh -- python3 integrations/code-agent/test_code_agent.py
+
+  setup-macos:
+    name: Setup on macOS
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # macOS runners have no Docker. The stub lets setup.sh and doctor.sh run their real code
+      # paths (BSD sed and stat, /bin/sh) with a Docker that can use 4 CPUs and 8 GiB.
+      - name: Put the docker stub on PATH
+        run: |
+          mkdir -p "$RUNNER_TEMP/bin"
+          install -m 755 .github/scripts/docker-stub.sh "$RUNNER_TEMP/bin/docker"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+      - name: setup.sh --non-interactive (/bin/sh)
+        run: /bin/sh ./setup.sh --non-interactive
+
+      - name: .env is private and complete (mode 600, no change_me)
+        run: |
+          test "$(stat -f %Lp .env)" = 600 || { echo "::error::.env is not mode 600"; exit 1; }
+          if grep -q 'change_me' .env; then echo "::error::.env still contains change_me placeholders"; exit 1; fi
+
+      - name: Re-running setup keeps .env unchanged
+        run: |
+          cp -p .env "$RUNNER_TEMP/env.first"
+          /bin/sh ./setup.sh --non-interactive > /dev/null
+          cmp -s .env "$RUNNER_TEMP/env.first" || { echo "::error::a second setup.sh run changed .env"; exit 1; }
+          rm -f "$RUNNER_TEMP/env.first"
+
+      - name: doctor.sh --preflight (/bin/sh)
+        run: /bin/sh ./scripts/doctor.sh --preflight
+
+  mcp-security:
+    name: MCP server security tests
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Cache the npm download cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/mcp-src-npm
+          key: mcp-src-npm-${{ hashFiles('docker/n8n/mcp-src/package-lock.json') }}
+          restore-keys: mcp-src-npm-
 
-      - name: Generate .env (non-interactive)
-        run: ./setup.sh --non-interactive
+      - name: Build mcp-src (npm 10.9.4 ci + nx build, as the image does)
+        run: tests/mcp-src/run.sh --work "$RUNNER_TEMP/mcp-src" --npm-cache "$HOME/.cache/mcp-src-npm" --build-only
 
-      - name: Validate docker-compose.yml
-        run: docker compose config --quiet
+      # TLS verification, credential separation, sessions, DELETE, redaction, Gaia allow-list,
+      # CPInfo and Threat Emulation path checks, Policy Insights parity with npm 0.3.5.
+      - name: Security tests (no network)
+        run: tests/mcp-src/run.sh --work "$RUNNER_TEMP/mcp-src" --skip-build
 
-      # compose pulls the prebuilt GHCR image (its build: block is commented out),
-      # so `docker compose build n8n` would build nothing — build the Dockerfile directly.
-      - name: Build custom n8n / MCP image
-        run: docker build -f docker/n8n/Dockerfile docker/n8n
-
-  # Heavyweight live-stack smoke test. NOT a merge gate: bringing up the full
-  # stack pulls large images and the management-backed MCP sidecars need a real
-  # Check Point SMS (secrets) to be fully healthy, which a public runner does not
-  # have. Run on demand (Actions -> CI -> Run workflow) or against the lab.
-  live-stack:
-    name: Live stack smoke (manual)
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
-    needs: validate
-    timeout-minutes: 40
+  rag-threshold:
+    name: RAG threshold (Langflow, n8n)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Retrievers honour the 0.5 relevance threshold (no network)
+        run: tests/rag-threshold/run.sh
+
+  image:
+    name: Lab images (build, smoke test, scan)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
-      - name: Generate .env (non-interactive)
-        run: ./setup.sh --non-interactive
+      # One amd64 build per run (no push). publish-image.yml builds amd64 + arm64 on main.
+      - name: Build docker/n8n (n8n + Check Point MCP servers)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: docker/n8n
+          file: docker/n8n/Dockerfile
+          platforms: linux/amd64
+          build-args: REVISION=${{ github.sha }}
+          tags: cp-agentic-n8n:ci
+          load: true
+          push: false
+          provenance: false
+          cache-from: type=gha,scope=cp-agentic-n8n-amd64
+          cache-to: type=gha,mode=max,scope=cp-agentic-n8n-amd64
 
-      - name: Start stack (CPU profile)
-        run: docker compose --profile cpu up -d
-        env:
-          COMPOSE_HTTP_TIMEOUT: 200
+      - name: Image carries this commit (OCI revision label)
+        run: |
+          rev=$(docker image inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' cp-agentic-n8n:ci)
+          test "$rev" = "$GITHUB_SHA" || { echo "::error::revision label is '$rev', expected $GITHUB_SHA"; exit 1; }
 
-      - name: Wait for services to initialize
-        run: sleep 90
+      - name: "Smoke test: every MCP wrapper starts and lists its tools (no network)"
+        run: |
+          docker run --rm --network none --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges \
+            --cpus 2 -m 3g --pids-limit 1024 -e HOME=/tmp --entrypoint node \
+            -v "$PWD/.github/scripts":/smoke:ro cp-agentic-n8n:ci /smoke/mcp-image-smoke.mjs
 
-      - name: Run health checks (in-network, validated smoke test)
-        run: ./scripts/health-check.sh --profile cpu --verbose
+      - name: Build the Build Your Own MCP exercise image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: exercises/build-your-own-mcp
+          file: exercises/build-your-own-mcp/Dockerfile
+          platforms: linux/amd64
+          tags: cp-agentic-ips-cve-mcp:ci
+          load: true
+          push: false
+          provenance: false
 
-      - name: Show compose logs on failure
-        if: failure()
-        run: docker compose --profile cpu logs --tail 150
+      - name: "Exercise image: the solution passes the offline self-test (no network)"
+        run: |
+          docker run --rm --network none --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges \
+            --cpus 1 -m 256m -v "$PWD/exercises/build-your-own-mcp":/x:ro --entrypoint python3 \
+            cp-agentic-ips-cve-mcp:ci /x/test_byo_mcp.py /app/ips_cve_mcp.py
+
+      # Gate: fixable CRITICAL vulnerabilities. Accepted exceptions go in .github/trivy/trivyignore
+      # with a reason and a review date.
+      - name: "Trivy gate: no fixable CRITICAL vulnerability"
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: ${{ env.TRIVY_VERSION }}
+          image-ref: cp-agentic-n8n:ci
+          scanners: vuln
+          severity: CRITICAL
+          ignore-unfixed: true
+          trivyignores: .github/trivy/trivyignore
+          format: table
+          exit-code: '1'
+
+      - name: "Trivy report: HIGH and CRITICAL (informational)"
+        if: always()
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: ${{ env.TRIVY_VERSION }}
+          skip-setup-trivy: true
+          image-ref: cp-agentic-n8n:ci
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          format: table
+          exit-code: '0'
