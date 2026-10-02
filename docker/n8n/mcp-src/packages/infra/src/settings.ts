@@ -58,7 +58,10 @@ export class Settings {
     this.cloudInfraToken = cloudInfraToken;
     this.clientId = clientId;
     this.secretKey = secretKey;
-    this.region = this.isValidRegion(region) ? region : 'EU';  
+    // LAB PATCH (D201): store the region upper-cased; getCloudInfraGateway()
+    // matches 'EU'/'US'/... only, so 'us' or 'Local' silently gave no gateway URL.
+    const upperRegion = String(region || 'EU').trim().toUpperCase();
+    this.region = this.isValidRegion(upperRegion) ? upperRegion as Region : 'EU';
     this.devPort = devPort;
 
     this.validate();
@@ -139,18 +142,23 @@ export class Settings {
    * Maps headers to environment variable format based on server config
    */
   static fromHeaders(headers: Record<string, string | string[]>): Settings {
+    // LAB PATCH (D044): header-supplied settings come from the headers ONLY.
+    // A missing header becomes '' (not undefined) so the constructor's
+    // process.env defaults never fill it in: a caller that sends only
+    // `management-host` must not get the operator's API key.
+    const header = (key: string): string => getHeaderValue(headers, key) ?? '';
     return new Settings({
-      apiKey: getHeaderValue(headers, 'API-KEY'),
-      username: getHeaderValue(headers, 'USERNAME'),
-      password: getHeaderValue(headers, 'PASSWORD'),
-      s1cUrl: getHeaderValue(headers, 'S1C-URL'),
-      managementHost: getHeaderValue(headers, 'MANAGEMENT-HOST'),
-      managementPort: getHeaderValue(headers, 'MANAGEMENT-PORT'),
-      cloudInfraToken: getHeaderValue(headers, 'CLOUD-INFRA-TOKEN'),
-      clientId: getHeaderValue(headers, 'CLIENT-ID'),
-      secretKey: getHeaderValue(headers, 'SECRET-KEY'),
-      region: getHeaderValue(headers, 'REGION')?.toUpperCase() as Region,
-      devPort: getHeaderValue(headers, 'DEV-PORT'),
+      apiKey: header('API-KEY'),
+      username: header('USERNAME'),
+      password: header('PASSWORD'),
+      s1cUrl: header('S1C-URL'),
+      managementHost: header('MANAGEMENT-HOST'),
+      managementPort: header('MANAGEMENT-PORT') || '443',
+      cloudInfraToken: header('CLOUD-INFRA-TOKEN'),
+      clientId: header('CLIENT-ID'),
+      secretKey: header('SECRET-KEY'),
+      region: (header('REGION').toUpperCase() || 'EU') as Region,
+      devPort: header('DEV-PORT') || '8006',
     });
   }
 }

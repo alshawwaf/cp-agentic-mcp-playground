@@ -27,14 +27,16 @@ export class Settings extends BaseSettings {
     
     this.infinityPortalUrl = infinityPortalUrl || '';
     
-    // Additional validation for Spark Management specific fields
-    this.validateSMPSettings();
+    // LAB PATCH (D031): no validation here. Validating in the constructor made
+    // the server exit at start-up (and crash-loop) whenever SPARK_MGMT_* was
+    // blank, unlike every other server. SMPAPIManager.create() now validates,
+    // so a missing setting is reported by the tool call instead.
   }
 
   /**
    * Spark Management-specific validation
    */
-  private validateSMPSettings(): void {
+  validateSMPSettings(): void {
     if (!this.clientId) {
       throw new Error('Client ID is required (via --client-id or CLIENT_ID env var)');
     }
@@ -56,16 +58,21 @@ export class Settings extends BaseSettings {
   }
 
   static override fromHeaders(headers: Record<string, string | string[]>): Settings {
-    const clientId = getHeaderValue(headers, 'CLIENT-ID');
-    const secretKey = getHeaderValue(headers, 'SECRET-KEY');
-    const infinityPortalUrl = getHeaderValue(headers, 'INFINITY-PORTAL-URL');
-    const region = getHeaderValue(headers, 'REGION');
+    // LAB PATCH (D044): headers ONLY - '' instead of undefined so neither this
+    // constructor nor the base Settings fills a missing value from process.env.
+    const header = (key: string): string => getHeaderValue(headers, key) ?? '';
     
     return new Settings({
-      clientId,
-      secretKey,
-      infinityPortalUrl,
-      region
+      clientId: header('CLIENT-ID'),
+      secretKey: header('SECRET-KEY'),
+      infinityPortalUrl: header('INFINITY-PORTAL-URL'),
+      region: header('REGION').toUpperCase() || 'EU',
+      apiKey: '',
+      username: '',
+      password: '',
+      s1cUrl: '',
+      managementHost: '',
+      cloudInfraToken: ''
     });
   }
 };

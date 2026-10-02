@@ -4,7 +4,8 @@ import { z } from 'zod';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { ThreatEmulationClient, ThreatEmulationSettings } from './lib/threat-emulation-client.js';
 import { calculateMD5 } from './lib/common-utils.js';
-import { readFileSync, statSync } from 'fs';
+import { resolveAllowedFile, FileAccessError } from './lib/file-access.js';
+import { readFileSync } from 'fs';
 import { join, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
 import { 
@@ -55,15 +56,15 @@ server.tool(
                 return { content: [{ type: 'text', text: JSON.stringify({ error: 'file_path is required' }, null, 2) }] };
             }
 
-            // Validate file exists
+            // LAB PATCH (file_path allow-list): only regular files under TE_ALLOWED_DIRS
+            // (default /data/shared) are read and uploaded. See lib/file-access.ts.
+            let actualFilePath: string;
             try {
-                statSync(filePath);
-            } catch {
-                return { content: [{ type: 'text', text: JSON.stringify({ error: 'File not found' }, null, 2) }] };
+                actualFilePath = await resolveAllowedFile(filePath);
+            } catch (e: any) {
+                return { content: [{ type: 'text', text: JSON.stringify({ error: e.message }, null, 2) }] };
             }
-
-            const actualFilePath = filePath;
-            const actualFileName = (args.file_name as string) || basename(actualFilePath);
+            const actualFileName = (args.file_name as string) || basename(filePath);
 
             // Rest of your existing upload logic (unchanged)
             const hashes: any = {};
@@ -161,12 +162,20 @@ server.tool(
 
             // If MD5 missing but file path provided, calculate it
             if (!hashes.md5 && filePath && features.includes('av')) {
+                // LAB PATCH (file_path allow-list): a file outside TE_ALLOWED_DIRS is never
+                // read (its MD5 would go to the TE cloud and the answer revealed whether it exists).
+                let allowedPath: string | undefined;
                 try {
-                    statSync(filePath);
-                    console.error('Calculating MD5 from file for AV analysis');
-                    hashes.md5 = calculateMD5(filePath);
-                } catch (e) {
+                    allowedPath = await resolveAllowedFile(filePath);
+                } catch (e: any) {
+                    if (!(e instanceof FileAccessError && e.notFound)) {
+                        return { content: [{ type: 'text', text: JSON.stringify({ error: e.message }, null, 2) }] };
+                    }
                     console.error('File not found for MD5 calculation, proceeding without it');
+                }
+                if (allowedPath) {
+                    console.error('Calculating MD5 from file for AV analysis');
+                    hashes.md5 = calculateMD5(allowedPath);
                 }
             }
 
@@ -218,15 +227,15 @@ server.tool(
                 return { content: [{ type: 'text', text: JSON.stringify({ error: 'file_path is required' }, null, 2) }] };
             }
 
-            // Validate file exists
+            // LAB PATCH (file_path allow-list): only regular files under TE_ALLOWED_DIRS
+            // (default /data/shared) are read and uploaded. See lib/file-access.ts.
+            let actualFilePath: string;
             try {
-                statSync(filePath);
-            } catch {
-                return { content: [{ type: 'text', text: JSON.stringify({ error: 'File not found' }, null, 2) }] };
+                actualFilePath = await resolveAllowedFile(filePath);
+            } catch (e: any) {
+                return { content: [{ type: 'text', text: JSON.stringify({ error: e.message }, null, 2) }] };
             }
-
-            const actualFilePath = filePath;
-            const actualFileName = (args.file_name as string) || basename(actualFilePath);
+            const actualFileName = (args.file_name as string) || basename(filePath);
 
             const settings = SessionContext.getSettings(serverModule, extra);
             const client = new ThreatEmulationClient(settings);

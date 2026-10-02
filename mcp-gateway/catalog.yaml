@@ -3,7 +3,7 @@ displayName: Check Point MCP (Pilot)
 registry:
   documentation:
     description: "Check Point product documentation MCP"
-    title: "CP Documentation"
+    title: "Check Point Documentation"
     type: "remote"
     remote:
       url: "http://mcp-documentation:3000"
@@ -13,8 +13,8 @@ registry:
       tags: ["documentation"]
 
   quantum-management:
-    description: "Check Point Quantum Management MCP"
-    title: "CP Quantum Management"
+    description: "Check Point Management MCP"
+    title: "Check Point Management"
     type: "remote"
     remote:
       url: "http://mcp-quantum-management:3002"
@@ -25,7 +25,7 @@ registry:
 
   policy-insights:
     description: "Check Point Policy Insights MCP — AI policy-tightening suggestions (zero-hit, over-permissive, disabled rules)"
-    title: "CP Policy Insights"
+    title: "Check Point Policy Insights"
     type: "remote"
     remote:
       url: "http://policy-insights-mcp:3013"
@@ -36,7 +36,7 @@ registry:
 
   cpinfo-analysis:
     description: "Check Point CPInfo bundle analysis MCP"
-    title: "CP CPInfo Analysis"
+    title: "Check Point CPInfo Analysis"
     type: "remote"
     remote:
       url: "http://cpinfo-analysis-mcp:3012"
@@ -47,7 +47,7 @@ registry:
 
   https-inspection:
     description: "Check Point HTTPS Inspection MCP"
-    title: "CP HTTPS Inspection"
+    title: "Check Point HTTPS Inspection"
     type: "remote"
     remote:
       url: "http://mcp-https-inspection:3001"
@@ -58,7 +58,7 @@ registry:
 
   management-logs:
     description: "Check Point management/log query MCP"
-    title: "CP Management Logs"
+    title: "Check Point Management Logs"
     type: "remote"
     remote:
       url: "http://mcp-management-logs:3003"
@@ -68,8 +68,8 @@ registry:
       tags: ["logs", "management"]
 
   gaia:
-    description: "Check Point Gaia OS MCP"
-    title: "CP Gaia"
+    description: "Check Point Gaia MCP"
+    title: "Check Point Gaia"
     type: "remote"
     remote:
       url: "http://quantum-gaia-mcp:3011/mcp"
@@ -80,7 +80,7 @@ registry:
 
   gw-cli:
     description: "Check Point gateway CLI (clish/expert) MCP"
-    title: "CP Gateway CLI"
+    title: "Check Point Gateway CLI"
     type: "remote"
     remote:
       url: "http://quantum-gw-cli-mcp:3009"
@@ -91,7 +91,7 @@ registry:
 
   reputation-service:
     description: "Check Point reputation/IoC lookup MCP"
-    title: "CP Reputation Service"
+    title: "Check Point Reputation Service"
     type: "remote"
     remote:
       url: "http://reputation-service-mcp:3007"
@@ -102,7 +102,7 @@ registry:
 
   threat-emulation:
     description: "Check Point Threat Emulation (sandbox) MCP"
-    title: "CP Threat Emulation"
+    title: "Check Point Threat Emulation"
     type: "remote"
     remote:
       url: "http://threat-emulation-mcp:3004"
@@ -113,7 +113,7 @@ registry:
 
   threat-prevention:
     description: "Check Point Threat Prevention MCP"
-    title: "CP Threat Prevention"
+    title: "Check Point Threat Prevention"
     type: "remote"
     remote:
       url: "http://threat-prevention-mcp:3005"

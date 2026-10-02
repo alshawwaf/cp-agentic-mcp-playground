@@ -8,6 +8,9 @@ import {
 } from "./cpinfo-exceptions.js";
 import { SectionType, SectionInfo } from "./types.js";
 import { createLogger } from "./logger.js";
+// LAB PATCH (D097, PATCHES.md section 8): file_path comes from the model, so loadFile() opens
+// only regular files under CPINFO_ALLOWED_DIRS (default /data/cpinfo); see file-access.ts.
+import { resolveAllowedCpinfoPath } from "./file-access.js";
 
 const logger = createLogger("cpinfo-reader");
 
@@ -32,7 +35,7 @@ export class CpInfoReader {
 
   async loadFile(filePath: string, options: BuildIndexOptions = {}): Promise<void> {
     logger.info(`Loading cpinfo file: ${filePath}`);
-    this.filePath = filePath;
+    this.filePath = await resolveAllowedCpinfoPath(filePath); // LAB PATCH (D097)
     await this.openFile();
 
     if (this.buildIndexOnLoad) {

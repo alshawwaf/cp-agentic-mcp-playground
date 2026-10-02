@@ -1,6 +1,106 @@
 // API client implementation for Check Point MCP servers
 import axios from 'axios';
+import fs from 'fs';
 import https from 'https';
+import tls from 'tls';
+import { redactSecrets } from '@chkp/mcp-utils';
+
+// ---------------------------------------------------------------------------
+// LAB PATCH (TLS verification, D053/D066/D096): certificate verification is
+// always ON. Upstream turned verification off for every on-prem client, so the
+// Management API key and the Gaia password went to unverified servers. There
+// is deliberately no switch to turn verification off. To trust a self-signed or private-CA certificate:
+//   * NODE_EXTRA_CA_CERTS=/path/ca.pem - Node adds the PEM file to its trust
+//     store for every HTTPS client in the process (read once at start-up), or
+//   * MANAGEMENT_CA_CERT=/path/ca.pem (GAIA_CA_CERT for the Gaia server) - the
+//     PEM file is ADDED to Node's default trust store for these clients only.
+// If the certificate does not name the address you connect to (for example a
+// NAT or IP address), set MANAGEMENT_TLS_SERVERNAME (GAIA_TLS_SERVERNAME) to a
+// DNS name the certificate does contain; it applies only to the configured
+// MANAGEMENT_HOST (GAIA_GATEWAY_IP), and the certificate is still verified.
+// ---------------------------------------------------------------------------
+export interface TlsTrustSettings {
+  caFile?: string;     // PEM file added to the default trust store
+  servername?: string; // name the server certificate must be valid for
+}
+
+const verifyingAgents = new Map<string, https.Agent>();
+
+/** Node's default CA list: bundled roots + NODE_EXTRA_CA_CERTS (+ system store if enabled). */
+function defaultCaCertificates(): string[] {
+  const getCACertificates = (tls as any).getCACertificates;
+  if (typeof getCACertificates === 'function') {
+    return getCACertificates('default');
+  }
+  const certificates = [...tls.rootCertificates];
+  const extraFile = process.env.NODE_EXTRA_CA_CERTS;
+  if (extraFile) {
+    try { certificates.push(fs.readFileSync(extraFile, 'utf8')); } catch { /* Node already warned at start-up */ }
+  }
+  return certificates;
+}
+
+/**
+ * LAB PATCH (D053): an https.Agent that always verifies the server certificate
+ * (rejectUnauthorized: true, which also overrides NODE_TLS_REJECT_UNAUTHORIZED),
+ * optionally trusting one extra CA file and checking against a given name.
+ */
+export function getVerifyingHttpsAgent(trust: TlsTrustSettings = {}): https.Agent {
+  const caFile = trust.caFile?.trim() || '';
+  const servername = trust.servername?.trim() || '';
+  const key = `${caFile}|${servername}`;
+  let agent = verifyingAgents.get(key);
+  if (!agent) {
+    const options: https.AgentOptions = { rejectUnauthorized: true };
+    if (caFile) {
+      let pem: string;
+      try {
+        pem = fs.readFileSync(caFile, 'utf8');
+      } catch (error) {
+        throw new Error(`Cannot read the CA certificate file ${caFile} (${(error as NodeJS.ErrnoException).code || (error as Error).message}).`);
+      }
+      if (!pem.includes('-----BEGIN CERTIFICATE-----')) {
+        throw new Error(`The CA certificate file ${caFile} does not contain a PEM certificate.`);
+      }
+      options.ca = [...defaultCaCertificates(), pem]; // adds to, never replaces, the default trust store
+    }
+    if (servername) {
+      options.servername = servername;
+    }
+    agent = new https.Agent(options);
+    verifyingAgents.set(key, agent);
+  }
+  return agent;
+}
+
+const TLS_VERIFICATION_ERRORS = new Set([
+  'DEPTH_ZERO_SELF_SIGNED_CERT', 'SELF_SIGNED_CERT_IN_CHAIN', 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+  'UNABLE_TO_GET_ISSUER_CERT', 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY', 'CERT_UNTRUSTED', 'CERT_HAS_EXPIRED',
+  'CERT_NOT_YET_VALID', 'CERT_SIGNATURE_FAILURE', 'CERT_REVOKED', 'ERR_TLS_CERT_ALTNAME_INVALID',
+]);
+
+/**
+ * LAB PATCH (no secrets in logs): turn an axios error without a response into
+ * a plain Error. The raw axios error carries the request config (the login
+ * body with the API key or password, the X-chkp-sid header) and was logged as
+ * a whole by callers.
+ */
+function requestFailure(error: any, method: string, url: string): Error {
+  const code: string | undefined = error?.code;
+  let message: string;
+  if (code && TLS_VERIFICATION_ERRORS.has(code)) {
+    message = `TLS certificate verification failed for ${url} (${code}: ${error?.message}). ` +
+      'This server does not trust the certificate. Mount the server CA certificate (PEM) into the ' +
+      'container and point NODE_EXTRA_CA_CERTS (or MANAGEMENT_CA_CERT / GAIA_CA_CERT) at it; if the ' +
+      'certificate does not name this host, also set MANAGEMENT_TLS_SERVERNAME / GAIA_TLS_SERVERNAME.';
+    console.error(message);
+  } else {
+    message = `API request ${method.toUpperCase()} ${url} failed: ${code ? `${code} ` : ''}${error?.message ?? String(error)}`;
+  }
+  const failure = new Error(message);
+  (failure as any).code = code;
+  return failure;
+}
 
 /**
  * Enum representing the types of authentication tokens
@@ -92,6 +192,15 @@ export abstract class APIClientBase {
   protected needsLogin(): boolean {
     return true;
   }
+
+  /**
+   * LAB PATCH (D053): the agent for this client's HTTPS requests. undefined
+   * means axios' default agent, which verifies certificates against Node's
+   * trust store (including NODE_EXTRA_CA_CERTS).
+   */
+  protected getHttpsAgent(): https.Agent | undefined {
+    return undefined;
+  }
   
   /**
    * Check if this client is in an MDS environment
@@ -163,11 +272,8 @@ export abstract class APIClientBase {
       }
     }
 
-    let httpsAgent;
-    if (this instanceof OnPremAPIClient) {
-      // Allow self-signed certs for on-prem management servers
-      httpsAgent = new https.Agent({ rejectUnauthorized: false });
-    }
+    // LAB PATCH (D053): certificate verification stays on (upstream turned it off for on-prem).
+    const httpsAgent = this.getHttpsAgent();
 
     try {
       return await this.makeRequest(
@@ -260,10 +366,9 @@ export abstract class APIClientBase {
    */
   protected async detectMDS(sessionUid: string, handleSelfSigned: boolean = false): Promise<void> {
     try {
-      let httpsAgent;
-      if (handleSelfSigned) {
-        httpsAgent = new https.Agent({ rejectUnauthorized: false });
-      }
+      // LAB PATCH (D053): handleSelfSigned no longer disables verification; the
+      // client's verifying agent (and its trusted CA, if configured) is used.
+      const httpsAgent = this.getHttpsAgent();
       
       const sessionResp = await this.makeRequest(
         this.getHost(),
@@ -281,7 +386,7 @@ export abstract class APIClientBase {
       }
     } catch (error) {
       // If we can't determine MDS status, assume it's not MDS
-      console.warn("Could not determine MDS status:", error);
+      console.warn("Could not determine MDS status:", (error as Error)?.message ?? error);
       this.isMDS = false;
     }
   }
@@ -326,24 +431,26 @@ export abstract class APIClientBase {
     } catch (error: any) {
       if (error.response) {
         console.error(`❌ API Error (${error.response.status}):`);
-        console.error('Headers:', error.response.headers);
-        console.error('Data:', error.response.data);
+        console.error('Headers:', redactSecrets(error.response.headers));
+        console.error('Data:', redactSecrets(error.response.data));
 
         // Print the request details when debug is enabled
+        // (LAB PATCH: secrets redacted - the login body carries the API key or password)
         if (this.debug) {
-          console.error('Debug mode: Printing request details:');
+          console.error('Debug mode: Printing request details (secrets redacted):');
           console.error('Request Method:', method);
           console.error('Request URL:', url);
-          console.error('Request Headers:', config.headers);
-          console.error('Request Data:', config.data);
-          console.error('Request Params:', config.params);
+          console.error('Request Headers:', redactSecrets(config.headers));
+          console.error('Request Data:', redactSecrets(config.data));
+          console.error('Request Params:', redactSecrets(config.params));
         }
       }
       
       if (error.response) {
-        throw new Error(`API request failed: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+        throw new Error(`API request failed: ${error.response.status} - ${JSON.stringify(redactSecrets(error.response.data))}`);
       }
-      throw error;
+      // LAB PATCH (no secrets in logs): never rethrow the raw axios error.
+      throw requestFailure(error, method, url);
     }
   }
 }
@@ -402,7 +509,9 @@ export class BearerTokenAPIClient extends APIClientBase {
 
 /**
  * API client for on-premises management server
- * Allows self-signed certificates and username/password authentication
+ * Supports username/password authentication. LAB PATCH (D053): the server
+ * certificate is verified; see getVerifyingHttpsAgent() for trusting a
+ * self-signed or private-CA certificate.
  */
 export class OnPremAPIClient extends APIClientBase {
   private readonly username?: string;
@@ -426,9 +535,27 @@ export class OnPremAPIClient extends APIClientBase {
     return `https://${managementHost}:${port}/web_api`;
   }
 
+  /**
+   * LAB PATCH (D053): operator TLS trust settings (environment only, never
+   * request headers). The server-name override applies only to the
+   * configured MANAGEMENT_HOST, never to a host a session supplied itself.
+   */
+  protected tlsTrust(): TlsTrustSettings {
+    const configuredHost = process.env.MANAGEMENT_HOST?.trim().toLowerCase();
+    const isConfiguredHost = !!configuredHost && configuredHost === this.managementHost.trim().toLowerCase();
+    return {
+      caFile: process.env.MANAGEMENT_CA_CERT,
+      servername: isConfiguredHost ? process.env.MANAGEMENT_TLS_SERVERNAME : undefined,
+    };
+  }
+
+  protected getHttpsAgent(): https.Agent {
+    return getVerifyingHttpsAgent(this.tlsTrust());
+  }
+
     /**
    * Override login() to support both api-key and username/password authentication
-   * and allow self-signed certificates
+   * (LAB PATCH D053: with certificate verification)
    */
   async login(): Promise<string> {
     // Determine if we're using API key or username/password
@@ -443,8 +570,8 @@ export class OnPremAPIClient extends APIClientBase {
       );
     }
 
-    // Allow self-signed certs for on-prem management servers
-    const httpsAgent = new https.Agent({ rejectUnauthorized: false });
+    // LAB PATCH (D053): verify the certificate (upstream turned verification off here)
+    const httpsAgent = this.getHttpsAgent();
     
     // Prepare login payload based on authentication method
     const loginPayload = isUsingApiKey 

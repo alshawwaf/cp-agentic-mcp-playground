@@ -76,6 +76,13 @@ This server operates locally and analyzes CPInfo files from your filesystem. No 
 
 All tools accept `file_path` as an absolute path to the **uncompressed** CPInfo text export file.
 
+> **Lab patch (allowed directories):** the server only opens files under `CPINFO_ALLOWED_DIRS`
+> (`:` or `,` separated, default `/data/cpinfo`; in the lab that is the `n8n/shared` folder).
+> A relative `file_path` is resolved against the first allowed directory. Symlinks and `..` are
+> resolved before the check, only regular files are opened, and paths elsewhere (for example
+> `/proc/self/environ`) get the same "Access denied" answer whether or not they exist.
+> See `docker/n8n/mcp-src/PATCHES.md` (section 8).
+
 > **⚠️ IMPORTANT - File Format Requirement**  
 > 
 > The `file_path` parameter must point to an **uncompressed text file**, NOT a compressed archive.
@@ -332,7 +339,7 @@ The test suite includes:
 - **Pagination bug tests** ensuring accurate line number reporting in search results
 - Tests run successfully on any machine without requiring large external CPInfo files
 
-For more details, see [TESTING.md](./TESTING.md) and [tests/README.md](./tests/README.md).
+The upstream test suite (and its `TESTING.md` / `tests/README.md`) is not part of this vendored copy; see the upstream [CheckPointSW/mcp-servers](https://github.com/CheckPointSW/mcp-servers) repository.
 
 ---
 

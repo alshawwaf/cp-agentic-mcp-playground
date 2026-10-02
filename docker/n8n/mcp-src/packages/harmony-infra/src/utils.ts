@@ -10,7 +10,7 @@ import { Settings } from "./settings.js";
  */
 export async function getApiManager(): Promise<APIManagerBase> {
   const settings = Settings.getSettings();
-  console.error({ settings });
+  // LAB PATCH (no secrets in logs): the settings object holds the API key; it is no longer printed.
   // HarmonySASE requires an API key
   if (!settings.apiKey) {
     throw new Error("API key is required for Harmony SASE");
