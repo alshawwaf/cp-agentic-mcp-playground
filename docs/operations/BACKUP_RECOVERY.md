@@ -1,447 +1,166 @@
-# Backup and Recovery Guide
+# Backup and recovery
 
-This guide covers backup strategies, automation, and disaster recovery procedures for the Check Point Agentic MCP Playground.
+Two scripts back up and restore the lab: `scripts/backup-volumes.sh` and
+`scripts/restore-volumes.sh`. A backup is one encrypted archive that holds everything the lab
+needs to come back: the data, the builder settings and the `.env` whose keys decrypt them.
 
----
+## What a backup holds
 
-## Table of Contents
+| Item | Contents | Notes |
+|------|----------|-------|
+| Docker volumes of the lab's Compose project | `n8n_storage` (n8n), `postgres_storage` (n8n, Flowise and Langfuse databases), `qdrant_data`, and, once their services have run, `langflow` and `open-webui` (Complete lab), the `aig_*` volumes (`ai-red-team`) and `policypilot_data` (`policypilot`) | Found by their Compose label, so any project name works |
+| Ollama models (`ollama_storage`) | Skipped by default | The lab downloads them again on start. `--include-models` adds them |
+| `./flowise_data` | Flowise's encryption key, session secrets and uploads | |
+| `./n8n/shared` | Files shared with the MCP servers (CPInfo files, files to scan) and the evals reports | |
+| `.env` | Every setting and secret | n8n can read its stored credentials only with the `N8N_ENCRYPTION_KEY` in it |
+| Postgres SQL dump | `pg_dumpall` of the lab Postgres | Only when `postgres` is running: a consistent copy even while the lab runs |
 
-- [Overview](#overview)
-- [What Gets Backed Up](#what-gets-backed-up)
-- [Backup Methods](#backup-methods)
-- [Automated Backups](#automated-backups)
-- [Restore Procedures](#restore-procedures)
-- [Disaster Recovery](#disaster-recovery)
-- [RTO and RPO](#rto-and-rpo)
+The archive holds secrets and lab data, so it is encrypted with AES-256 (`openssl enc -aes-256-cbc`,
+PBKDF2 with 200,000 iterations) and written with mode 600. It carries no authentication code: store
+it where only administrators can write.
 
----
+## Prerequisites
 
-## Overview
+- `sh`, `docker` and `openssl` on the host (macOS and Linux include `openssl`).
+- A passphrase of at least 12 characters, kept in your password manager. Without it the backup
+  cannot be restored.
 
-The MCP Playground stores data in **Docker volumes**. Regular backups are essential for:
-- Protection against data loss
-- Disaster recovery
-- Migration to new infrastructure
-- Development/testing data snapshots
+## Back up
 
----
-
-## What Gets Backed Up
-
-### Docker Volumes
-
-| Volume | Contents | Priority |
-|--------|----------|----------|
-| `n8n_storage` | n8n workflows, credentials, settings | **Critical** |
-| `postgres_storage` | PostgreSQL database (n8n backend) | **Critical** |
-| `ollama_storage` | Downloaded LLM models | High |
-| `open-webui` | Chat history, user data | Medium |
-| `flowise` | Flow configurations | Medium |
-| `langflow` | Flow data | Medium |
-| `aig_data` / `aig_db` / `aig_logs` / `aig_uploads` | AI-Infra-Guard state, DB, logs, uploads | Medium |
-
-> The default volume list in `scripts/backup-volumes.sh` still names `qdrant_storage` (Qdrant is no longer in the stack — it is simply skipped) and does not yet include the `aig_*` volumes. Pass `--volumes` to back those up explicitly until the script is updated.
-
-### Configuration Files
-
-**Also back up these files from your project directory:**
-- `.env` (credentials) - **Store securely, never commit to git**
-- `docker-compose.yml` (if customized)
-- `n8n/backup/` (exported workflows/credentials)
-- Custom scripts in `scripts/`
-
----
-
-## Backup Methods
-
-### Method 1: Automated Script (Recommended)
-
-Use the provided backup script:
-
-```bash
-# Backup all volumes
-../scripts/backup-volumes.sh
-
-# Selective backup
-../scripts/backup-volumes.sh --volumes n8n_storage,postgres_storage
-
-# Custom output directory
-../scripts/backup-volumes.sh --output-dir /mnt/backup
-
-# Set retention period
-../scripts/backup-volumes.sh --retention-days 60
+```sh
+./scripts/backup-volumes.sh
 ```
 
-**Output:**
-```
-backups/mcp-playground-backup-2025-11-28-153045.tar.gz
-```
+It asks for the passphrase twice (hidden). For scheduled runs, give it a passphrase file (first line,
+mode 600) or the variable `BACKUP_PASSPHRASE`:
 
-### Method 2: Manual Docker Volume Backup
-
-Backup a single volume manually:
-
-```bash
-docker run --rm \
-  -v n8n_storage:/source:ro \
-  -v $(pwd)/backups:/backup \
-  busybox \
-  tar czf /backup/n8n-storage-$(date +%Y-%m-%d).tar.gz -C /source .
+```sh
+./scripts/backup-volumes.sh --passphrase-file /root/.lab-backup-pass
 ```
 
-### Method 3: n8n Native Export
+| Option | Meaning |
+|--------|---------|
+| `--output-dir DIR` | Where to write the archive (default `./backups`, git-ignored) |
+| `--volumes NAME,...` | Only these items: volume names (`n8n_storage` or `<project>_n8n_storage`), folders (`flowise_data`, `n8n/shared`) and `postgres-dump` |
+| `--include-models` | Also save the Ollama models |
+| `--passphrase-file FILE` | Read the passphrase from the first line of FILE |
+| `--no-encrypt` | Write a plain archive. It holds secrets: store it encrypted |
+| `--retention-days N` | Remove this project's backups older than N days from the output folder (default 30; 0 keeps every backup) |
+| `--project-dir DIR` | Back up the lab in another directory |
 
-Export workflows and credentials directly from n8n:
+Expected result:
 
-```bash
-# From inside n8n container
-docker exec n8n n8n export:workflow --output=/backup/workflows --all
-docker exec n8n n8n export:credentials --output=/backup/credentials --all
+```
+Backup written: <dir>/lab-backup-<project>-<YYYYmmdd-HHMMSS>.tar.gz.enc (<size>, mode 600)
+Restore with: ./scripts/restore-volumes.sh "<archive>"
 ```
 
-**Advantage**: Encrypted credentials remain encrypted in exports
+The script reads the encrypted archive back before it reports success. If any item fails, it writes
+no archive.
 
----
+**Consistency.** Databases that change during the copy can be inconsistent. While the lab runs, the
+script warns and still includes the SQL dump, which is consistent. For a fully consistent volume
+copy, stop the lab first:
 
-## Automated Backups
-
-### Cron Job Setup
-
-**Daily backups at 2 AM:**
-
-```bash
-# Edit crontab
-crontab -e
-
-# Add this line
-0 2 * * * /path/to/cp-agentic-mcp-playground/scripts/backup-volumes.sh --retention-days 30 >> /var/log/mcp-backup.log 2>&1
-```
-
-**Hourly backups (critical data only):**
-
-```bash
-0 * * * * /path/to/cp-agentic-mcp-playground/scripts/backup-volumes.sh --volumes n8n_storage,postgres_storage >> /var/log/mcp-backup-hourly.log 2>&1
-```
-
-### Off-Site Backups
-
-**Sync to remote storage:**
-
-```bash
-#!/bin/bash
-# backup-and-sync.sh
-
-# Run backup
-/path/to/scripts/backup-volumes.sh
-
-# Sync to S3
-aws s3 sync ./backups/ s3://my-backup-bucket/mcp-playground/ --storage-class GLACIER
-
-# Or use rsync to remote server
-rsync -avz ./backups/ backup-server:/backups/mcp-playground/
-```
-
-**Schedule with cron:**
-
-```bash
-0 3 * * * /path/to/backup-and-sync.sh >> /var/log/mcp-backup-sync.log 2>&1
-```
-
-### Backup Verification
-
-**Test restore quarterly:**
-
-```bash
-# Script to verify backup integrity
-#!/bin/bash
-set -e
-
-BACKUP_FILE="backups/mcp-playground-backup-latest.tar.gz"
-
-echo "Testing backup integrity..."
-tar tzf "$BACKUP_FILE" > /dev/null
-echo "✓ Backup archive is valid"
-
-echo "Testing extraction..."
-TEMP_DIR=$(mktemp -d)
-tar xzf "$BACKUP_FILE" -C "$TEMP_DIR"
-echo "✓ Backup can be extracted"
-
-rm -rf "$TEMP_DIR"
-echo "✓ Backup verification complete"
-```
-
----
-
-## Restore Procedures
-
-### Full Restore
-
-**Prerequisites:**
-- Existing stack must be stopped
-- Backup file must be available
-
-**Steps:**
-
-```bash
-# 1. Stop all services
-docker compose --profile cpu down
-
-# 2. (Optional) Remove existing volumes to ensure clean restore
-docker volume rm n8n_storage postgres_storage ollama_storage open-webui flowise langflow aig_data aig_db aig_logs aig_uploads
-
-# 3. Run restore script
-../scripts/restore-volumes.sh backups/mcp-playground-backup-2025-11-28-153045.tar.gz
-
-# 4. Start services
-docker compose --profile cpu up -d
-
-# 5. Verify health
-../scripts/health-check.sh --profile cpu
-```
-
-### Selective Restore (Single Volume)
-
-Restore only one volume manually:
-
-```bash
-# Stop service using the volume
-docker compose stop n8n
-
-# Remove existing volume
-docker volume rm n8n_storage
-
-# Create fresh volume
-docker volume create n8n_storage
-
-# Extract backup
-tar xzf backups/mcp-playground-backup-2025-11-28-153045.tar.gz
-
-# Restore specific volume
-docker run --rm \
-  -v n8n_storage:/target \
-  -v $(pwd)/n8n_storage:/source:ro \
-  busybox \
-  sh -c "cd /target && tar xzf /source/data.tar.gz"
-
-# Restart service
-docker compose start n8n
-```
-
-### Point-in-Time Recovery
-
-Restore to a specific backup:
-
-```bash
-# List available backups
-ls -lh backups/
-
-# Choose a backup
-../scripts/restore-volumes.sh backups/mcp-playground-backup-2025-11-25-020000.tar.gz
-```
-
----
-
-## Disaster Recovery
-
-### Scenario 1: Database Corruption
-
-**Symptoms:**
-- n8n won't start
-- PostgreSQL errors in logs
-
-**Recovery:**
-
-```bash
-# Stop services
-docker compose down
-
-# Restore PostgreSQL volume only
-docker volume rm postgres_storage
-docker volume create postgres_storage
-
-# Extract just postgres from backup
-tar xzf backups/latest-backup.tar.gz postgres_storage/data.tar.gz
-docker run --rm \
-  -v postgres_storage:/target \
-  -v $(pwd)/postgres_storage:/source:ro \
-  busybox \
-  sh -c "cd /target && tar xzf /source/data.tar.gz"
-
-# Restart
-docker compose --profile cpu up -d
-```
-
-### Scenario 2: Complete Infrastructure Loss
-
-**Recovery to new host:**
-
-```bash
-# On new host:
-# 1. Install Docker and Docker Compose
-# 2. Clone repository or copy application files
-# 3. Copy .env file from secure storage
-# 4. Copy latest backup
-
-# Restore
-../scripts/restore-volumes.sh /path/to/backup.tar.gz
-
-# Start stack
-docker compose --profile cpu up -d
-```
-
-### Scenario 3: Accidental Data Deletion
-
-**Recovery:**
-
-```bash
-# Don't create new data - stop immediately
+```sh
 docker compose stop
-
-# Restore from most recent backup
-../scripts/restore-volumes.sh backups/mcp-playground-backup-latest.tar.gz
-
-# Resume
+./scripts/backup-volumes.sh --passphrase-file /root/.lab-backup-pass
 docker compose start
 ```
 
----
+With the lab stopped there is no SQL dump; the volume copy is then consistent on its own.
 
-## RTO and RPO
+### Schedule it
 
-### Recovery Time Objective (RTO)
+Example crontab line, daily at 02:00, keeping 30 days:
 
-**Expected recovery times:**
-
-| Scenario | RTO | Notes |
-|----------|-----|-------|
-| Single volume restore | 10-15 min | Depends on volume size |
-| Full stack restore | 20-30 min | Includes service startup |
-| New infrastructure rebuild | 1-2 hours | Install Docker + restore |
-
-### Recovery Point Objective (RPO)
-
-**Data loss tolerance:**
-
-| Backup Frequency | RPO | Use Case |
-|------------------|-----|----------|
-| Hourly (critical volumes) | 1 hour | Production |
-| Daily (full backup) | 24 hours | Development |
-| Weekly | 7 days | Lab/testing |
-
-**Optimize RPO:**
-- Use n8n's built-in versioning for workflows
-- Enable PostgreSQL WAL archiving for point-in-time recovery
-- Frequency = balance between storage costs and acceptable data loss
-
----
-
-## Best Practices
-
-### DO:
-- ✓ Test restores regularly (monthly minimum)
-- ✓ Store backups off-site (different physical location)
-- ✓ Encrypt backup archives for sensitive data
-- ✓ Document restore procedures and keep updated
-- ✓ Monitor backup job success/failure
-- ✓ Verify backup integrity automatically
-
-### DON'T:
-- ✗ Store only one copy of backups
-- ✗ Keep backups on same host/disk as production
-- ✗ Neglect to test restore procedures
-- ✗ Forget to back up `.env` file
-- ✗ Ignore backup failures in logs
-
----
-
-## Advanced Topics
-
-### Incremental Backups
-
-For large volumes, use incremental backups:
-
-```bash
-# First backup (full)
-../scripts/backup-volumes.sh
-
-# Subsequent backups (incremental with rsync)
-rsync -avz --link-dest=/backups/previous \
-  /var/lib/docker/volumes/ \
-  /backups/incremental-$(date +%Y-%m-%d)
+```sh
+0 2 * * * cd /path/to/cp-agentic-mcp-playground && ./scripts/backup-volumes.sh --passphrase-file /root/.lab-backup-pass --retention-days 30 >> /var/log/lab-backup.log 2>&1
 ```
 
-### Encrypted Backups
+Copy the archives to storage your organization approves for lab data, off the lab host. Keep the
+passphrase apart from the archives.
 
-Encrypt backups at rest:
+## Restore
 
-```bash
-# Create encrypted backup
-../scripts/backup-volumes.sh
-gpg --symmetric --cipher-algo AES256 backups/latest-backup.tar.gz
-
-# Decrypt for restore
-gpg --decrypt backups/latest-backup.tar.gz.gpg > backup.tar.gz
-../scripts/restore-volumes.sh backup.tar.gz
+```sh
+docker compose stop
+./scripts/restore-volumes.sh backups/lab-backup-<project>-<time>.tar.gz.enc
 ```
 
-### Database-Specific Backups
+The restore is safe by design:
 
-PostgreSQL native backup (alternative method):
+1. It decrypts and checks the whole archive before it changes anything. A wrong passphrase or a
+   damaged file stops it with "Nothing was changed."
+2. It refuses to run while containers of the lab are running.
+3. It shows the plan (every volume it replaces or creates, every folder, what happens to `.env`) and
+   asks you to type the project name. `--yes` skips the question.
+4. It restores into the Compose project of this directory, whatever its name. A backup taken under
+   another project name restores fine. Each volume is emptied completely and filled from the backup.
+   Every volume is attempted and reported.
+5. Folders are never deleted: the current `./flowise_data` and `./n8n/shared` are renamed to
+   `<name>.before-restore-<time>` first.
+6. `.env` is never replaced silently. The backup's copy is saved as `.env.from-backup` (mode 600) and
+   your `.env` stays active. `--with-env` makes the backup's copy the active `.env` and keeps yours as
+   `.env.before-restore`.
+7. The SQL dump, when the backup holds one, is copied to `backups/postgres-dumpall-<time>.sql.gz`.
+   It is not loaded automatically.
 
-```bash
-# Dump database
-docker exec postgres pg_dump -U admin n8n > n8n-db-$(date +%Y-%m-%d).sql
+| Option | Meaning |
+|--------|---------|
+| `--volumes NAME,...` | Restore only these volumes or folders |
+| `--with-env` | Make the backup's `.env` the active one |
+| `--passphrase-file FILE` | Read the passphrase from FILE (or set `BACKUP_PASSPHRASE`) |
+| `--yes`, `-y` | Do not ask for the project name |
+| `--project-dir DIR` | Restore into the lab in another directory |
 
-# Restore
-docker exec -i postgres psql -U admin n8n < n8n-db-2025-11-28.sql
+Then start the lab and check it:
+
+```sh
+docker compose up -d                                  # or: op run --env-file=.env -- docker compose up -d
+./scripts/doctor.sh --post-start
 ```
 
----
+**The encryption keys must match the data.** n8n reads its restored credentials only with the
+`N8N_ENCRYPTION_KEY` the data was written with, and Postgres and Langfuse keep `POSTGRES_PASSWORD`,
+`SALT` and `LANGFUSE_ENCRYPTION_KEY`. If you restore without `--with-env` and the restored n8n cannot
+read its credentials, copy `N8N_ENCRYPTION_KEY` (and `POSTGRES_PASSWORD`) from `.env.from-backup` into
+`.env`, then `docker compose up -d`.
 
-## Monitoring Backups
+## Recover on a new host
 
-### Check Backup Health
+1. Install Docker and clone the repository.
+2. Copy the archive to the new host.
+3. Restore it with its `.env`:
 
-```bash
-#!/bin/bash
-# check-backup-age.sh
+   ```sh
+   ./scripts/restore-volumes.sh /path/to/lab-backup-<project>-<time>.tar.gz.enc --with-env
+   ```
 
-BACKUP_DIR="./backups"
-MAX_AGE_HOURS=48
+4. Run `./setup.sh --non-interactive`. It keeps every value of the restored `.env`, adds settings that
+   are new in this lab version and creates the `dokploy-network` network when it is missing. It
+   generates no new key for a lab whose n8n and Postgres volumes exist.
+5. Start the lab: `docker compose up -d`. The Ollama models download again on the first start.
+6. Check it: `./scripts/doctor.sh --post-start`, then `tests/acceptance/run.sh`.
 
-LATEST_BACKUP=$(ls -t $BACKUP_DIR/mcp-playground-backup-*.tar.gz | head -1)
+With 1Password, the restored `.env` holds `op://` references: start and check the lab through
+`op run --env-file=.env --`.
 
-if [[ -z "$LATEST_BACKUP" ]]; then
-  echo "ERROR: No backups found!"
-  exit 1
-fi
+## Test your backups
 
-BACKUP_AGE_HOURS=$(( ($(date +%s) - $(stat -c %Y "$LATEST_BACKUP")) / 3600 ))
+A backup you never restored is a hope, not a backup. Restore the latest archive on a second host
+regularly and run the acceptance tests there. Do not restore a test copy on the lab host itself: the
+lab's containers use fixed names, so a second copy of the lab cannot run next to the first.
 
-if [[ $BACKUP_AGE_HOURS -gt $MAX_AGE_HOURS ]]; then
-  echo "WARNING: Latest backup is $BACKUP_AGE_HOURS hours old (max: $MAX_AGE_HOURS)"
-  exit 1
-else
-  echo "OK: Latest backup is $BACKUP_AGE_HOURS hours old"
-  exit 0
-fi
-```
+## Troubleshooting
 
-Add to monitoring/alerting system.
-
----
-
-## Support
-
-For backup/restore issues, check logs:
-
-```bash
-# Backup script logs
-cat /var/log/mcp-backup.log
-
-# Docker volume logs
-docker volume inspect n8n_storage
-```
-
-Report issues with backup details and error messages.
+| Message | Fix |
+|---------|-----|
+| `openssl is required to encrypt the backup` | Install `openssl`, or pass `--no-encrypt` and encrypt the archive yourself |
+| `the backup passphrase must be at least 12 characters` | Use a longer passphrase |
+| `set BACKUP_PASSPHRASE, use --passphrase-file FILE, or run in a terminal` | The script runs without a terminal (for example from cron). Pass `--passphrase-file` |
+| `N containers of this lab are running` (backup) | A warning. Stop the lab first for a fully consistent copy |
+| `cannot decrypt or read ... Nothing was changed.` | Wrong passphrase or damaged file |
+| `stop the lab first (docker compose stop) ... Nothing was changed.` | Run `docker compose stop`, then the restore again |
+| `FAIL volume ...` during the restore | The restore reports every volume. Fix the cause (disk space, Docker) and run it again before you start the lab |
+| n8n shows credential errors after a restore | `N8N_ENCRYPTION_KEY` in `.env` differs from the backup's: copy it from `.env.from-backup` |

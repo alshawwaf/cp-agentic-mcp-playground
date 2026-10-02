@@ -1,66 +1,132 @@
-# HTTPS Inspection MCP Agent Guide
+# HTTPS Inspection Agents (MCP Gateway and Direct)
 
-This guide details the **HTTPS Inspection MCP Agent** workflow, designed to manage and query Check Point HTTPS Inspection rules using AI and the Model Context Protocol (MCP).
+The HTTPS Inspection agents read your HTTPS Inspection policy on the Management Server: layers, sections,
+rules, and the objects the rules use.
 
-## Overview
+Two agents ship in n8n, Flowise, and Langflow: **HTTPS Inspection Agent (MCP Gateway)** and **HTTPS Inspection Agent (Direct)**. They have the same nine tools and the same prompt. Only the path of the tool calls differs.
 
-The **HTTPS Inspection MCP Agent** enables users to interact with HTTPS Inspection settings using natural language. Users can query existing rules and potentially manage configurations through the AI interface.
+Every tool of these agents only reads. The agents never change your environment. When you ask for a change, they draft it for an administrator to apply in SmartConsole.
+
+## At a glance
+
+|  | MCP Gateway agent | Direct agent |
+|---|---|---|
+| Agent name | HTTPS Inspection Agent (MCP Gateway) | HTTPS Inspection Agent (Direct) |
+| Endpoint | `http://mcp-gateway:8080/mcp`, Bearer token `MCP_GATEWAY_TOKEN` | `http://mcp-https-inspection:3001`, no token (internal `lab` network only) |
+| Tools | 9 of the gateway's 190, selected | All 9 of the server |
+| n8n MCP Client Tool node | `MCP Gateway` | `HTTPS Inspection MCP` |
+| Tool names the model sees in n8n | `MCP_Gateway_https-inspection__init` | `HTTPS_Inspection_MCP_https-inspection__init` |
+| n8n workflow file | `n8n/backup/workflows/https-inspection-via-gateway.json` | `n8n/backup/workflows/https-inspection-mcp-agent.json` |
+| Flowise file | `integrations/flowise/https-inspection.flowdata.json` | `integrations/flowise/direct-https-inspection.flowdata.json` |
+| Langflow file | `integrations/langflow/https-inspection.flow.json` | `integrations/langflow/direct-https-inspection.flow.json` |
+
+The MCP server runs as the Compose service `mcp-https-inspection` (catalog key `https-inspection` in `mcp-gateway/catalog.yaml`).
+
+## Tools (9)
+
+- **Session:** `https-inspection__init`
+- **Policy:** `show_https_layers`, `show_https_layer`, `show_https_rulebase`, `show_https_section`, `show_https_rule`
+- **Context:** `https-inspection__show_gateways_and_servers`, `https-inspection__show_objects`, `https-inspection__show_object`
 
 ## Prerequisites
 
-*   **n8n URL**: `http://<host_ip>:5678`
-*   **Credentials**:
-    *   **Postgres**: For chat memory.
-    *   **OpenAI / Azure OpenAI / Ollama**: For the LLM.
-    *   **MCP Client**: HTTP connection to the HTTPS Inspection MCP server.
+1. **The lab is running.** `./scripts/doctor.sh --post-start` reports `no blockers` (with 1Password references in `.env`: `op run --env-file=.env -- ./scripts/doctor.sh --post-start`)
+2. **A model for `lab-chat`.** One model provider key in `.env`, or the local Ollama model (slow on a CPU). Every agent calls `lab-chat` through LiteLLM; builders never hold provider keys
+3. **The HTTPS Inspection settings in `.env`** (table below). `./setup.sh` asks for them, or edit `.env` (with `./setup.sh --1password`, `.env` holds `op://` references instead of values). Then run `docker compose up -d`: it recreates the servers whose settings changed. With 1Password references in `.env`, start every `docker compose` command in this guide with `op run --env-file=.env --` ([Secrets and 1Password](../REFERENCE.md#secrets-and-1password))
+4. **Sign-in.** The lab admin for n8n, Flowise, and Langflow: `N8N_ADMIN_EMAIL` (default `admin@lab.local`) and `N8N_ADMIN_PASSWORD`
 
-## Step-by-Step Guide
+| Setting | Value |
+|---|---|
+| `MANAGEMENT_HOST` | Host name or IP address of the Security Management Server or Multi-Domain Server, without `https://`. It must be reachable from the Docker host. |
+| `S1C_URL` | Instead of `MANAGEMENT_HOST`, for Smart-1 Cloud: the Web API URL of your tenant, without `/login` (Smart-1 Cloud portal: **Settings > API & SmartConsole**). |
+| `MANAGEMENT_API_KEY` | API key of a management administrator. On-premises: SmartConsole, **Manage & Settings > Permissions & Administrators > Administrators**, Authentication Method **API Key**. Smart-1 Cloud accepts an API key only. |
+| `MANAGEMENT_USERNAME`, `MANAGEMENT_PASSWORD` | Optional, on-premises only: a user name and password instead of the API key. Set both or neither. |
+| `MANAGEMENT_PORT` | Optional. Management API port of an on-premises server. Default `443`. |
+| `MANAGEMENT_CA_CERT`, `MANAGEMENT_TLS_SERVERNAME` | Optional. For a self-signed certificate, see **Certificates** below. |
 
-### 1. Open the Workflow
+### Certificates
 
-1.  Log in to n8n.
-2.  Locate and click on the **https-inspection-mcp-agent** workflow.
+The MCP servers always verify the Management Server's TLS certificate. If it is self-signed:
 
-### 2. Using the Chat Interface
+1. Save the certificate as `certs/sms.pem` and confirm its SHA-256 fingerprint with the server's
+   administrator. The commands are in [`certs/README.md`](../../certs/README.md)
+2. Set `MANAGEMENT_CA_CERT=/certs/sms.pem` in `.env`. The `certs` folder is mounted read-only at
+   `/certs` in the MCP server containers
+3. If you connect by IP address and the certificate names a host, set `MANAGEMENT_TLS_SERVERNAME` to
+   that host name
+4. Recreate the servers: `docker compose up -d`
 
-1.  Click the **Test Workflow** button.
-2.  Click the **Chat** button.
-3.  Enter a query, for example:
-    > "What are the HTTPS inspection rules I have in the 'Default Outbound Layer' and 'Standard' package?"
+## Chat with the agents
 
-### 3. Review Results
+### n8n
 
-The AI agent will retrieve the requested rule information via MCP and present it in the chat.
+1. Sign in to n8n and open the workflow **HTTPS Inspection Agent (Direct)**
+2. Click **Open chat** and send one of the prompts below
+3. Open the **Executions** tab and the latest run. The MCP Client Tool **HTTPS Inspection MCP** shows the tools the agent called, for example `HTTPS_Inspection_MCP_https-inspection__init`
+4. Repeat with **HTTPS Inspection Agent (MCP Gateway)**. Its MCP Client Tool **MCP Gateway** selects the same nine tools under **Tools to Include** and uses the credential **MCP Gateway Bearer**. The tool calls appear as `MCP_Gateway_https-inspection__init`
 
-## Workflow Deep Dive
+The chat trigger also has a public **Chat URL** (it ends in `/webhook/<id>/chat`). That page asks for HTTP Basic authentication: the lab admin email and password (credential **Lab Agents Chat**).
 
-### 1. Input Trigger: Chat Interface
-*   **Node Name**: `When chat message received`
-*   **Purpose**: Captures the user's query about HTTPS inspection.
+### Flowise
 
-### 2. Data Processing
-*   **Node Name**: `Edit Fields`
-*   **Purpose**: Prepares the input data for the agent.
+1. Sign in to Flowise, open **Chatflows**, and open **HTTPS Inspection Agent (Direct)** or **HTTPS Inspection Agent (MCP Gateway)**
+2. Click the chat icon at the top right of the canvas and send a prompt
+3. The **Custom MCP** node shows the endpoint under **MCP Server Config** and the nine selected tools under **Available Actions**. The gateway agent sends `Authorization: Bearer {{$vars.MCP_GATEWAY_TOKEN}}`, the Flowise variable that `builders-import` keeps in sync with `.env`
 
-### 3. The Brain: AI Agent
-*   **Node Name**: `CP-HTTPS-Inspection-MCP-AI Agent`
-*   **Type**: `@n8n/n8n-nodes-langchain.agent`
-*   **Purpose**: Understands the user's request and controls the MCP tools.
-*   **Configuration**:
-    *   **System Message**: Instructs the AI to list tools first, then execute the appropriate tool with correct parameters to answer the user's question.
+### Langflow (Complete lab)
 
-### 4. Memory Management
-*   **Node Name**: `Postgres Chat Memory`
-*   **Purpose**: Stores conversation history.
+Langflow runs in the Complete lab (`COMPOSE_PROFILES=complete`), or on its own with the `langflow` profile.
 
-### 5. The Tools: MCP Client
-*   **Nodes**: `List-CP-HTTPS-Inspection-MCP-Tools` and `Execute-CP-HTTPS-Inspection-MCP-Tools`
-*   **Purpose**: Interfaces with the HTTPS Inspection MCP server.
-*   **Functionality**:
-    *   **List**: Discovers available tools for HTTPS inspection management.
-    *   **Execute**: Runs the selected tool (e.g., to show rules) based on the AI's decision.
+1. Sign in to Langflow and open the flow **HTTPS Inspection Agent (Direct)** or **HTTPS Inspection Agent (MCP Gateway)**
+2. Click **Playground** (Langflow's chat panel) and send a prompt
+3. In the gateway flow, the **MCP Tools** node lists all 190 gateway tools under **Actions**, with only this server's nine switched on
 
-## Best Practices
+## Try these
 
-*   **Precise Names**: Use exact names for layers and packages to ensure the agent finds the correct rules.
-*   **Verify**: Always verify the returned information against the management console if making critical decisions.
+- *Show the HTTPS Inspection rules*
+- *Which HTTPS Inspection rules bypass inspection?*
+- *Show the HTTPS Inspection layers*
+
+## Expected result
+
+The agent calls `https-inspection__init`, then reads the layers and the rulebase. Expect a table of rules
+with their sources, destinations, services, categories, and action (inspect or bypass), and a short
+note on rules that bypass inspection. Without management settings, the tool calls fail and the agent
+reports the error.
+
+## How the agents are built
+
+| n8n node | Type | What it does |
+|---|---|---|
+| `When chat message received` | Chat Trigger | Starts one run per message. Shows the greeting and starter prompts. Public chat behind HTTP Basic authentication (credential **Lab Agents Chat**) |
+| `Normalize input` | Edit Fields | Takes `chatInput` and `sessionId` from the chat, or from the body of a webhook call |
+| `HTTPS Inspection Agent` | AI Agent | Holds the system prompt and decides which tools to call. On an error it continues to `Friendly error` |
+| `OpenAI Chat Model` | OpenAI Chat Model | Model `lab-chat` with the credential **Lab Model (LiteLLM)** (`http://litellm:4000/v1`) |
+| `Conversation Memory` | Simple Memory | Keeps the recent turns of the chat session |
+| `HTTPS Inspection MCP` or `MCP Gateway` | MCP Client Tool | The nine tools: direct to `http://mcp-https-inspection:3001`, or through the gateway |
+| `Friendly error` | Code | Turns a failure into a plain explanation with the command that fixes it |
+
+In Flowise, a **Tool Agent** uses the **OpenAI** chat model node (`lab-chat`, credential **Lab Model (LiteLLM)**, Base Path `http://litellm:4000/v1`), **Buffer Memory**, and one **Custom MCP** node. In Langflow, **Chat Input** feeds an **Agent** with the **OpenAI** component (`lab-chat`, OpenAI API Base `http://litellm:4000/v1`, API key from the global variable `LITELLM_MASTER_KEY`) and one **MCP Tools** node, and the answer goes to **Chat Output**. For a node-by-node walkthrough, see the [Threat Prevention deep dive](CheckPoint_Threat_Prevention_Guide.md).
+
+**Updates.** `n8n-import` and `builders-import` re-import these agents on every deploy and keep an agent you changed. To keep your own variant, duplicate it first. `N8N_SEED_OVERWRITE=1` (n8n) or `SEED_OVERWRITE=1` (Flowise and Langflow) replaces a changed agent with the repository version; set it back to `0` after that run.
+
+**Data handling.** Every tool result goes to the model provider behind `lab-chat`. With a cloud provider, that is an external service. Use lab data only. Never connect the lab to customer environments or load customer data unless the provider is approved for that data.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `Either management host or S1C URL must be provided` | No management settings in `.env` | Set `MANAGEMENT_HOST` (or `S1C_URL`) and `MANAGEMENT_API_KEY`, then `docker compose up -d mcp-https-inspection` |
+| `docker compose logs mcp-https-inspection` shows `WARNING: MANAGEMENT_HOST is set without MANAGEMENT_API_KEY` | A host without a way to sign in is ignored | Add `MANAGEMENT_API_KEY` (or `MANAGEMENT_USERNAME` and `MANAGEMENT_PASSWORD`), then `docker compose up -d mcp-https-inspection` |
+| `TLS certificate verification failed` | Self-signed certificate, or the name does not match | See **Certificates** above |
+| `MCP error -32001: Request timed out` | `MANAGEMENT_HOST` is unreachable from the Docker host, or replies do not route back | `./scripts/doctor.sh --preflight --online` tests reachability. See **Lab connectivity** in the [Direct and MCP Gateway agents lab](MCP_Gateway_Agent_Guide.md) |
+| HTTP 429 (too many requests) from the Management Server | The Management Server limits logins; every new MCP session logs in | Wait one or two minutes. Keep one chat session per exercise |
+| The MCP Gateway agent answers with HTTP 401 | The token in the builder differs from `MCP_GATEWAY_TOKEN` in `.env` | n8n: `docker compose run --rm n8n-import`. Flowise and Langflow: `docker compose run --rm builders-import` |
+| The MCP Gateway agent has no tools, or fails while the Direct agent works | The gateway started before the server was ready, or still uses sessions to an old server container | `docker compose restart mcp-gateway` |
+| **Friendly error**: the lab model endpoint is not reachable | LiteLLM is not running | `docker compose up -d litellm` |
+| **Friendly error**: LiteLLM could not serve the `lab-chat` model | No working model provider key, or the provider failed | Check the key in `.env`, then `docker compose logs litellm` |
+| The hosted chat URL asks for a password | HTTP Basic authentication on the chat trigger | Sign in with the lab admin email and password |
+
+---
+
+*Related:* [The MCP Gateway, Explained](MCP_Gateway_Explained.md) · [Direct and MCP Gateway agents lab](MCP_Gateway_Agent_Guide.md) · [Management](Quantum_Management_MCP_Agent_Guide.md)

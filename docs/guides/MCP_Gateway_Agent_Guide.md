@@ -1,197 +1,234 @@
-# MCP Gateway Agent Guide (Direct vs. Gateway)
+# Direct and MCP Gateway Agents: Hands-On Lab
 
-This guide teaches two ways an AI agent can reach the Check Point MCP servers in
-this playground, so learners can compare them hands-on:
+An AI agent in this lab reaches a Check Point MCP server in one of two ways:
 
-1. **Direct** — the n8n agent connects to one MCP sidecar (e.g.
-   `mcp-quantum-management`) over HTTP. One connection per server, no auth.
-2. **Gateway** — the n8n agent connects to a single **Docker MCP Gateway**
-   endpoint that fronts *many* MCP servers, aggregates their tools, and enforces
-   a Bearer token.
+1. **Direct.** The agent connects to one product's MCP server, for example
+   `http://mcp-quantum-management:3002`. No token: the server is reachable only on the internal
+   `lab` network
+2. **MCP Gateway.** The agent connects to `http://mcp-gateway:8080/mcp`, which fronts 11 Check Point
+   MCP servers (190 tools) and requires the Bearer token `MCP_GATEWAY_TOKEN`
 
-Both are provisioned and ready. The point is to *see the difference*, not to pick
-a winner — each teaches something.
-
----
-
-## Why a gateway? (the concept)
-
-A "reverse proxy for MCP." Instead of every client wiring up N connections (one
-per MCP server), the client makes **one** connection to the gateway, and the
-gateway:
-
-* **aggregates** tools from every registered server into one `tools/list`,
-* **namespaces / de-collides** tools when two servers expose the same name,
-* **centralizes auth** (a single Bearer token at the edge),
-* gives one place for **discovery, logging, and policy**.
-
-This is the same idea as an API gateway, applied to agent tools. In this
-playground the gateway is Docker's `docker/mcp-gateway`, driven by
-`mcp-gateway/catalog.yaml`.
+Each of the 11 products behind the gateway has one agent for each path, with the same tools and the
+same prompt. In this lab you run both, compare them, and see what the gateway adds. For the concepts
+behind it, read [The MCP Gateway, Explained](MCP_Gateway_Explained.md) first.
 
 ---
 
-## Architecture in this lab
+## Architecture
 
 ```
-                        ┌────────────────────────┐
-   n8n agent  ── HTTP ─▶│  DIRECT path           │
-   (no auth)            │  mcp-quantum-management │──▶ Check Point SMS
-                        │      :3002 /mcp         │
-                        └────────────────────────┘
-
-                        ┌────────────────────────┐      ┌─ documentation
-   n8n agent  ── HTTP ─▶│  GATEWAY path          │──────┤  quantum-management ──▶ SMS
-   (Bearer token)       │  mcp-gateway :8080/mcp │      │  gaia, gw-cli, logs…
-                        │  catalog.yaml          │      └─ (all 10 CP servers)
-                        └────────────────────────┘
+  n8n, Flowise, Langflow
+   |
+   |-- "<Product> Agent (Direct)" ------- HTTP, no token -------> one MCP server ----+
+   |                                                                                  |
+   |-- "<Product> Agent (MCP Gateway)" -- HTTP + Bearer token --> mcp-gateway:8080 ---+--> 11 MCP servers
+   |                                                                                  |
+   |-- "Check Point MCP Gateway Agent" -- HTTP + Bearer token --> mcp-gateway:8080 ---+
+                                                                                      |
+                                                       Your Check Point environment <-+
+                                                       (Management Server, gateways, Check Point cloud services)
 ```
 
-* **Direct credential:** `CP Management MCP Client Docker`
-  → `http://mcp-quantum-management:3002`, no headers.
-* **Gateway credential:** `CP MCP Gateway Docker`
-  → `http://mcp-gateway:8080/mcp`, header
-  `Authorization=Bearer <MCP_GATEWAY_TOKEN>`.
+The gateway and the MCP servers have no host ports. Only containers on the `lab` network reach them.
 
-Both live only on the internal `demo` Docker network — the gateway has **no**
-published port.
+---
 
-### The gateway fronts *all* the Check Point MCP servers
+## The agent pairs
 
-The gateway aggregates **10** Check Point MCP servers into one endpoint. The set
-is defined in `mcp-gateway/catalog.yaml` and enabled via the `--servers=` list on
-the `mcp-gateway` service in `docker-compose.yml` (a custom catalog does not
-auto-enable its servers — they must be listed explicitly, and the two must stay
-in sync):
+The names are the same in n8n, Flowise, and Langflow.
 
-| Catalog key         | Sidecar URL                                | Purpose                          |
-|---------------------|--------------------------------------------|----------------------------------|
-| `documentation`     | `http://mcp-documentation:3000`            | Product documentation (cloud)    |
-| `quantum-management`| `http://mcp-quantum-management:3002`       | Quantum Management (SMS)         |
-| `cpinfo-analysis`   | `http://cpinfo-analysis-mcp:3012`          | CPInfo bundle analysis           |
-| `https-inspection`  | `http://mcp-https-inspection:3001`         | HTTPS Inspection                 |
-| `management-logs`   | `http://mcp-management-logs:3003`          | Management / log queries         |
-| `gaia`              | `http://quantum-gaia-mcp:3011/mcp`         | Gaia OS                          |
-| `gw-cli`            | `http://quantum-gw-cli-mcp:3009`           | Gateway CLI (clish/expert)       |
-| `reputation-service`| `http://reputation-service-mcp:3007`       | Reputation / IoC lookup          |
-| `threat-emulation`  | `http://threat-emulation-mcp:3004`         | Threat Emulation (sandbox)       |
-| `threat-prevention` | `http://threat-prevention-mcp:3005`        | Threat Prevention                |
+| Product | MCP Gateway agent | Direct agent | Direct endpoint | Tools |
+|---|---|---|---|---|
+| Documentation | Documentation Agent (MCP Gateway) | Documentation Agent (Direct) | `http://mcp-documentation:3000` | 1 |
+| Management | Management Agent (MCP Gateway) | Management Agent (Direct) | `http://mcp-quantum-management:3002` | 50 |
+| Management Logs | Management Logs Agent (MCP Gateway) | Management Logs Agent (Direct) | `http://mcp-management-logs:3003` | 7 |
+| Policy Insights | Policy Insights Agent (MCP Gateway) | Policy Insights Agent (Direct) | `http://policy-insights-mcp:3013` | 10 |
+| Threat Prevention | Threat Prevention Agent (MCP Gateway) | Threat Prevention Agent (Direct) | `http://threat-prevention-mcp:3005` | 25 |
+| HTTPS Inspection | HTTPS Inspection Agent (MCP Gateway) | HTTPS Inspection Agent (Direct) | `http://mcp-https-inspection:3001` | 9 |
+| Gaia | Gaia Agent (MCP Gateway) | Gaia Agent (Direct) | `http://quantum-gaia-mcp:3011/mcp` | 42 |
+| Gateway CLI | Gateway CLI Agent (MCP Gateway) | Gateway CLI Agent (Direct) | `http://quantum-gw-cli-mcp:3009` | 26 |
+| CPInfo Analysis | CPInfo Analysis Agent (MCP Gateway) | CPInfo Analysis Agent (Direct) | `http://cpinfo-analysis-mcp:3012` | 12 |
+| Reputation Service | Reputation Service Agent (MCP Gateway) | Reputation Service Agent (Direct) | `http://reputation-service-mcp:3007` | 3 |
+| Threat Emulation | Threat Emulation Agent (MCP Gateway) | Threat Emulation Agent (Direct) | `http://threat-emulation-mcp:3004` | 5 |
 
-Together these expose on the order of ~180 aggregated tools through the single
-gateway endpoint (the exact count is reported by the live gateway's `tools/list`,
-not stored in the repo). The `spark-management`, `harmony-sase`, and
-`quantum-gw-connection-analysis` sidecars run in the stack but are **not** behind
-the gateway (not in `catalog.yaml` / `--servers=`).
+One more agent uses the gateway across products: **Check Point MCP Gateway Agent**, with a read-first
+core of 48 tools from all 11 servers.
+
+Each product has its own guide with its settings and prompts, for example the
+[Management guide](Quantum_Management_MCP_Agent_Guide.md) and the
+[Documentation guide](Documentation_MCP_Agent_Guide.md).
 
 ---
 
 ## Prerequisites
 
-* n8n reachable at `http://<host_ip>:5678`.
-* `.env` set (copied from `.env-example`). Relevant keys:
-  * `MANAGEMENT_HOST` / `MANAGEMENT_API_KEY` — the Check Point SMS.
-  * `MCP_GATEWAY_TOKEN` — the pinned gateway Bearer token (defaults to
-    `cp-mcp-gateway-training-token`; the provisioned n8n credential uses that
-    default, so change **both** together if you customize it).
+1. **The lab is running.** `./scripts/doctor.sh --post-start` reports `no blockers`, and
+   `190 tools with MCP_GATEWAY_TOKEN`. With 1Password references in `.env`, run it as
+   `op run --env-file=.env -- ./scripts/doctor.sh --post-start`
+2. **A model for `lab-chat`.** Every agent uses `lab-chat` through LiteLLM. Give one provider key in
+   `.env` (Azure OpenAI needs `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, and
+   `AZURE_OPENAI_DEPLOYMENT`; or `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `GEMINI_API_KEY`). With no key,
+   `lab-chat` runs on the local Ollama model, which is slow on a CPU
+3. **The settings of the product you test.** This lab starts with the Documentation agents, which
+   need only `DOC_CLIENT_ID`, `DOC_SECRET_KEY`, and `DOC_REGION` (EU or US). The Management agents need
+   `MANAGEMENT_HOST` (or `S1C_URL`) and `MANAGEMENT_API_KEY`. `./setup.sh` asks for each product's
+   settings; after a change run `docker compose up -d`. With 1Password references in `.env`, start
+   every `docker compose` command in this lab with `op run --env-file=.env --`
+4. **Sign-in.** n8n, Flowise, and Langflow share the lab admin: `N8N_ADMIN_EMAIL` (default
+   `admin@lab.local`) and `N8N_ADMIN_PASSWORD` from `.env` (or from your 1Password item)
+5. **The builder addresses.** On a lab host: `https://n8n.<DOMAIN>`, `https://flowise.<DOMAIN>`, and
+   `https://langflow.<DOMAIN>`. On your own computer the lab publishes no ports; publish them on
+   `127.0.0.1` in a local `docker-compose.override.yml` next to `docker-compose.yml` (it is
+   git-ignored), then run `docker compose up -d`:
+
+   ```yaml
+   services:
+     n8n:
+       ports: ["127.0.0.1:5678:5678"]
+     flowise:
+       ports: ["127.0.0.1:3020:3020"]   # both sides equal FLOWISE_PORT
+     langflow:
+       ports: ["127.0.0.1:7860:7860"]   # Complete lab, or the langflow profile
+   ```
+
+Langflow runs in the Complete lab (`COMPOSE_PROFILES=complete`), or on its own with the `langflow`
+profile. The Standard lab has n8n and Flowise.
 
 ---
 
-## Lab connectivity (READ THIS if management calls time out)
+## Walkthrough A: the direct path (n8n)
 
-Management tools call `https://$MANAGEMENT_HOST/web_api/...`. Two lab-specific
-gotchas cause a hang that surfaces in n8n as **`MCP error -32001: Request timed
-out`** after ~60s:
+1. Sign in to n8n and open the workflow **Documentation Agent (Direct)**
+2. Look at the canvas: `When chat message received` → `Normalize input` → `Documentation Agent`,
+   with `OpenAI Chat Model`, `Conversation Memory`, and the MCP Client Tool **Documentation MCP**
+   attached. The MCP node points at `http://mcp-documentation:3000` and has no credential
+3. Click **Open chat** and ask: *How do I enable Identity Awareness on R82?*
+4. Open the **Executions** tab and the latest run. The tool call is
+   `Documentation_MCP_ask-checkpoint-docs`
 
-1. **`MANAGEMENT_HOST` must be reachable from the Docker host.** In a CloudShare
-   lab the internal `10.1.1.x` SMS IP is *not* routable from outside the
-   environment — set `MANAGEMENT_HOST` to the SMS adapter's CloudShare **Public
-   IP** (Networks → SMS adapter → Inbound Access: Public IP).
+Expected result: an answer from Check Point documentation, with sources.
 
-2. **The SMS must return replies out the same path.** If the SMS default route
-   points at the training gateway (`10.1.1.111`), replies to an external client
-   are sent into the *simulated* internet (`203.0.113.0/24`, TEST-NET — routes
-   nowhere) and the connection half-opens. Keep the training default route, and
-   add a **specific** route for your external client subnet out the CloudShare
-   gateway. Example (Gaia clish on the SMS, for a client at `203.0.113.0/24`):
+## Walkthrough B: the MCP Gateway path (n8n)
 
-   ```
-   set static-route <your-client-subnet>/24 nexthop gateway address 10.1.1.1 on
-   save config
-   ```
+1. Open the workflow **Documentation Agent (MCP Gateway)**
+2. Open the MCP Client Tool node **MCP Gateway**. It points at `http://mcp-gateway:8080/mcp`, uses
+   the credential **MCP Gateway Bearer**, and under **Tools to Include** selects one tool:
+   `ask-checkpoint-docs`
+3. Click **Open chat** and ask the same question
+4. In **Executions**, the tool call is now `MCP_Gateway_ask-checkpoint-docs`
 
-   Then snapshot the CloudShare blueprint so a revert keeps the route.
+Expected result: the same answer. The tools and the prompt are the same; only the path differs. The
+acceptance test `N8N-RUN` runs exactly this pair.
 
-The **documentation** server does not touch the SMS (it calls Check Point's
-cloud), so the gateway's doc tools work even while the SMS is unreachable — handy
-for demoing the gateway itself in isolation.
+## Walkthrough C: one endpoint, many products
 
-### When the CloudShare address changes
+1. Open the workflow **Check Point MCP Gateway Agent**. Its MCP Client Tool **MCP Gateway** selects
+   48 of the 190 gateway tools, from all 11 servers
+2. Click **Open chat** and ask questions that span products, for example:
+   - *Which gateways do I have, and what are their IP addresses?* (Management)
+   - *Show the Threat Prevention profiles* (Threat Prevention)
+   - *What is the reputation of 8.8.8.8?* (Reputation Service)
+3. In **Executions**, see the tools of several servers called through one node and one token
 
-CloudShare VM hostnames (`*.vm.cld.sr`) change when the environment is
-recreated/re-provisioned. `MANAGEMENT_HOST` is the **single place** to update —
-n8n credentials and workflows never change (they point at the sidecars/gateway,
-not the SMS).
+Expected result: answers from each product you configured. For a product without settings, the tool
+call fails and the agent reports why.
 
-1. Get the new address: CloudShare → your environment → **Networks** → SMS
-   adapter → **Inbound Access: Public IP** (hostname or IP).
-2. Update the env — pick the one that matches how the stack is run:
-   * **Dokploy:** project → **Environment** → set
-     `MANAGEMENT_HOST=<new-address>` → **Redeploy**. (This is the durable copy —
-     Dokploy rewrites `.env` from it on redeploy.)
-   * **Plain compose host:** edit `.env`, then `docker compose up -d`
-     (recreates only the services whose env changed).
-3. That's it. Sanity-check with the chat: *"show me the gateways and servers"*.
-   If it times out, re-verify the two connectivity items above (public IP
-   reachable + the SMS return route — a CloudShare **revert** to an old snapshot
-   can silently remove the static route).
+## The same agents in Flowise and Langflow
 
----
+**Flowise.** Open **Chatflows**, open **Documentation Agent (Direct)**, and click the chat icon at the
+top right of the canvas. Then do the same with **Documentation Agent (MCP Gateway)**. The **Custom
+MCP** node shows the endpoint under **MCP Server Config** and the selected tool under **Available
+Actions**. The gateway agent sends `Authorization: Bearer {{$vars.MCP_GATEWAY_TOKEN}}`; the value is
+the Flowise variable `MCP_GATEWAY_TOKEN`, which `builders-import` keeps in sync with `.env`.
 
-## Walkthrough A — Direct
+**Langflow (Complete lab).** Open the flow **Documentation Agent (MCP Gateway)** and click
+**Playground** (Langflow's chat panel). The **MCP Tools** node lists all 190 gateway tools under
+**Actions**, with only `ask-checkpoint-docs` switched on. The direct flow's **MCP Tools** node points
+at `http://mcp-documentation:3000`.
 
-1. Open the **quantum-management-mcp** workflow.
-2. Click **Test Workflow → Chat**.
-3. Ask: *"Is there a rule in the DNS_Layer to allow traffic to 8.8.8.8?"*
-4. The agent calls `List-CP-MCP-Tools` (one server's tools), then
-   `CP-MCP-Client` to run the chosen tool against the SMS.
-
-Observe: the tool list is only the management server's tools; there is no auth.
-
-## Walkthrough B — Gateway
-
-1. Open the **quantum-management-via-gateway** workflow.
-2. Click **Test Workflow → Chat**.
-3. Ask the same question, then ask a **documentation** question (e.g. *"What is
-   an access rule?"*).
-4. The agent calls `List-Gateway-MCP-Tools` and gets the **combined** catalog
-   from *both* servers through one endpoint; `Gateway-MCP-Client` runs the tool.
-
-Observe: one connection, one Bearer token, tools from multiple servers.
+The acceptance tests `FLOWISE-RUN` and `LANGFLOW-RUN` run these pairs.
 
 ---
 
 ## Exercises
 
-1. **Compare tool lists.** Run `List-CP-MCP-Tools` (direct) and
-   `List-Gateway-MCP-Tools` (gateway). How many tools does each return, and
-   where do the extra gateway tools come from?
-2. **Break auth on purpose.** Edit the `CP MCP Gateway Docker` credential and
-   change the Bearer token. Re-run — you'll get `401 Unauthorized`. Restore it.
-   (This is exactly what happens silently if the gateway token is *not* pinned
-   and the gateway restarts — see below.)
-3. **Add a server to the gateway (advanced).** Only *gateway-ready* servers can
-   sit behind the gateway — the stock Check Point packages are single-client
-   over HTTP and break on the gateway's concurrent sessions. All **10** servers
-   in the catalog above are locally patched and gateway-ready. See
-   `docker/n8n/mcp-src/PATCHES.md` for the why, the full capability matrix, and
-   the ~30-line recipe — then make one of the not-yet-fronted sidecars (e.g.
-   `spark-management`) gateway-ready yourself, add it to
-   `mcp-gateway/catalog.yaml` + the `--servers=` list (healthcheck +
-   `depends_on: service_healthy` too), redeploy, and watch its tools appear with
-   **no client change**.
-4. **Security discussion.** With the gateway as the single choke point, where
-   would you enforce tool-level allow/deny, DLP on arguments, or scanning of
-   tool descriptions? (This is the "MCP security gateway" idea.)
+1. **Compare the tool lists.** Open the MCP node of **Management Agent (Direct)** and of **Management
+   Agent (MCP Gateway)**. The direct node binds all 50 tools of its server. The gateway node selects
+   the same 50 from 190. Where do the other 140 come from?
+2. **Break the token on purpose.** In n8n, open the credential **MCP Gateway Bearer**, change one
+   character of the token, save, and chat with **Documentation Agent (MCP Gateway)**. The gateway
+   answers HTTP 401 and the agent's **Friendly error** step explains it. The direct agent still works.
+   Restore the credential from `.env`: `docker compose run --rm n8n-import`
+3. **Feel the 128-tool limit.** In Flowise, open **Management Agent (MCP Gateway)** and click
+   **Refresh** on **Available Actions**: the list shows all 190 gateway tools. The OpenAI and Azure
+   OpenAI APIs accept at most 128 tools per request. Leave the selection at 50, or close the flow
+   without saving
+4. **Add your own server.** The [Build Your Own MCP Server](Build_Your_Own_MCP_Exercise.md) exercise
+   puts a new server behind the gateway. Its tools appear in the gateway catalog without any change to
+   the existing agents; you then select them in the agents that should use them
+5. **Discuss the policy point.** Every gateway call passes through one endpoint. Where would you
+   enforce tool allow and deny lists, argument checks, or description scanning? See section 7 of
+   [The MCP Gateway, Explained](MCP_Gateway_Explained.md) and the [MCP Security Lab](MCP_Security_Lab.md)
+
+---
+
+## Chat outside the editor
+
+- **Open chat** in the n8n editor needs no extra sign-in
+- Every agent's chat trigger is public and shows a **Chat URL** that ends in `/webhook/<id>/chat`. That
+  hosted chat page, and the same URL called as a webhook, ask for HTTP Basic authentication: the lab
+  admin email and password (n8n credential **Lab Agents Chat**, filled in by `n8n-import`)
+- Flowise's prediction API (`/api/v1/prediction`) needs the Flowise API key **Lab Agents API**. The
+  chat on the Flowise canvas does not
+
+## How the lab keeps the agents in sync
+
+- `n8n-import` runs at every start. It re-syncs the n8n credentials from `.env` (edits made in the
+  n8n UI are replaced), imports the workflows, and publishes them. A workflow whose prerequisites are
+  missing (for example a token or `DOMAIN`) is imported but not published, and the log says what it
+  needs. A workflow you changed in n8n is kept and named in the log; `N8N_SEED_OVERWRITE=1` replaces it
+  with the repository version. To keep your own variant, duplicate the workflow first
+- `builders-import` does the same for Flowise and Langflow: it re-syncs the model credential and the
+  variables from `.env`, updates seeded flows in place, and keeps flows you changed unless
+  `SEED_OVERWRITE=1`
+- To re-run them after a change to `.env`: `docker compose run --rm n8n-import` and
+  `docker compose run --rm builders-import`
+
+---
+
+## Lab connectivity: reaching the Management Server
+
+The MCP servers of the Management, Management Logs, Threat Prevention, HTTPS Inspection, Policy
+Insights, and Gateway CLI agents call the Management API at
+`https://<MANAGEMENT_HOST>:<MANAGEMENT_PORT>/web_api`. The servers of the Documentation, Reputation
+Service, and Threat Emulation agents call Check Point cloud services instead, so those agents work
+while the Management Server is unreachable.
+
+1. **`MANAGEMENT_HOST` is reachable from the Docker host.** Host name or IP address only, no
+   `https://`. `./scripts/doctor.sh --preflight --online` tests TCP reachability of the Check Point
+   hosts in `.env`
+2. **The certificate is trusted.** TLS verification is always on. For a self-signed Management
+   Server, save its certificate as `certs/<name>.pem`, confirm its fingerprint with the administrator,
+   and set `MANAGEMENT_CA_CERT=/certs/<name>.pem`. If you connect by IP address and the certificate
+   names a host, set `MANAGEMENT_TLS_SERVERNAME` to that host name. The steps are in
+   [`certs/README.md`](../../certs/README.md)
+3. **Replies route back.** If the Management Server's default route points into a training network,
+   replies to your Docker host can get lost and tool calls time out. Add a specific route for your
+   client subnet in Gaia clish on the Management Server, for example:
+
+   ```
+   set static-route <your-client-subnet>/24 nexthop gateway address <lab-router-ip> on
+   save config
+   ```
+
+**CloudShare labs.** The internal `10.1.1.x` address of the Management Server is not reachable from
+outside the environment. Set `MANAGEMENT_HOST` to the Management Server's public IP (CloudShare:
+**Networks**, the Management Server's adapter, **Inbound Access: Public IP**). That address can change
+when the environment is recreated. `MANAGEMENT_HOST` is the only place to update: the agents point at
+the MCP servers, not at the Management Server. After the change run `docker compose up -d` (on a
+Dokploy lab host, change it in the project's environment settings and redeploy). If the certificate
+does not name the public IP, set `MANAGEMENT_TLS_SERVERNAME` to a host name it does contain. If a
+CloudShare revert removed your static route, add it again.
 
 ---
 
@@ -199,68 +236,28 @@ Observe: one connection, one Bearer token, tools from multiple servers.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| Gateway lists **0 tools** | Gateway started before a sidecar was listening; it enumerates once at startup | Fixed by healthchecks + `depends_on: service_healthy`. To recover a running stack: `docker restart mcp-gateway` |
-| A raw `tools/list` returns **0 tools** (curl / manual client) | No MCP `initialize` handshake was performed first | **Expected MCP protocol behavior, not a bug.** A session must send `initialize` (and the `notifications/initialized` follow-up) before `tools/list`. n8n's MCP client does this for you; a hand-rolled curl must do it explicitly. Send `Authorization: Bearer <MCP_GATEWAY_TOKEN>` on every request |
-| n8n gets **401 Unauthorized** from the gateway | Missing/wrong Bearer token, or the gateway generated a new random token on restart | Pin `MCP_GATEWAY_TOKEN` in `.env` (done by default) and set the same value in the `CP MCP Gateway Docker` credential header |
-| **`-32001 Request timed out`** on management tools | SMS unreachable or asymmetric return routing | See **Lab connectivity** above |
-| Gateway logs `connection refused` to a sidecar | Sidecar not healthy yet | Confirm the sidecar's healthcheck passes (`docker ps` shows `healthy`) |
-| Management tools return **`429 err_too_many_requests`** | SMS login-rate throttle: every new MCP session performs its own `/web_api/login`, and bursts of sessions (a classroom, or parallel test runs) trip it | Wait ~1–2 minutes; it clears on its own. Keep one chat session per exercise rather than re-opening workflows rapidly |
+| The gateway agent answers with HTTP 401 | The **MCP Gateway Bearer** credential (n8n) or the builder variable differs from `MCP_GATEWAY_TOKEN` in `.env` | n8n: `docker compose run --rm n8n-import`. Flowise and Langflow: `docker compose run --rm builders-import` |
+| A server shows 0 tools through the gateway | The server was not ready when the gateway started | `docker compose restart mcp-gateway` |
+| The gateway agent fails, the direct agent works, after you recreated a server | The gateway may still use sessions to the old server container | `docker compose restart mcp-gateway` |
+| **Friendly error**: the lab model endpoint is not reachable | LiteLLM is not running | `docker compose up -d litellm` |
+| **Friendly error**: LiteLLM could not serve the `lab-chat` model | No working provider key, or the provider failed | Check the key in `.env`, then `docker compose logs litellm` |
+| Management tools fail with `MCP error -32001: Request timed out` | `MANAGEMENT_HOST` is unreachable, or replies do not route back | See **Lab connectivity** above |
+| `TLS certificate verification failed` | Self-signed certificate, or the name does not match | `MANAGEMENT_CA_CERT` and `MANAGEMENT_TLS_SERVERNAME` ([`certs/README.md`](../../certs/README.md)) |
+| `Either management host or S1C URL must be provided` | No management settings in `.env` | Set `MANAGEMENT_HOST` (or `S1C_URL`) and `MANAGEMENT_API_KEY`, then `docker compose up -d` |
+| Management tools fail with HTTP 429 (too many requests) | The Management Server limits logins; every new MCP session logs in | Wait one or two minutes. Keep one chat session per exercise |
+| The hosted chat URL asks for a password | HTTP Basic authentication on the chat trigger | Sign in with the lab admin email and password |
+| The model provider rejects the request: too many tools | The agent binds more than 128 tools | Select fewer tools in the agent's MCP node |
+| Your change to a seeded workflow or flow is not replaced after an update | Changed agents are kept on purpose | `N8N_SEED_OVERWRITE=1` (n8n) or `SEED_OVERWRITE=1` (Flowise, Langflow) for one run, then set it back to `0` |
 
 ---
 
-## Direct + gateway twins ship together
+## Reference
 
-Every direct-connection agent workflow has a matching `*-via-gateway.json` twin
-whose only difference is the MCP credential: the direct workflow points at one
-sidecar (no auth), and the twin points at the `CP MCP Gateway Docker` credential
-(`http://mcp-gateway:8080/mcp` + Bearer token). Both variants are committed under
-`n8n/backup/workflows/` and are re-imported on every redeploy, so the direct-vs-
-gateway comparison is always available. The 10 twins:
-
-`cpinfo-analysis-via-gateway`, `documentation-via-gateway`,
-`https-inspection-via-gateway`, `management-logs-via-gateway`,
-`quantum-gaia-via-gateway`, `quantum-gw-cli-via-gateway`,
-`quantum-management-via-gateway`, `reputation-service-via-gateway`,
-`threat-emulation-via-gateway`, `threat-prevention-via-gateway`.
-
-## The import job substitutes secrets and resolves the domain
-
-The `n8n-import` service (in `docker-compose.yml`) does not import the committed
-files verbatim. It copies `./n8n/backup` to a writable temp dir and, before
-importing:
-
-* substitutes real secrets from `.env` into the credential templates —
-  `__POSTGRES_PASSWORD__`, `__PILOT_MCP_TOKEN__` (PolicyPilot bearer), and
-  `__DEVHUB_MCP_TOKEN__` (DevHub bearer). If a token env is **empty**, the import
-  *drops* that credential file rather than importing a broken placeholder
-  credential (and logs a warning).
-* resolves the `{{DOMAIN}}` placeholder in the `policypilot-management-agent`,
-  `policypilot-dynamic-layer-agent`, and `devhub-agent` workflows to the real
-  deployment domain (from `DOMAIN`, falling back to `N8N_HOST` with the `n8n.`
-  prefix stripped), so each MCP endpoint URL (`policypilot.<domain>/mcp`,
-  `hub.<domain>/api/mcp`) is correct on a fresh deploy.
-
-It then runs:
-
-```bash
-n8n import:credentials --separate --input=/tmp/import/credentials_public
-n8n import:workflow    --separate --input=/tmp/import/workflows
-```
-
-**Gotcha — tags are stripped.** `n8n import:workflow` fails on duplicate tag
-names, so every committed workflow JSON carries an empty `"tags": []` array.
-Keep it that way when re-exporting a workflow, or the import step will error on
-re-deploy.
-
-## How it's wired (reference)
-
-* `docker-compose.yml` → `mcp-gateway` service: `--catalog=checkpoint-mcp.yaml`,
-  `--servers=documentation,quantum-management,cpinfo-analysis,https-inspection,management-logs,gaia,gw-cli,reputation-service,threat-emulation,threat-prevention`,
-  and the pinned Bearer token
-  `MCP_GATEWAY_AUTH_TOKEN=${MCP_GATEWAY_TOKEN:-cp-mcp-gateway-training-token}`,
-  `depends_on: { <sidecar>: { condition: service_healthy } }`.
-* `mcp-gateway/catalog.yaml` → the remote MCP servers the gateway fronts.
-* Provisioned n8n artifacts:
-  * credential `CP MCP Gateway Docker`
-    (`n8n/backup/credentials_public/CP-MCP-Gateway-Docker.json`)
-  * the 10 `*-via-gateway` workflows in `n8n/backup/workflows/`.
+- `docker-compose.yml`, service `mcp-gateway`: the `--servers=` list, `MCP_GATEWAY_AUTH_TOKEN` from
+  `MCP_GATEWAY_TOKEN`, and `depends_on` on all 11 servers
+- `mcp-gateway/catalog.yaml`: the servers the gateway fronts
+- n8n: credential **MCP Gateway Bearer** (`n8n/backup/credentials_public/gateway-bearer.json`); the
+  gateway workflows `n8n/backup/workflows/*-via-gateway.json` and `mcp-gateway-agent.json`
+- Flowise and Langflow: `integrations/flowise/` and `integrations/langflow/`, listed with their agent
+  names and tool counts in `integrations/builders_agents.json`
+- Tool scopes: `SERVER_TOOLS` in `scripts/flows/langflow_fix.py`
