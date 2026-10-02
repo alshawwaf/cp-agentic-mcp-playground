@@ -11,12 +11,13 @@
       "type": "customNode",
       "data": {
         "id": "chatOpenAI_0",
-        "label": "ChatOpenAI",
-        "version": 8.2,
+        "label": "OpenAI",
+        "version": 8.3,
         "name": "chatOpenAI",
         "type": "ChatOpenAI",
         "baseClasses": [
           "ChatOpenAI",
+          "BaseChatOpenAI",
           "BaseChatModel",
           "BaseLanguageModel",
           "Runnable"
@@ -62,6 +63,84 @@
             "additionalParams": true,
             "id": "chatOpenAI_0-input-streaming-boolean",
             "display": true
+          },
+          {
+            "label": "Allow Image Uploads",
+            "name": "allowImageUploads",
+            "type": "boolean",
+            "description": "Allow image input. Refer to the <a href=\"https://docs.flowiseai.com/using-flowise/uploads#image\" target=\"_blank\">docs</a> for more details.",
+            "default": false,
+            "optional": true,
+            "id": "chatOpenAI_0-input-allowImageUploads-boolean",
+            "display": true
+          },
+          {
+            "label": "Reasoning",
+            "description": "Whether the model supports reasoning. Only applicable for reasoning models (gpt-5 and o-series models only)",
+            "name": "reasoning",
+            "type": "boolean",
+            "default": false,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-reasoning-boolean",
+            "display": true
+          },
+          {
+            "label": "Reasoning Effort",
+            "description": "Constrains effort on reasoning. Only applicable for reasoning models (gpt-5 and o-series models only)",
+            "name": "reasoningEffort",
+            "type": "options",
+            "options": [
+              {
+                "label": "Low",
+                "name": "low"
+              },
+              {
+                "label": "Medium",
+                "name": "medium"
+              },
+              {
+                "label": "High",
+                "name": "high"
+              },
+              {
+                "label": "X-High",
+                "name": "xhigh",
+                "description": "X-High is supported for all models after gpt-5.1-codex-max"
+              }
+            ],
+            "additionalParams": true,
+            "show": {
+              "reasoning": true
+            },
+            "id": "chatOpenAI_0-input-reasoningEffort-options",
+            "display": false
+          },
+          {
+            "label": "Reasoning Summary",
+            "description": "A summary of the reasoning performed by the model. This can be useful for debugging and understanding the model's reasoning process",
+            "name": "reasoningSummary",
+            "type": "options",
+            "options": [
+              {
+                "label": "Auto",
+                "name": "auto"
+              },
+              {
+                "label": "Concise",
+                "name": "concise"
+              },
+              {
+                "label": "Detailed",
+                "name": "detailed"
+              }
+            ],
+            "additionalParams": true,
+            "show": {
+              "reasoning": true
+            },
+            "id": "chatOpenAI_0-input-reasoningSummary-options",
+            "display": false
           },
           {
             "label": "Max Tokens",
@@ -135,92 +214,23 @@
             "display": true
           },
           {
-            "label": "BasePath",
+            "label": "Base Path",
             "name": "basepath",
             "type": "string",
             "optional": true,
+            "description": "Override the default base URL for the API, e.g., \"https://api.example.com/v2/",
             "additionalParams": true,
             "id": "chatOpenAI_0-input-basepath-string",
             "display": true
           },
           {
-            "label": "Proxy Url",
-            "name": "proxyUrl",
-            "type": "string",
-            "optional": true,
-            "additionalParams": true,
-            "id": "chatOpenAI_0-input-proxyUrl-string",
-            "display": true
-          },
-          {
-            "label": "BaseOptions",
+            "label": "Base Options",
             "name": "baseOptions",
             "type": "json",
             "optional": true,
+            "description": "Default headers to include with every request to the API.",
             "additionalParams": true,
             "id": "chatOpenAI_0-input-baseOptions-json",
-            "display": true
-          },
-          {
-            "label": "Allow Image Uploads",
-            "name": "allowImageUploads",
-            "type": "boolean",
-            "description": "Allow image input. Refer to the <a href=\"https://docs.flowiseai.com/using-flowise/uploads#image\" target=\"_blank\">docs</a> for more details.",
-            "default": false,
-            "optional": true,
-            "id": "chatOpenAI_0-input-allowImageUploads-boolean",
-            "display": true
-          },
-          {
-            "label": "Image Resolution",
-            "description": "This parameter controls the resolution in which the model views the image.",
-            "name": "imageResolution",
-            "type": "options",
-            "options": [
-              {
-                "label": "Low",
-                "name": "low"
-              },
-              {
-                "label": "High",
-                "name": "high"
-              },
-              {
-                "label": "Auto",
-                "name": "auto"
-              }
-            ],
-            "default": "low",
-            "optional": false,
-            "show": {
-              "allowImageUploads": true
-            },
-            "id": "chatOpenAI_0-input-imageResolution-options",
-            "display": false
-          },
-          {
-            "label": "Reasoning Effort",
-            "description": "Constrains effort on reasoning for reasoning models. Only applicable for o1 and o3 models.",
-            "name": "reasoningEffort",
-            "type": "options",
-            "options": [
-              {
-                "label": "Low",
-                "name": "low"
-              },
-              {
-                "label": "Medium",
-                "name": "medium"
-              },
-              {
-                "label": "High",
-                "name": "high"
-              }
-            ],
-            "default": "medium",
-            "optional": false,
-            "additionalParams": true,
-            "id": "chatOpenAI_0-input-reasoningEffort-options",
             "display": true
           }
         ],
@@ -236,9 +246,13 @@
         ],
         "inputs": {
           "cache": "",
-          "modelName": "gpt-5.4",
+          "modelName": "lab-chat",
           "temperature": 0.2,
           "streaming": true,
+          "allowImageUploads": false,
+          "reasoning": "",
+          "reasoningEffort": "",
+          "reasoningSummary": "",
           "maxTokens": "",
           "topP": "",
           "frequencyPenalty": "",
@@ -246,21 +260,17 @@
           "timeout": "",
           "strictToolCalling": "",
           "stopSequence": "",
-          "basepath": "",
-          "proxyUrl": "",
+          "basepath": "http://litellm:4000/v1",
           "baseOptions": "",
-          "allowImageUploads": false,
-          "imageResolution": "low",
-          "reasoningEffort": "",
           "credential": ""
         },
         "outputAnchors": [
           {
-            "id": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
+            "id": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
             "name": "chatOpenAI",
             "label": "ChatOpenAI",
             "description": "Wrapper around OpenAI large language models that use the Chat endpoint",
-            "type": "ChatOpenAI | BaseChatModel | BaseLanguageModel | Runnable"
+            "type": "ChatOpenAI | BaseChatOpenAI | BaseChatModel | BaseLanguageModel | Runnable"
           }
         ],
         "outputs": {},
@@ -305,7 +315,8 @@
             "default": "",
             "additionalParams": true,
             "optional": true,
-            "id": "bufferMemory_1-input-sessionId-string"
+            "id": "bufferMemory_1-input-sessionId-string",
+            "display": true
           },
           {
             "label": "Memory Key",
@@ -313,7 +324,8 @@
             "type": "string",
             "default": "chat_history",
             "additionalParams": true,
-            "id": "bufferMemory_1-input-memoryKey-string"
+            "id": "bufferMemory_1-input-memoryKey-string",
+            "display": true
           }
         ],
         "inputAnchors": [],
@@ -326,6 +338,7 @@
             "id": "bufferMemory_1-output-bufferMemory-BufferMemory|BaseChatMemory|BaseMemory",
             "name": "bufferMemory",
             "label": "BufferMemory",
+            "description": "Retrieve chat messages stored in database",
             "type": "BufferMemory | BaseChatMemory | BaseMemory"
           }
         ],
@@ -386,6 +399,7 @@
             "name": "requestsPostDescription",
             "type": "string",
             "rows": 4,
+            "default": "Use this when you want to execute a POST request to create or update a resource.",
             "description": "Describe to LLM when it should use this tool",
             "additionalParams": true,
             "optional": true,
@@ -400,6 +414,7 @@
             "acceptVariable": true,
             "additionalParams": true,
             "optional": true,
+            "placeholder": "{\n    \"Authorization\": \"Bearer <token>\"\n}",
             "id": "requestsPost_0-input-requestsPostHeaders-string",
             "display": true
           },
@@ -412,6 +427,7 @@
             "additionalParams": true,
             "acceptVariable": true,
             "optional": true,
+            "placeholder": "{\n    \"name\": \"John Doe\",\n    \"age\": 30\n}",
             "id": "requestsPost_0-input-requestPostBody-string",
             "display": true
           },
@@ -420,9 +436,11 @@
             "name": "requestsPostBodySchema",
             "type": "code",
             "description": "Description of the available body params to enable LLM to figure out which body params to use",
+            "placeholder": "{\n    \"name\": {\n        \"type\": \"string\",\n        \"required\": true,\n        \"description\": \"Name of the item\"\n    },\n    \"date\": {\n        \"type\": \"string\",\n        \"description\": \"Date of the item\"\n    }\n}",
             "optional": true,
             "hideCodeExecute": true,
             "additionalParams": true,
+            "codeExample": "{\n    \"name\": {\n        \"type\": \"string\",\n        \"required\": true,\n        \"description\": \"Name of the item\"\n    },\n    \"date\": {\n        \"type\": \"string\",\n        \"description\": \"Date of the item\"\n    }\n}",
             "id": "requestsPost_0-input-requestsPostBodySchema-code",
             "display": true
           },
@@ -430,6 +448,7 @@
             "label": "Max Output Length",
             "name": "requestsPostMaxOutputLength",
             "type": "number",
+            "description": "Max length of the output. Remove this if you want to return the entire response",
             "default": "2000",
             "step": 1,
             "optional": true,
@@ -443,7 +462,7 @@
           "requestsPostUrl": "https://idp.{{DOMAIN}}/scim/v2/Users",
           "requestsPostName": "SCIM_Create_User",
           "requestsPostDescription": "Provision (create) a NEW user in the Identity Provider via SCIM 2.0. Provide userName (the user's email), displayName, name {givenName, familyName}, and emails [{value, primary}]. Only call once you have a real email, first name and last name.",
-          "requestsPostHeaders": "{\n    \"Authorization\": \"Bearer __IDP_SCIM_TOKEN__\",\n    \"Content-Type\": \"application/scim+json\"\n}",
+          "requestsPostHeaders": "{\n    \"Authorization\": \"Bearer {{$vars.IDP_SCIM_TOKEN}}\",\n    \"Content-Type\": \"application/scim+json\"\n}",
           "requestPostBody": "{\n    \"schemas\": [\n        \"urn:ietf:params:scim:schemas:core:2.0:User\"\n    ],\n    \"active\": true\n}",
           "requestsPostBodySchema": "{\n    \"userName\": {\n        \"type\": \"string\",\n        \"required\": true,\n        \"description\": \"The new user's login / email address, used as the SCIM userName (e.g. jane.doe@example.com).\"\n    },\n    \"displayName\": {\n        \"type\": \"string\",\n        \"required\": true,\n        \"description\": \"The user's full display name, e.g. 'Jane Doe'.\"\n    },\n    \"name\": {\n        \"type\": \"object\",\n        \"required\": true,\n        \"description\": \"Object with the given and family name, exactly: {\\\"givenName\\\": \\\"Jane\\\", \\\"familyName\\\": \\\"Doe\\\"}.\"\n    },\n    \"emails\": {\n        \"type\": \"array\",\n        \"required\": true,\n        \"description\": \"Array with the primary email, exactly: [{\\\"value\\\": \\\"jane.doe@example.com\\\", \\\"primary\\\": true}].\"\n    }\n}",
           "requestsPostMaxOutputLength": "2000"
@@ -516,6 +535,7 @@
             "name": "requestsGetDescription",
             "type": "string",
             "rows": 4,
+            "default": "Use this when you need to execute a GET request to get data from a website.",
             "description": "Describe to LLM when it should use this tool",
             "additionalParams": true,
             "optional": true,
@@ -530,6 +550,7 @@
             "acceptVariable": true,
             "additionalParams": true,
             "optional": true,
+            "placeholder": "{\n    \"Authorization\": \"Bearer <token>\"\n}",
             "id": "requestsGet_0-input-requestsGetHeaders-string",
             "display": true
           },
@@ -538,9 +559,11 @@
             "name": "requestsGetQueryParamsSchema",
             "type": "code",
             "description": "Description of the available query params to enable LLM to figure out which query params to use",
+            "placeholder": "{\n    \"id\": {\n        \"type\": \"string\",\n        \"required\": true,\n        \"in\": \"path\",\n        \"description\": \"ID of the item to get. /:id\"\n    },\n    \"limit\": {\n        \"type\": \"string\",\n        \"in\": \"query\",\n        \"description\": \"Limit the number of items to get. ?limit=10\"\n    }\n}",
             "optional": true,
             "hideCodeExecute": true,
             "additionalParams": true,
+            "codeExample": "{\n    \"id\": {\n        \"type\": \"string\",\n        \"required\": true,\n        \"in\": \"path\",\n        \"description\": \"ID of the item to get. /:id\"\n    },\n    \"limit\": {\n        \"type\": \"string\",\n        \"in\": \"query\",\n        \"description\": \"Limit the number of items to get. ?limit=10\"\n    }\n}",
             "id": "requestsGet_0-input-requestsGetQueryParamsSchema-code",
             "display": true
           },
@@ -548,6 +571,7 @@
             "label": "Max Output Length",
             "name": "requestsGetMaxOutputLength",
             "type": "number",
+            "description": "Max length of the output. Remove this if you want to return the entire response",
             "default": "2000",
             "step": 1,
             "optional": true,
@@ -561,7 +585,7 @@
           "requestsGetUrl": "https://idp.{{DOMAIN}}/scim/v2/Users",
           "requestsGetName": "SCIM_List_Users",
           "requestsGetDescription": "List or search existing users in the Identity Provider via SCIM 2.0. Optionally pass a SCIM `filter` (e.g. userName eq \"jane.doe@example.com\"), plus startIndex/count for paging. Use this to check whether a user already exists or to find a user.",
-          "requestsGetHeaders": "{\n    \"Authorization\": \"Bearer __IDP_SCIM_TOKEN__\",\n    \"Accept\": \"application/scim+json\"\n}",
+          "requestsGetHeaders": "{\n    \"Authorization\": \"Bearer {{$vars.IDP_SCIM_TOKEN}}\",\n    \"Accept\": \"application/scim+json\"\n}",
           "requestsGetQueryParamsSchema": "{\n    \"filter\": {\n        \"type\": \"string\",\n        \"in\": \"query\",\n        \"description\": \"SCIM filter expression to search users, e.g. userName eq \\\"jane.doe@example.com\\\" or active eq true. Omit to list all.\"\n    },\n    \"startIndex\": {\n        \"type\": \"number\",\n        \"in\": \"query\",\n        \"description\": \"1-based index of the first result to return (paging).\"\n    },\n    \"count\": {\n        \"type\": \"number\",\n        \"in\": \"query\",\n        \"description\": \"Maximum number of users to return.\"\n    }\n}",
           "requestsGetMaxOutputLength": "2000"
         },
@@ -724,7 +748,7 @@
         "x": -80,
         "y": -470
       },
-      "type": "customNode",
+      "type": "stickyNote",
       "data": {
         "id": "stickyNote_0",
         "label": "Sticky Note",
@@ -735,14 +759,14 @@
           "StickyNote"
         ],
         "category": "Utilities",
-        "description": "",
+        "description": "Add a sticky note",
         "inputParams": [
           {
             "label": "",
             "name": "note",
             "type": "string",
             "rows": 1,
-            "placeholder": "",
+            "placeholder": "Type something here",
             "optional": true,
             "id": "stickyNote_0-input-note-string",
             "display": true
@@ -750,14 +774,14 @@
         ],
         "inputAnchors": [],
         "inputs": {
-          "note": "CP Identity — SCIM Provisioning Agent. HTTP-tool agent (not MCP): SCIM_Create_User (POST) + SCIM_List_Users (GET) against https://idp.{{DOMAIN}}/scim/v2/Users. Set the IdP bearer token where __IDP_SCIM_TOKEN__ appears in the two Requests tools' Headers."
+          "note": "Identity provisioning agent: creates and lists users in an Identity Provider over SCIM 2.0. Needs DOMAIN (or an edited SCIM Users URL) and the Flowise variable IDP_SCIM_TOKEN.\n\nTools: SCIM_Create_User (POST) and SCIM_List_Users (GET) on https://idp.<DOMAIN>/scim/v2/Users with Authorization \"Bearer {{$vars.IDP_SCIM_TOKEN}}\". Set DOMAIN and IDP_SCIM_TOKEN in .env and re-run builders-import.\n\nModel: lab-chat through LiteLLM (credential \"Lab Model (LiteLLM)\", Base Path http://litellm:4000/v1 under Additional Parameters). The Model Name list only knows OpenAI model names, so it can look empty: leave it, the agent still uses lab-chat."
         },
         "outputAnchors": [
           {
             "id": "stickyNote_0-output-stickyNote-StickyNote",
             "name": "stickyNote",
             "label": "StickyNote",
-            "description": "",
+            "description": "Add a sticky note",
             "type": "StickyNote"
           }
         ],
@@ -793,11 +817,11 @@
     },
     {
       "source": "chatOpenAI_0",
-      "sourceHandle": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
+      "sourceHandle": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
       "target": "toolAgent_0",
       "targetHandle": "toolAgent_0-input-model-BaseChatModel",
       "type": "buttonedge",
-      "id": "chatOpenAI_0-chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable-toolAgent_0-toolAgent_0-input-model-BaseChatModel"
+      "id": "chatOpenAI_0-chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable-toolAgent_0-toolAgent_0-input-model-BaseChatModel"
     },
     {
       "source": "bufferMemory_1",

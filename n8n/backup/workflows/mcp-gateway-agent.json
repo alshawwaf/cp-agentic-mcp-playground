@@ -1,14 +1,14 @@
 {
-  "name": "Reputation Service Agent (MCP Gateway)",
+  "name": "Check Point MCP Gateway Agent",
   "nodes": [
     {
       "parameters": {
-        "content": "## Check Point Reputation Service agent · MCP Gateway path\n**Looks up the Check Point reputation of URLs, IP addresses, and file hashes.** Same tools as the direct agent; the calls go through the MCP Gateway.",
+        "content": "## Check Point MCP Gateway agent\n**One gateway endpoint, every Check Point MCP server.** A read-first core of 48 tools that spans all 11 servers.",
         "width": 1400,
         "height": 150,
         "color": 6
       },
-      "id": "9ae4b0d0-0301-5560-94ed-0793f9db5fad",
+      "id": "6f4a2205-39df-550f-8ea5-43cf064ab725",
       "name": "Banner",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -19,12 +19,12 @@
     },
     {
       "parameters": {
-        "content": "### Try these\n- What is the reputation of 8.8.8.8?\n- Is example.com safe to visit?\n\n### How it works\n- Chat trigger → Normalize input → AI Agent → answer. If the model or the tool server fails, \"Friendly error\" explains why.\n- Calls ride the lab's MCP Gateway (`http://mcp-gateway:8080/mcp`, Bearer token from the \"MCP Gateway Bearer\" credential). The gateway fronts every Check Point MCP server; this agent selects the Reputation Service MCP server's 3 tools, the same set as its direct twin.\n- Tool names reach the model with the node name as a prefix (for example `MCP_Gateway_reputation_url`).\n\n### Before you start\nSet REPUTATION_API_KEY in `.env`, then run `docker compose up -d reputation-service-mcp`.\n\n### Notes\n- Model: **OpenAI Chat Model** with the credential \"Lab Model (LiteLLM)\" calls `lab-chat` on LiteLLM (http://litellm:4000/v1). LiteLLM picks the provider from `.env`; change providers there, not in n8n.\n- Chat: use **Open chat** in the editor. The hosted chat URL and the webhook ask for HTTP Basic auth: the lab admin email and password (credential \"Lab Agents Chat\", filled in by n8n-import).\n- Updates: n8n-import refreshes this workflow on every run unless you changed it in n8n. To keep your own variant, duplicate it first.",
+        "content": "### Try these\n- Which gateways do I have, and what are their IP addresses?\n- Show the Threat Prevention profiles\n- What is the reputation of 8.8.8.8?\n\n### How it works\n- Chat trigger → Normalize input → AI Agent → answer. If the model or the gateway fails, \"Friendly error\" explains why.\n- One MCP Client Tool calls the lab's MCP Gateway (`http://mcp-gateway:8080/mcp`) and selects a read-first core of 48 of its 190 tools across all 11 Check Point MCP servers. The per-product agents have the full tool sets.\n- To add tools (for example your own Build-Your-Own-MCP tools), open the MCP Client Tool, pick them under Tools to Include, and keep the total at 128 or fewer.\n\n### Before you start\nSet MANAGEMENT_HOST and MANAGEMENT_API_KEY (and the other product keys you have) in `.env`.\n\n### Notes\n- Model: **OpenAI Chat Model** with the credential \"Lab Model (LiteLLM)\" calls `lab-chat` on LiteLLM (http://litellm:4000/v1). LiteLLM picks the provider from `.env`; change providers there, not in n8n.\n- Chat: use **Open chat** in the editor. The hosted chat URL and the webhook ask for HTTP Basic auth: the lab admin email and password (credential \"Lab Agents Chat\", filled in by n8n-import).\n- Updates: n8n-import refreshes this workflow on every run unless you changed it in n8n. To keep your own variant, duplicate it first.",
         "width": 540,
         "height": 760,
         "color": 7
       },
-      "id": "e040e416-e0ce-50e9-bd6b-256fa19093be",
+      "id": "a006d38f-e45f-5b1a-9dd6-233c6e61f482",
       "name": "Guide",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -37,15 +37,15 @@
       "parameters": {
         "public": true,
         "authentication": "basicAuth",
-        "initialMessages": "I'm the **Check Point Reputation Service** agent on the MCP Gateway path. I look up the Check Point reputation of URLs, IP addresses, and file hashes. My tools only read, so I never change your environment.\n\n**Try one of these:**\n- What is the reputation of 8.8.8.8?\n- Is example.com safe to visit?",
+        "initialMessages": "I'm the **Check Point MCP Gateway** agent. One gateway endpoint gives me a read-first core of 48 tools across all 11 Check Point MCP servers. My tools only read, so I never change your environment.\n\n**Try one of these:**\n- Which gateways do I have, and what are their IP addresses?\n- Show the Threat Prevention profiles\n- What is the reputation of 8.8.8.8?",
         "options": {
           "responseMode": "lastNode",
-          "title": "Reputation Service Agent (MCP Gateway)",
-          "subtitle": "URL, IP, and file hash reputation.",
-          "inputPlaceholder": "e.g. What is the reputation of 8.8.8.8?"
+          "title": "Check Point MCP Gateway Agent",
+          "subtitle": "One gateway endpoint, every Check Point MCP server, read-only.",
+          "inputPlaceholder": "e.g. Which gateways do I have, and what are their IP addresses?"
         }
       },
-      "id": "7d2c3510-f5f5-4fd8-9a85-f8d8190726eb",
+      "id": "ee837b35-7ce3-5212-9018-b750d4263596",
       "name": "When chat message received",
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
@@ -59,7 +59,7 @@
           "name": "Lab Agents Chat"
         }
       },
-      "webhookId": "1235d65d-0e5b-5e0c-ac08-64a19a3d7bd2"
+      "webhookId": "abcbf616-df41-5708-b690-1b1bc796e66f"
     },
     {
       "parameters": {
@@ -81,7 +81,7 @@
         },
         "options": {}
       },
-      "id": "d43471a0-0aec-5a23-9abd-f8a2b69bcf81",
+      "id": "24be15f3-9a50-5336-9d15-099882d7f9e7",
       "name": "Normalize input",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
@@ -95,11 +95,11 @@
         "promptType": "define",
         "text": "={{ $json.chatInput }}",
         "options": {
-          "systemMessage": "You are the **Check Point Reputation Service** assistant. You look up URL / IP / file-hash reputation over MCP and interpret the classification for the user. All calls go through the Docker MCP Gateway.\n\n== WHAT YOU CAN DO ==\n- Query reputation and risk for URLs, IP addresses, and file hashes.\n- Explain the classification, risk level, and what action a customer should take.\n\n== HOW TO WORK ==\n- Use ONLY the MCP tools exposed to you. Never invent tool names or parameters; if no tool fits, say so.\n- Start with read-only tools (show/list/get) to gather facts before answering.\n- If a tool call fails, show the error in one short line and suggest the next step.\n- You have conversation memory: use prior turns for context instead of re-asking.\n\n== GATEWAY ==\nYour tools arrive through the lab's MCP Gateway (Docker MCP Gateway): one Bearer-authenticated endpoint in front of every Check Point MCP server. This agent is scoped to the Reputation Service MCP server's 3 tools, the same set its direct twin uses, so the only difference between the two agents is the path the calls take. If a request needs another Check Point product's tools, say which agent to use instead.\n\n== OUTPUT STYLE ==\n- Answer in concise Markdown: short paragraphs, bullets, and small tables for object/rule lists.\n- Summarize tool results faithfully. Do NOT paste raw JSON unless the user explicitly asks for raw output; \"verbatim\" means faithful to the data, not raw JSON.\n- For long lists show the 15 most relevant items and say how many more exist.\n- End multi-step work with a one-line summary of what was done."
+          "systemMessage": "You are the Check Point operations assistant. You work against a live Check Point environment through Model Context Protocol (MCP) tools that reach you via the lab's MCP Gateway (one Bearer-authenticated endpoint in front of all 11 Check Point MCP servers). You have a read-first core of 48 tools that spans every server: Management, Management Logs, Threat Prevention, HTTPS Inspection, Gaia, Gateway CLI, Reputation Service, Threat Emulation, Policy Insights, CPInfo Analysis, and Documentation.\n\nHOW TO WORK\n- Use ONLY the MCP tools exposed to you. Never invent tool names or parameters; if no tool fits the request, say so plainly and name the per-product agent that has the full tool set.\n- Management-backed servers need their init tool once per conversation before other calls: management__init, management-logs__init, threat-prevention__init, https-inspection__init, policy-insights__init.\n- Read first. Start with show/list/get tools to gather facts before you answer.\n- Summarize tool results faithfully in concise Markdown (short paragraphs, bullets, small tables). Do NOT paste raw JSON unless the user explicitly asks for raw output.\n- For long lists, show the ~15 most relevant items and state how many more exist.\n\nREAD-ONLY\n- The tools in this agent only read. Never claim that you created, changed, published, or installed anything. When the user asks for a change, draft it precisely for an administrator to apply in SmartConsole.\n\nPrefer the tools relevant to the user's request; use tools from other Check Point products only when the request clearly needs them. End multi-step work with a one-line summary."
         }
       },
-      "id": "63ae7368-9206-4c3c-9b6b-a7e184addff5",
-      "name": "Reputation Service Agent",
+      "id": "6c16dc05-92f3-57b3-96bd-e9c3bc2ef767",
+      "name": "MCP Gateway Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
@@ -117,7 +117,7 @@
         },
         "options": {}
       },
-      "id": "35252b16-10ad-5623-8a4f-d230794f4f54",
+      "id": "6e629d9c-9246-50ad-999d-f6de1e8a1fa5",
       "name": "OpenAI Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
@@ -134,7 +134,7 @@
     },
     {
       "parameters": {},
-      "id": "2c5835bd-2ed8-40b0-b9a6-97628163a2ee",
+      "id": "e0093862-3da7-5cd6-b577-30768c6379e4",
       "name": "Conversation Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
@@ -149,13 +149,58 @@
         "authentication": "bearerAuth",
         "include": "selected",
         "includeTools": [
+          "ask-checkpoint-docs",
+          "management__init",
+          "show_hosts",
+          "show_networks",
+          "show_groups",
+          "show_services_tcp",
+          "show_access_layers",
+          "show_access_rulebase",
+          "show_nat_rulebase",
+          "management__show_gateways_and_servers",
+          "management__show_objects",
+          "management__show_object",
+          "find_zero_hits_rules",
+          "management-logs__init",
+          "run_logs_query",
+          "build_logs_query_filter",
+          "get_next_query_page",
           "reputation_url",
           "reputation_ip",
-          "reputation_file"
+          "reputation_file",
+          "threat-prevention__init",
+          "show_threat_profiles",
+          "show_threat_layers",
+          "show_threat_rulebase",
+          "show_ips_status",
+          "check_cve_protection",
+          "show_threat_ioc_feeds",
+          "https-inspection__init",
+          "show_https_layers",
+          "show_https_rulebase",
+          "show_interfaces_by_type",
+          "show_routes",
+          "show_dns",
+          "show_date_time",
+          "cphaprob_stat",
+          "show_interfaces",
+          "fw_accel_stats",
+          "cplic_print",
+          "disk_usage",
+          "policy-insights__init",
+          "ShowPolicyInsightsStatus",
+          "ShowSuggestionsSummary",
+          "ShowSuggestions",
+          "check_initialization_status",
+          "analyze_cpinfo_overview",
+          "comprehensive_health_analysis",
+          "query_file",
+          "get_quota"
         ],
         "options": {}
       },
-      "id": "0eb0ff8e-8c33-5262-baa8-208032d86961",
+      "id": "76515aac-3614-5d21-ae5d-9dae67718e0e",
       "name": "MCP Gateway",
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
@@ -175,7 +220,7 @@
         "mode": "runOnceForEachItem",
         "jsCode": "// The agent's error output carries only a short message. Explain the likely cause in plain words.\nconst TOOLS = {\"MCP Gateway\": \"the MCP Gateway (http://mcp-gateway:8080/mcp). Check that mcp-gateway is running (docker compose ps mcp-gateway). If it is, MCP_GATEWAY_TOKEN in .env and the \\\"MCP Gateway Bearer\\\" credential may differ: run docker compose run --rm n8n-import.\"};\nconst MODEL_NODES = [\"OpenAI Chat Model\"];\nconst READ_ONLY = true;\nconst raw = String(($json.error && ($json.error.message || $json.error)) || $json.message || 'Unknown error');\nconst sub = raw.match(/Error in sub-node (.+)$/);\nconst modelHint = 'The lab model endpoint (lab-chat on LiteLLM, http://litellm:4000/v1) is not reachable. ' +\n  'Start it with docker compose up -d litellm and try again.';\nlet hint;\nif (sub && TOOLS[sub[1]]) {\n  hint = `The tool node \"${sub[1]}\" could not reach ${TOOLS[sub[1]]}`;\n} else if (sub && MODEL_NODES.includes(sub[1])) {\n  hint = 'The \"OpenAI Chat Model\" node could not start. Check that the \"Lab Model (LiteLLM)\" credential exists: ' +\n    'run docker compose run --rm n8n-import.';\n} else if (sub) {\n  hint = `The node \"${sub[1]}\" failed. Open the execution in the Executions tab for details.`;\n} else if (/connection error|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|getaddrinfo|fetch failed|socket hang up|timed? ?out/i.test(raw)) {\n  hint = modelHint;\n} else if (/\\b40[13]\\b|authori[sz]|api key|unauthori[sz]ed|credentials/i.test(raw)) {\n  hint = 'LiteLLM rejected the key in the \"Lab Model (LiteLLM)\" credential. LITELLM_MASTER_KEY in .env is the ' +\n    'source of truth: run docker compose run --rm n8n-import to sync the credential.';\n} else if (/not able to process|failed to process|bad request|bad gateway|service unavailable|gateway timed out|too many requests|model|deployment|provider|\\b429\\b|rate limit|quota|\\b5\\d\\d\\b/i.test(raw)) {\n  hint = 'LiteLLM could not serve the lab-chat model. Check that a model provider key is set in .env and look at ' +\n    'docker compose logs litellm.';\n} else {\n  hint = 'Open the execution in the Executions tab for the full error.';\n}\nconst safe = READ_ONLY ? ' This agent only reads, so nothing was changed.' : '';\nreturn { json: { output: `I could not complete this request.${safe}\\n\\nReason: ${raw}\\n\\n${hint}` } };\n"
       },
-      "id": "695e2c56-ca5a-5c4b-9442-541ac38864bd",
+      "id": "ce3092f8-11da-5cfd-94f8-ae80e4a06672",
       "name": "Friendly error",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -201,14 +246,14 @@
       "main": [
         [
           {
-            "node": "Reputation Service Agent",
+            "node": "MCP Gateway Agent",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Reputation Service Agent": {
+    "MCP Gateway Agent": {
       "main": [
         [],
         [
@@ -224,7 +269,7 @@
       "ai_languageModel": [
         [
           {
-            "node": "Reputation Service Agent",
+            "node": "MCP Gateway Agent",
             "type": "ai_languageModel",
             "index": 0
           }
@@ -235,7 +280,7 @@
       "ai_memory": [
         [
           {
-            "node": "Reputation Service Agent",
+            "node": "MCP Gateway Agent",
             "type": "ai_memory",
             "index": 0
           }
@@ -246,7 +291,7 @@
       "ai_tool": [
         [
           {
-            "node": "Reputation Service Agent",
+            "node": "MCP Gateway Agent",
             "type": "ai_tool",
             "index": 0
           }
@@ -259,10 +304,10 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "275cd6fc-b9b2-4aec-9e8d-019ba96f6841",
+  "versionId": "9a887886-60bf-5676-a5ae-af77d8094ec9",
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "id": "GwReputationSvcWf1",
+  "id": "McpGatewayAgentWf1",
   "tags": []
 }

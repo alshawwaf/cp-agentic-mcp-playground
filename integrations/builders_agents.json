@@ -1,325 +1,464 @@
 {
- "umbrella": "CP MCP Gateway Agent",
- "agents": [
-  {
-   "slug": "cpinfo-analysis",
-   "name": "CP CPinfo Analysis — AI Agent (Gateway)",
-   "flowise": "flowise/cpinfo-analysis.flowdata.json",
-   "langflow": "langflow/cpinfo-analysis.flow.json",
-   "tools": 12,
-   "kind": "gateway",
-   "endpoint": "http://mcp-gateway:8080/mcp",
-   "auth": "__MCP_GATEWAY_TOKEN__"
-  },
-  {
-   "slug": "documentation",
-   "name": "CP Documentation — AI Agent (Gateway)",
-   "flowise": "flowise/documentation.flowdata.json",
-   "langflow": "langflow/documentation.flow.json",
-   "tools": 1,
-   "kind": "gateway",
-   "endpoint": "http://mcp-gateway:8080/mcp",
-   "auth": "__MCP_GATEWAY_TOKEN__"
-  },
-  {
-   "slug": "https-inspection",
-   "name": "CP HTTPS Inspection — AI Agent (Gateway)",
-   "flowise": "flowise/https-inspection.flowdata.json",
-   "langflow": "langflow/https-inspection.flow.json",
-   "tools": 9,
-   "kind": "gateway",
-   "endpoint": "http://mcp-gateway:8080/mcp",
-   "auth": "__MCP_GATEWAY_TOKEN__"
-  },
-  {
-   "slug": "management-logs",
-   "name": "CP Logs — AI Agent (Gateway)",
-   "flowise": "flowise/management-logs.flowdata.json",
-   "langflow": "langflow/management-logs.flow.json",
-   "tools": 7,
-   "kind": "gateway",
-   "endpoint": "http://mcp-gateway:8080/mcp",
-   "auth": "__MCP_GATEWAY_TOKEN__"
-  },
-  {
-   "slug": "policy-insights",
-   "name": "CP Policy Insights — AI Agent (Gateway)",
-   "flowise": "flowise/policy-insights.flowdata.json",
-   "langflow": "langflow/policy-insights.flow.json",
-   "tools": 15,
-   "kind": "gateway",
-   "endpoint": "http://mcp-gateway:8080/mcp",
-   "auth": "__MCP_GATEWAY_TOKEN__"
-  },
-  {
-   "slug": "quantum-gaia",
-   "name": "CP Gaia OS — AI Agent (Gateway)",
-   "flowise": "flowise/quantum-gaia.flowdata.json",
-   "langflow": "langflow/quantum-gaia.flow.json",
-   "tools": 30,
-   "kind": "gateway",
-   "endpoint": "http://mcp-gateway:8080/mcp",
-   "auth": "__MCP_GATEWAY_TOKEN__"
-  },
-  {
-   "slug": "quantum-gw-cli",
-   "name": "CP Gateway CLI — AI Agent (Gateway)",
-   "flowise": "flowise/quantum-gw-cli.flowdata.json",
-   "langflow": "langflow/quantum-gw-cli.flow.json",
-   "tools": 37,
-   "kind": "gateway",
-   "endpoint": "http://mcp-gateway:8080/mcp",
-   "auth": "__MCP_GATEWAY_TOKEN__"
-  },
-  {
-   "slug": "quantum-management",
-   "name": "CP Quantum Management — AI Agent (Gateway)",
-   "flowise": "flowise/quantum-management.flowdata.json",
-   "langflow": "langflow/quantum-management.flow.json",
-   "tools": 51,
-   "kind": "gateway",
-   "endpoint": "http://mcp-gateway:8080/mcp",
-   "auth": "__MCP_GATEWAY_TOKEN__"
-  },
-  {
-   "slug": "reputation-service",
-   "name": "CP Reputation — AI Agent (Gateway)",
-   "flowise": "flowise/reputation-service.flowdata.json",
-   "langflow": "langflow/reputation-service.flow.json",
-   "tools": 5,
-   "kind": "gateway",
-   "endpoint": "http://mcp-gateway:8080/mcp",
-   "auth": "__MCP_GATEWAY_TOKEN__"
-  },
-  {
-   "slug": "threat-emulation",
-   "name": "CP Threat Emulation — AI Agent (Gateway)",
-   "flowise": "flowise/threat-emulation.flowdata.json",
-   "langflow": "langflow/threat-emulation.flow.json",
-   "tools": 5,
-   "kind": "gateway",
-   "endpoint": "http://mcp-gateway:8080/mcp",
-   "auth": "__MCP_GATEWAY_TOKEN__"
-  },
-  {
-   "slug": "threat-prevention",
-   "name": "CP Threat Prevention — AI Agent (Gateway)",
-   "flowise": "flowise/threat-prevention.flowdata.json",
-   "langflow": "langflow/threat-prevention.flow.json",
-   "tools": 23,
-   "kind": "gateway",
-   "endpoint": "http://mcp-gateway:8080/mcp",
-   "auth": "__MCP_GATEWAY_TOKEN__"
-  },
-  {
-   "slug": "direct-cpinfo",
-   "name": "CP CPinfo Analysis — AI Agent",
-   "kind": "direct",
-   "endpoint": "http://cpinfo-analysis-mcp:3012",
-   "auth": null,
-   "flowise": "flowise/direct-cpinfo.flowdata.json",
-   "langflow": "langflow/direct-cpinfo.flow.json",
-   "tools": 12
-  },
-  {
-   "slug": "direct-documentation",
-   "name": "CP Documentation — AI Agent",
-   "kind": "direct",
-   "endpoint": "http://mcp-documentation:3000",
-   "auth": null,
-   "flowise": "flowise/direct-documentation.flowdata.json",
-   "langflow": "langflow/direct-documentation.flow.json",
-   "tools": 1
-  },
-  {
-   "slug": "direct-https-inspection",
-   "name": "CP HTTPS Inspection — AI Agent",
-   "kind": "direct",
-   "endpoint": "http://mcp-https-inspection:3001",
-   "auth": null,
-   "flowise": "flowise/direct-https-inspection.flowdata.json",
-   "langflow": "langflow/direct-https-inspection.flow.json",
-   "tools": 9
-  },
-  {
-   "slug": "direct-logs",
-   "name": "CP Logs — AI Agent",
-   "kind": "direct",
-   "endpoint": "http://mcp-management-logs:3003",
-   "auth": null,
-   "flowise": "flowise/direct-logs.flowdata.json",
-   "langflow": "langflow/direct-logs.flow.json",
-   "tools": 0
-  },
-  {
-   "slug": "security-lab",
-   "name": "MCP Security Lab — Vulnerable Agent (DEMO)",
-   "kind": "direct",
-   "endpoint": "http://vuln-mcp:3099",
-   "auth": null,
-   "flowise": "flowise/security-lab.flowdata.json",
-   "langflow": "langflow/security-lab.flow.json",
-   "tools": 4
-  },
-  {
-   "slug": "direct-policy-insights",
-   "name": "CP Policy Insights — AI Agent",
-   "kind": "direct",
-   "endpoint": "http://policy-insights-mcp:3013",
-   "auth": null,
-   "flowise": "flowise/direct-policy-insights.flowdata.json",
-   "langflow": "langflow/direct-policy-insights.flow.json",
-   "tools": 10
-  },
-  {
-   "slug": "direct-gaia",
-   "name": "CP Gaia OS — AI Agent",
-   "kind": "direct",
-   "endpoint": "http://quantum-gaia-mcp:3011/mcp",
-   "auth": null,
-   "flowise": "flowise/direct-gaia.flowdata.json",
-   "langflow": "langflow/direct-gaia.flow.json",
-   "tools": 42
-  },
-  {
-   "slug": "direct-gw-cli",
-   "name": "CP Gateway CLI — AI Agent",
-   "kind": "direct",
-   "endpoint": "http://quantum-gw-cli-mcp:3009",
-   "auth": null,
-   "flowise": "flowise/direct-gw-cli.flowdata.json",
-   "langflow": "langflow/direct-gw-cli.flow.json",
-   "tools": 26
-  },
-  {
-   "slug": "direct-management",
-   "name": "CP Quantum Management — AI Agent",
-   "kind": "direct",
-   "endpoint": "http://mcp-quantum-management:3002",
-   "auth": null,
-   "flowise": "flowise/direct-management.flowdata.json",
-   "langflow": "langflow/direct-management.flow.json",
-   "tools": 50
-  },
-  {
-   "slug": "direct-reputation",
-   "name": "CP Reputation — AI Agent",
-   "kind": "direct",
-   "endpoint": "http://reputation-service-mcp:3007",
-   "auth": null,
-   "flowise": "flowise/direct-reputation.flowdata.json",
-   "langflow": "langflow/direct-reputation.flow.json",
-   "tools": 0
-  },
-  {
-   "slug": "direct-threat-emulation",
-   "name": "CP Threat Emulation — AI Agent",
-   "kind": "direct",
-   "endpoint": "http://threat-emulation-mcp:3004",
-   "auth": null,
-   "flowise": "flowise/direct-threat-emulation.flowdata.json",
-   "langflow": "langflow/direct-threat-emulation.flow.json",
-   "tools": 5
-  },
-  {
-   "slug": "direct-threat-prevention",
-   "name": "CP Threat Prevention — AI Agent",
-   "kind": "direct",
-   "endpoint": "http://threat-prevention-mcp:3005",
-   "auth": null,
-   "flowise": "flowise/direct-threat-prevention.flowdata.json",
-   "langflow": "langflow/direct-threat-prevention.flow.json",
-   "tools": 0
-  },
-  {
-   "slug": "lakera-playground",
-   "name": "Lakera-Playground",
-   "kind": "direct",
-   "endpoint": "http://mcp-management-logs:3003",
-   "auth": null,
-   "flowise": "flowise/lakera-playground.flowdata.json",
-   "langflow": "langflow/lakera-playground.flow.json",
-   "tools": 0
-  },
-  {
-   "slug": "fleet-commander",
-   "name": "CP Fleet Commander — Estate Agent",
-   "kind": "gateway",
-   "endpoint": "http://mcp-gateway:8080/mcp",
-   "auth": "__MCP_GATEWAY_TOKEN__",
-   "flowise": "flowise/fleet-commander.flowdata.json",
-   "langflow": "langflow/fleet-commander.flow.json",
-   "tools": 113
-  },
-  {
-   "slug": "guarded-chat",
-   "name": "CP Guarded Agent — Security in the Loop",
-   "kind": "gateway",
-   "endpoint": "http://mcp-gateway:8080/mcp",
-   "auth": "__MCP_GATEWAY_TOKEN__",
-   "flowise": "flowise/guarded-chat.flowdata.json",
-   "langflow": "langflow/guarded-chat.flow.json",
-   "tools": 113
-  },
-  {
-   "slug": "devhub",
-   "name": "DevHub — Operations Agent",
-   "kind": "external",
-   "endpoint": "https://hub.{{DOMAIN}}/api/mcp",
-   "auth": "__DEVHUB_MCP_TOKEN__",
-   "flowise": "flowise/devhub.flowdata.json",
-   "langflow": "langflow/devhub.flow.json",
-   "tools": 0
-  },
-  {
-   "slug": "policypilot-management",
-   "name": "PolicyPilot — Access Automation Agent (Pro)",
-   "kind": "external",
-   "endpoint": "https://policypilot.{{DOMAIN}}/mcp/",
-   "auth": "__PILOT_MCP_TOKEN__",
-   "flowise": "flowise/policypilot-management.flowdata.json",
-   "langflow": "langflow/policypilot-management.flow.json",
-   "tools": 0
-  },
-  {
-   "slug": "policypilot-dynamic-layer",
-   "name": "PolicyPilot — Dynamic Layers Agent",
-   "kind": "external",
-   "endpoint": "https://policypilot.{{DOMAIN}}/mcp/",
-   "auth": "__PILOT_MCP_TOKEN__",
-   "flowise": "flowise/policypilot-dynamic-layer.flowdata.json",
-   "langflow": "langflow/policypilot-dynamic-layer.flow.json",
-   "tools": 0
-  },
-  {
-   "slug": "soc-response-chain",
-   "name": "CP SOC Response Chain — Estate Agent",
-   "kind": "gateway",
-   "endpoint": "http://mcp-gateway:8080/mcp",
-   "auth": "__MCP_GATEWAY_TOKEN__",
-   "flowise": "flowise/soc-response-chain.flowdata.json",
-   "langflow": "langflow/soc-response-chain.flow.json",
-   "tools": 0
-  },
-  {
-   "slug": "rag-cp-docs",
-   "name": "CP Docs — Visible RAG Agent",
-   "kind": "native",
-   "endpoint": "qdrant:cp_docs",
-   "auth": null,
-   "flowise": "flowise/rag-cp-docs.flowdata.json",
-   "langflow": "langflow/rag-cp-docs.flow.json",
-   "tools": 0
-  },
-  {
-   "slug": "scim-provisioning",
-   "name": "CP Identity — SCIM Provisioning Agent",
-   "kind": "external",
-   "endpoint": "https://idp.{{DOMAIN}}/scim/v2/Users",
-   "auth": "__IDP_SCIM_TOKEN__",
-   "flowise": "flowise/scim-provisioning.flowdata.json",
-   "langflow": "langflow/scim-provisioning.flow.json",
-   "tools": 0
-  }
- ]
+  "umbrella": "Check Point MCP Gateway Agent",
+  "agents": [
+    {
+      "slug": "cp-mcp-gateway-agent",
+      "name": "Check Point MCP Gateway Agent",
+      "former_names": [
+        "CP MCP Gateway Agent"
+      ],
+      "kind": "gateway",
+      "endpoint": "http://mcp-gateway:8080/mcp",
+      "auth": "__MCP_GATEWAY_TOKEN__",
+      "tools": 48,
+      "flowise": "flowise/cp-mcp-gateway-agent.flowdata.json",
+      "langflow": "langflow/cp-mcp-gateway-agent.flow.json"
+    },
+    {
+      "slug": "cpinfo-analysis",
+      "name": "CPInfo Analysis Agent (MCP Gateway)",
+      "former_names": [
+        "CP CPinfo Analysis — AI Agent (Gateway)"
+      ],
+      "kind": "gateway",
+      "endpoint": "http://mcp-gateway:8080/mcp",
+      "auth": "__MCP_GATEWAY_TOKEN__",
+      "tools": 12,
+      "flowise": "flowise/cpinfo-analysis.flowdata.json",
+      "langflow": "langflow/cpinfo-analysis.flow.json"
+    },
+    {
+      "slug": "documentation",
+      "name": "Documentation Agent (MCP Gateway)",
+      "former_names": [
+        "CP Documentation — AI Agent (Gateway)"
+      ],
+      "kind": "gateway",
+      "endpoint": "http://mcp-gateway:8080/mcp",
+      "auth": "__MCP_GATEWAY_TOKEN__",
+      "tools": 1,
+      "flowise": "flowise/documentation.flowdata.json",
+      "langflow": "langflow/documentation.flow.json"
+    },
+    {
+      "slug": "https-inspection",
+      "name": "HTTPS Inspection Agent (MCP Gateway)",
+      "former_names": [
+        "CP HTTPS Inspection — AI Agent (Gateway)"
+      ],
+      "kind": "gateway",
+      "endpoint": "http://mcp-gateway:8080/mcp",
+      "auth": "__MCP_GATEWAY_TOKEN__",
+      "tools": 9,
+      "flowise": "flowise/https-inspection.flowdata.json",
+      "langflow": "langflow/https-inspection.flow.json"
+    },
+    {
+      "slug": "management-logs",
+      "name": "Management Logs Agent (MCP Gateway)",
+      "former_names": [
+        "CP Logs — AI Agent (Gateway)"
+      ],
+      "kind": "gateway",
+      "endpoint": "http://mcp-gateway:8080/mcp",
+      "auth": "__MCP_GATEWAY_TOKEN__",
+      "tools": 7,
+      "flowise": "flowise/management-logs.flowdata.json",
+      "langflow": "langflow/management-logs.flow.json"
+    },
+    {
+      "slug": "policy-insights",
+      "name": "Policy Insights Agent (MCP Gateway)",
+      "former_names": [
+        "CP Policy Insights — AI Agent (Gateway)"
+      ],
+      "kind": "gateway",
+      "endpoint": "http://mcp-gateway:8080/mcp",
+      "auth": "__MCP_GATEWAY_TOKEN__",
+      "tools": 10,
+      "flowise": "flowise/policy-insights.flowdata.json",
+      "langflow": "langflow/policy-insights.flow.json"
+    },
+    {
+      "slug": "quantum-gaia",
+      "name": "Gaia Agent (MCP Gateway)",
+      "former_names": [
+        "CP Gaia OS — AI Agent (Gateway)"
+      ],
+      "kind": "gateway",
+      "endpoint": "http://mcp-gateway:8080/mcp",
+      "auth": "__MCP_GATEWAY_TOKEN__",
+      "tools": 42,
+      "flowise": "flowise/quantum-gaia.flowdata.json",
+      "langflow": "langflow/quantum-gaia.flow.json"
+    },
+    {
+      "slug": "quantum-gw-cli",
+      "name": "Gateway CLI Agent (MCP Gateway)",
+      "former_names": [
+        "CP Gateway CLI — AI Agent (Gateway)"
+      ],
+      "kind": "gateway",
+      "endpoint": "http://mcp-gateway:8080/mcp",
+      "auth": "__MCP_GATEWAY_TOKEN__",
+      "tools": 26,
+      "flowise": "flowise/quantum-gw-cli.flowdata.json",
+      "langflow": "langflow/quantum-gw-cli.flow.json"
+    },
+    {
+      "slug": "quantum-management",
+      "name": "Management Agent (MCP Gateway)",
+      "former_names": [
+        "CP Quantum Management — AI Agent (Gateway)"
+      ],
+      "kind": "gateway",
+      "endpoint": "http://mcp-gateway:8080/mcp",
+      "auth": "__MCP_GATEWAY_TOKEN__",
+      "tools": 50,
+      "flowise": "flowise/quantum-management.flowdata.json",
+      "langflow": "langflow/quantum-management.flow.json"
+    },
+    {
+      "slug": "reputation-service",
+      "name": "Reputation Service Agent (MCP Gateway)",
+      "former_names": [
+        "CP Reputation — AI Agent (Gateway)"
+      ],
+      "kind": "gateway",
+      "endpoint": "http://mcp-gateway:8080/mcp",
+      "auth": "__MCP_GATEWAY_TOKEN__",
+      "tools": 3,
+      "flowise": "flowise/reputation-service.flowdata.json",
+      "langflow": "langflow/reputation-service.flow.json"
+    },
+    {
+      "slug": "threat-emulation",
+      "name": "Threat Emulation Agent (MCP Gateway)",
+      "former_names": [
+        "CP Threat Emulation — AI Agent (Gateway)"
+      ],
+      "kind": "gateway",
+      "endpoint": "http://mcp-gateway:8080/mcp",
+      "auth": "__MCP_GATEWAY_TOKEN__",
+      "tools": 5,
+      "flowise": "flowise/threat-emulation.flowdata.json",
+      "langflow": "langflow/threat-emulation.flow.json"
+    },
+    {
+      "slug": "threat-prevention",
+      "name": "Threat Prevention Agent (MCP Gateway)",
+      "former_names": [
+        "CP Threat Prevention — AI Agent (Gateway)"
+      ],
+      "kind": "gateway",
+      "endpoint": "http://mcp-gateway:8080/mcp",
+      "auth": "__MCP_GATEWAY_TOKEN__",
+      "tools": 25,
+      "flowise": "flowise/threat-prevention.flowdata.json",
+      "langflow": "langflow/threat-prevention.flow.json"
+    },
+    {
+      "slug": "direct-cpinfo",
+      "name": "CPInfo Analysis Agent (Direct)",
+      "former_names": [
+        "CP CPinfo Analysis — AI Agent"
+      ],
+      "kind": "direct",
+      "endpoint": "http://cpinfo-analysis-mcp:3012",
+      "auth": null,
+      "tools": 12,
+      "flowise": "flowise/direct-cpinfo.flowdata.json",
+      "langflow": "langflow/direct-cpinfo.flow.json"
+    },
+    {
+      "slug": "direct-documentation",
+      "name": "Documentation Agent (Direct)",
+      "former_names": [
+        "CP Documentation — AI Agent"
+      ],
+      "kind": "direct",
+      "endpoint": "http://mcp-documentation:3000",
+      "auth": null,
+      "tools": 1,
+      "flowise": "flowise/direct-documentation.flowdata.json",
+      "langflow": "langflow/direct-documentation.flow.json"
+    },
+    {
+      "slug": "direct-https-inspection",
+      "name": "HTTPS Inspection Agent (Direct)",
+      "former_names": [
+        "CP HTTPS Inspection — AI Agent"
+      ],
+      "kind": "direct",
+      "endpoint": "http://mcp-https-inspection:3001",
+      "auth": null,
+      "tools": 9,
+      "flowise": "flowise/direct-https-inspection.flowdata.json",
+      "langflow": "langflow/direct-https-inspection.flow.json"
+    },
+    {
+      "slug": "direct-logs",
+      "name": "Management Logs Agent (Direct)",
+      "former_names": [
+        "CP Logs — AI Agent"
+      ],
+      "kind": "direct",
+      "endpoint": "http://mcp-management-logs:3003",
+      "auth": null,
+      "tools": 7,
+      "flowise": "flowise/direct-logs.flowdata.json",
+      "langflow": "langflow/direct-logs.flow.json"
+    },
+    {
+      "slug": "security-lab",
+      "name": "MCP Security Lab Agent (Intentionally Vulnerable)",
+      "former_names": [
+        "MCP Security Lab — Vulnerable Agent (DEMO)"
+      ],
+      "kind": "direct",
+      "endpoint": "http://vuln-mcp:3099",
+      "auth": null,
+      "tools": 4,
+      "flowise": "flowise/security-lab.flowdata.json",
+      "langflow": "langflow/security-lab.flow.json",
+      "profile": "security-lab"
+    },
+    {
+      "slug": "direct-policy-insights",
+      "name": "Policy Insights Agent (Direct)",
+      "former_names": [
+        "CP Policy Insights — AI Agent"
+      ],
+      "kind": "direct",
+      "endpoint": "http://policy-insights-mcp:3013",
+      "auth": null,
+      "tools": 10,
+      "flowise": "flowise/direct-policy-insights.flowdata.json",
+      "langflow": "langflow/direct-policy-insights.flow.json"
+    },
+    {
+      "slug": "direct-gaia",
+      "name": "Gaia Agent (Direct)",
+      "former_names": [
+        "CP Gaia OS — AI Agent"
+      ],
+      "kind": "direct",
+      "endpoint": "http://quantum-gaia-mcp:3011/mcp",
+      "auth": null,
+      "tools": 42,
+      "flowise": "flowise/direct-gaia.flowdata.json",
+      "langflow": "langflow/direct-gaia.flow.json"
+    },
+    {
+      "slug": "direct-gw-cli",
+      "name": "Gateway CLI Agent (Direct)",
+      "former_names": [
+        "CP Gateway CLI — AI Agent"
+      ],
+      "kind": "direct",
+      "endpoint": "http://quantum-gw-cli-mcp:3009",
+      "auth": null,
+      "tools": 26,
+      "flowise": "flowise/direct-gw-cli.flowdata.json",
+      "langflow": "langflow/direct-gw-cli.flow.json"
+    },
+    {
+      "slug": "direct-management",
+      "name": "Management Agent (Direct)",
+      "former_names": [
+        "CP Quantum Management — AI Agent"
+      ],
+      "kind": "direct",
+      "endpoint": "http://mcp-quantum-management:3002",
+      "auth": null,
+      "tools": 50,
+      "flowise": "flowise/direct-management.flowdata.json",
+      "langflow": "langflow/direct-management.flow.json"
+    },
+    {
+      "slug": "direct-reputation",
+      "name": "Reputation Service Agent (Direct)",
+      "former_names": [
+        "CP Reputation — AI Agent"
+      ],
+      "kind": "direct",
+      "endpoint": "http://reputation-service-mcp:3007",
+      "auth": null,
+      "tools": 3,
+      "flowise": "flowise/direct-reputation.flowdata.json",
+      "langflow": "langflow/direct-reputation.flow.json"
+    },
+    {
+      "slug": "direct-threat-emulation",
+      "name": "Threat Emulation Agent (Direct)",
+      "former_names": [
+        "CP Threat Emulation — AI Agent"
+      ],
+      "kind": "direct",
+      "endpoint": "http://threat-emulation-mcp:3004",
+      "auth": null,
+      "tools": 5,
+      "flowise": "flowise/direct-threat-emulation.flowdata.json",
+      "langflow": "langflow/direct-threat-emulation.flow.json"
+    },
+    {
+      "slug": "direct-threat-prevention",
+      "name": "Threat Prevention Agent (Direct)",
+      "former_names": [
+        "CP Threat Prevention — AI Agent"
+      ],
+      "kind": "direct",
+      "endpoint": "http://threat-prevention-mcp:3005",
+      "auth": null,
+      "tools": 25,
+      "flowise": "flowise/direct-threat-prevention.flowdata.json",
+      "langflow": "langflow/direct-threat-prevention.flow.json"
+    },
+    {
+      "slug": "lakera-guard-screening",
+      "name": "Lakera Guard Screening Agent",
+      "former_names": [
+        "Lakera-Playground"
+      ],
+      "former_slugs": [
+        "lakera-playground"
+      ],
+      "kind": "native",
+      "endpoint": null,
+      "auth": null,
+      "tools": 0,
+      "flowise": "flowise/lakera-guard-screening.flowdata.json",
+      "langflow": "langflow/lakera-guard-screening.flow.json",
+      "flowise_type": "AGENTFLOW",
+      "guard": "lakera",
+      "requires": [
+        "LAKERA_API_KEY"
+      ]
+    },
+    {
+      "slug": "fleet-commander",
+      "name": "Fleet Commander Estate Agent",
+      "former_names": [
+        "CP Fleet Commander — Estate Agent"
+      ],
+      "kind": "gateway",
+      "endpoint": "http://mcp-gateway:8080/mcp",
+      "auth": "__MCP_GATEWAY_TOKEN__",
+      "tools": 117,
+      "flowise": "flowise/fleet-commander.flowdata.json",
+      "langflow": "langflow/fleet-commander.flow.json"
+    },
+    {
+      "slug": "guarded-chat",
+      "name": "Guarded Agent (Lakera Guard)",
+      "former_names": [
+        "CP Guarded Agent — Security in the Loop"
+      ],
+      "kind": "gateway",
+      "endpoint": "http://mcp-gateway:8080/mcp",
+      "auth": "__MCP_GATEWAY_TOKEN__",
+      "tools": 117,
+      "flowise": "flowise/guarded-chat.flowdata.json",
+      "langflow": "langflow/guarded-chat.flow.json",
+      "flowise_type": "AGENTFLOW",
+      "guard": "lakera",
+      "requires": [
+        "LAKERA_API_KEY"
+      ]
+    },
+    {
+      "slug": "devhub",
+      "name": "DevHub Operations Agent",
+      "former_names": [
+        "DevHub — Operations Agent"
+      ],
+      "kind": "external",
+      "endpoint": "https://hub.{{DOMAIN}}/api/mcp",
+      "auth": "__DEVHUB_MCP_TOKEN__",
+      "tools": 8,
+      "flowise": "flowise/devhub.flowdata.json",
+      "langflow": "langflow/devhub.flow.json",
+      "requires": [
+        "DOMAIN",
+        "DEVHUB_MCP_TOKEN"
+      ]
+    },
+    {
+      "slug": "policypilot-management",
+      "name": "PolicyPilot Access Automation Agent (Pro)",
+      "former_names": [
+        "PolicyPilot — Access Automation Agent (Pro)"
+      ],
+      "kind": "external",
+      "endpoint": "https://policypilot.{{DOMAIN}}/mcp/",
+      "auth": "__PILOT_MCP_TOKEN__",
+      "tools": 31,
+      "flowise": "flowise/policypilot-management.flowdata.json",
+      "langflow": "langflow/policypilot-management.flow.json",
+      "requires": [
+        "DOMAIN",
+        "PILOT_MCP_TOKEN"
+      ]
+    },
+    {
+      "slug": "policypilot-dynamic-layer",
+      "name": "PolicyPilot Dynamic Layers Agent",
+      "former_names": [
+        "PolicyPilot — Dynamic Layers Agent"
+      ],
+      "kind": "external",
+      "endpoint": "https://policypilot.{{DOMAIN}}/mcp/",
+      "auth": "__PILOT_MCP_TOKEN__",
+      "tools": 31,
+      "flowise": "flowise/policypilot-dynamic-layer.flowdata.json",
+      "langflow": "langflow/policypilot-dynamic-layer.flow.json",
+      "requires": [
+        "DOMAIN",
+        "PILOT_MCP_TOKEN"
+      ]
+    },
+    {
+      "slug": "soc-response-chain",
+      "name": "SOC Response Chain Agent",
+      "former_names": [
+        "CP SOC Response Chain — Estate Agent"
+      ],
+      "kind": "gateway",
+      "endpoint": "http://mcp-gateway:8080/mcp",
+      "auth": "__MCP_GATEWAY_TOKEN__",
+      "tools": 62,
+      "flowise": "flowise/soc-response-chain.flowdata.json",
+      "langflow": "langflow/soc-response-chain.flow.json"
+    },
+    {
+      "slug": "rag-cp-docs",
+      "name": "Documentation RAG Agent",
+      "former_names": [
+        "CP Docs — Visible RAG Agent"
+      ],
+      "kind": "native",
+      "endpoint": "qdrant:cp_docs",
+      "auth": null,
+      "tools": 0,
+      "flowise": "flowise/rag-cp-docs.flowdata.json",
+      "langflow": "langflow/rag-cp-docs.flow.json"
+    },
+    {
+      "slug": "scim-provisioning",
+      "name": "Identity Provisioning Agent (SCIM)",
+      "former_names": [
+        "CP Identity — SCIM Provisioning Agent"
+      ],
+      "kind": "external",
+      "endpoint": "https://idp.{{DOMAIN}}/scim/v2/Users",
+      "auth": "__IDP_SCIM_TOKEN__",
+      "tools": 0,
+      "flowise": "flowise/scim-provisioning.flowdata.json",
+      "langflow": "langflow/scim-provisioning.flow.json",
+      "requires": [
+        "DOMAIN",
+        "IDP_SCIM_TOKEN"
+      ]
+    }
+  ]
 }

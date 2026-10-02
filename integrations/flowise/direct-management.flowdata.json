@@ -11,12 +11,13 @@
       "type": "customNode",
       "data": {
         "id": "chatOpenAI_0",
-        "label": "ChatOpenAI",
-        "version": 8.2,
+        "label": "OpenAI",
+        "version": 8.3,
         "name": "chatOpenAI",
         "type": "ChatOpenAI",
         "baseClasses": [
           "ChatOpenAI",
+          "BaseChatOpenAI",
           "BaseChatModel",
           "BaseLanguageModel",
           "Runnable"
@@ -62,6 +63,84 @@
             "additionalParams": true,
             "id": "chatOpenAI_0-input-streaming-boolean",
             "display": true
+          },
+          {
+            "label": "Allow Image Uploads",
+            "name": "allowImageUploads",
+            "type": "boolean",
+            "description": "Allow image input. Refer to the <a href=\"https://docs.flowiseai.com/using-flowise/uploads#image\" target=\"_blank\">docs</a> for more details.",
+            "default": false,
+            "optional": true,
+            "id": "chatOpenAI_0-input-allowImageUploads-boolean",
+            "display": true
+          },
+          {
+            "label": "Reasoning",
+            "description": "Whether the model supports reasoning. Only applicable for reasoning models (gpt-5 and o-series models only)",
+            "name": "reasoning",
+            "type": "boolean",
+            "default": false,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-reasoning-boolean",
+            "display": true
+          },
+          {
+            "label": "Reasoning Effort",
+            "description": "Constrains effort on reasoning. Only applicable for reasoning models (gpt-5 and o-series models only)",
+            "name": "reasoningEffort",
+            "type": "options",
+            "options": [
+              {
+                "label": "Low",
+                "name": "low"
+              },
+              {
+                "label": "Medium",
+                "name": "medium"
+              },
+              {
+                "label": "High",
+                "name": "high"
+              },
+              {
+                "label": "X-High",
+                "name": "xhigh",
+                "description": "X-High is supported for all models after gpt-5.1-codex-max"
+              }
+            ],
+            "additionalParams": true,
+            "show": {
+              "reasoning": true
+            },
+            "id": "chatOpenAI_0-input-reasoningEffort-options",
+            "display": false
+          },
+          {
+            "label": "Reasoning Summary",
+            "description": "A summary of the reasoning performed by the model. This can be useful for debugging and understanding the model's reasoning process",
+            "name": "reasoningSummary",
+            "type": "options",
+            "options": [
+              {
+                "label": "Auto",
+                "name": "auto"
+              },
+              {
+                "label": "Concise",
+                "name": "concise"
+              },
+              {
+                "label": "Detailed",
+                "name": "detailed"
+              }
+            ],
+            "additionalParams": true,
+            "show": {
+              "reasoning": true
+            },
+            "id": "chatOpenAI_0-input-reasoningSummary-options",
+            "display": false
           },
           {
             "label": "Max Tokens",
@@ -135,92 +214,23 @@
             "display": true
           },
           {
-            "label": "BasePath",
+            "label": "Base Path",
             "name": "basepath",
             "type": "string",
             "optional": true,
+            "description": "Override the default base URL for the API, e.g., \"https://api.example.com/v2/",
             "additionalParams": true,
             "id": "chatOpenAI_0-input-basepath-string",
             "display": true
           },
           {
-            "label": "Proxy Url",
-            "name": "proxyUrl",
-            "type": "string",
-            "optional": true,
-            "additionalParams": true,
-            "id": "chatOpenAI_0-input-proxyUrl-string",
-            "display": true
-          },
-          {
-            "label": "BaseOptions",
+            "label": "Base Options",
             "name": "baseOptions",
             "type": "json",
             "optional": true,
+            "description": "Default headers to include with every request to the API.",
             "additionalParams": true,
             "id": "chatOpenAI_0-input-baseOptions-json",
-            "display": true
-          },
-          {
-            "label": "Allow Image Uploads",
-            "name": "allowImageUploads",
-            "type": "boolean",
-            "description": "Allow image input. Refer to the <a href=\"https://docs.flowiseai.com/using-flowise/uploads#image\" target=\"_blank\">docs</a> for more details.",
-            "default": false,
-            "optional": true,
-            "id": "chatOpenAI_0-input-allowImageUploads-boolean",
-            "display": true
-          },
-          {
-            "label": "Image Resolution",
-            "description": "This parameter controls the resolution in which the model views the image.",
-            "name": "imageResolution",
-            "type": "options",
-            "options": [
-              {
-                "label": "Low",
-                "name": "low"
-              },
-              {
-                "label": "High",
-                "name": "high"
-              },
-              {
-                "label": "Auto",
-                "name": "auto"
-              }
-            ],
-            "default": "low",
-            "optional": false,
-            "show": {
-              "allowImageUploads": true
-            },
-            "id": "chatOpenAI_0-input-imageResolution-options",
-            "display": false
-          },
-          {
-            "label": "Reasoning Effort",
-            "description": "Constrains effort on reasoning for reasoning models. Only applicable for o1 and o3 models.",
-            "name": "reasoningEffort",
-            "type": "options",
-            "options": [
-              {
-                "label": "Low",
-                "name": "low"
-              },
-              {
-                "label": "Medium",
-                "name": "medium"
-              },
-              {
-                "label": "High",
-                "name": "high"
-              }
-            ],
-            "default": "medium",
-            "optional": false,
-            "additionalParams": true,
-            "id": "chatOpenAI_0-input-reasoningEffort-options",
             "display": true
           }
         ],
@@ -236,9 +246,13 @@
         ],
         "inputs": {
           "cache": "",
-          "modelName": "gpt-5.4",
+          "modelName": "lab-chat",
           "temperature": 0.2,
           "streaming": true,
+          "allowImageUploads": false,
+          "reasoning": "",
+          "reasoningEffort": "",
+          "reasoningSummary": "",
           "maxTokens": "",
           "topP": "",
           "frequencyPenalty": "",
@@ -246,26 +260,22 @@
           "timeout": "",
           "strictToolCalling": "",
           "stopSequence": "",
-          "basepath": "",
-          "proxyUrl": "",
+          "basepath": "http://litellm:4000/v1",
           "baseOptions": "",
-          "allowImageUploads": false,
-          "imageResolution": "low",
-          "reasoningEffort": "",
-          "credential": "96711d21-d048-48dc-b588-17bb4b101527"
+          "credential": ""
         },
         "outputAnchors": [
           {
-            "id": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
+            "id": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
             "name": "chatOpenAI",
             "label": "ChatOpenAI",
             "description": "Wrapper around OpenAI large language models that use the Chat endpoint",
-            "type": "ChatOpenAI | BaseChatModel | BaseLanguageModel | Runnable"
+            "type": "ChatOpenAI | BaseChatOpenAI | BaseChatModel | BaseLanguageModel | Runnable"
           }
         ],
         "outputs": {},
         "selected": false,
-        "credential": "96711d21-d048-48dc-b588-17bb4b101527"
+        "credential": ""
       },
       "selected": true,
       "positionAbsolute": {
@@ -305,7 +315,8 @@
             "default": "",
             "additionalParams": true,
             "optional": true,
-            "id": "bufferMemory_1-input-sessionId-string"
+            "id": "bufferMemory_1-input-sessionId-string",
+            "display": true
           },
           {
             "label": "Memory Key",
@@ -313,7 +324,8 @@
             "type": "string",
             "default": "chat_history",
             "additionalParams": true,
-            "id": "bufferMemory_1-input-memoryKey-string"
+            "id": "bufferMemory_1-input-memoryKey-string",
+            "display": true
           }
         ],
         "inputAnchors": [],
@@ -326,6 +338,7 @@
             "id": "bufferMemory_1-output-bufferMemory-BufferMemory|BaseChatMemory|BaseMemory",
             "name": "bufferMemory",
             "label": "BufferMemory",
+            "description": "Retrieve chat messages stored in database",
             "type": "BufferMemory | BaseChatMemory | BaseMemory"
           }
         ],
@@ -365,9 +378,9 @@
             "hideCodeExecute": true,
             "hint": {
               "label": "How to use",
-              "value": "Remote MCP over streamable HTTP. Bearer auth in headers."
+              "value": "\nYou can use variables in the MCP Server Config with double curly braces `{{ }}` and prefix `$vars.<variableName>`. \n\nFor example, you have a variable called \"var1\":\n```json\n{\n    \"command\": \"docker\",\n    \"args\": [\n        \"run\",\n        \"-i\",\n        \"--rm\",\n        \"-e\", \"API_TOKEN\"\n    ],\n    \"env\": {\n        \"API_TOKEN\": \"{{$vars.var1}}\"\n    }\n}\n```\n\nFor example, when using SSE, you can use the variable \"var1\" in the headers:\n```json\n{\n    \"url\": \"https://api.example.com/endpoint/sse\",\n    \"headers\": {\n        \"Authorization\": \"Bearer {{$vars.var1}}\"\n    }\n}\n```\n"
             },
-            "placeholder": "{\n    \"url\": \"http://host:port/mcp\"\n}",
+            "placeholder": "{\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/path/to/allowed/files\"]\n}",
             "id": "customMCP_0-input-mcpServerConfig-code",
             "display": true
           },
@@ -384,13 +397,13 @@
         "inputAnchors": [],
         "inputs": {
           "mcpServerConfig": "{\n    \"url\": \"http://mcp-quantum-management:3002\"\n}",
-          "mcpActions": "[\"find_zero_hits_rules\", \"management__init\", \"management__show_gateways_and_servers\", \"management__show_object\", \"management__show_objects\", \"show_access_layer\", \"show_access_layers\", \"show_access_point_names\", \"show_access_rule\", \"show_access_rulebase\", \"show_access_section\", \"show_address_ranges\", \"show_application_site_categories\", \"show_application_site_groups\", \"show_application_sites\", \"show_cluster_member\", \"show_cluster_members\", \"show_dns_domains\", \"show_domains\", \"show_dynamic_objects\", \"show_groups\", \"show_hosts\", \"show_lsm_cluster\", \"show_lsm_clusters\", \"show_lsm_gateway\", \"show_lsm_gateways\", \"show_mdss\", \"show_multicast_address_ranges\", \"show_nat_rulebase\", \"show_nat_section\", \"show_networks\", \"show_security_zones\", \"show_service_groups\", \"show_services_icmp\", \"show_services_icmp6\", \"show_services_tcp\", \"show_services_udp\", \"show_simple_cluster\", \"show_simple_clusters\", \"show_simple_gateway\", \"show_simple_gateways\", \"show_tags\", \"show_time_groups\", \"show_vpn_communities_meshed\", \"show_vpn_communities_remote_access\", \"show_vpn_communities_star\", \"show_vpn_community_meshed\", \"show_vpn_community_remote_access\", \"show_vpn_community_star\", \"show_wildcards\"]"
+          "mcpActions": "[\"management__init\", \"show_access_rulebase\", \"show_hosts\", \"show_access_rule\", \"show_access_layer\", \"show_access_layers\", \"show_nat_rulebase\", \"show_access_section\", \"show_nat_section\", \"show_vpn_community_star\", \"show_vpn_communities_star\", \"show_vpn_community_meshed\", \"show_vpn_communities_meshed\", \"show_vpn_community_remote_access\", \"show_vpn_communities_remote_access\", \"show_domains\", \"show_mdss\", \"management__show_gateways_and_servers\", \"show_simple_gateway\", \"show_simple_gateways\", \"show_lsm_clusters\", \"show_cluster_member\", \"show_cluster_members\", \"show_lsm_gateway\", \"show_simple_clusters\", \"show_simple_cluster\", \"show_lsm_gateways\", \"show_lsm_cluster\", \"show_groups\", \"show_services_tcp\", \"show_application_sites\", \"show_application_site_groups\", \"show_services_udp\", \"show_wildcards\", \"show_security_zones\", \"show_tags\", \"show_address_ranges\", \"show_application_site_categories\", \"show_dynamic_objects\", \"show_services_icmp6\", \"show_services_icmp\", \"show_service_groups\", \"show_multicast_address_ranges\", \"show_dns_domains\", \"show_time_groups\", \"show_access_point_names\", \"management__show_objects\", \"management__show_object\", \"find_zero_hits_rules\", \"show_networks\"]"
         },
         "outputAnchors": [
           {
             "id": "customMCP_0-output-customMCP-Tool",
             "name": "customMCP",
-            "label": "Tool",
+            "label": "Custom MCP Tool",
             "description": "Custom MCP Config",
             "type": "Tool"
           }
@@ -512,7 +525,7 @@
           "memory": "{{bufferMemory_1.data.instance}}",
           "model": "{{chatOpenAI_0.data.instance}}",
           "chatPromptTemplate": "",
-          "systemMessage": "You are the **Check Point Quantum Management** assistant. You work against the live Security Management server over MCP (Management API): read and, when authorized, change the security policy.\n\n== WHAT YOU CAN DO ==\n- Discover and inspect network objects: hosts, networks, groups, services, applications.\n- Read access-control and NAT rulebases, policy packages, layers, and installation targets.\n- Create/modify objects and access rules when the user asks for a change.\n- Inspect sessions, publish changes, and install policy — only on explicit request.\n\n== HOW TO WORK ==\n- Use ONLY the MCP tools exposed to you. Never invent tool names or parameters; if no tool fits, say so.\n- Start with read-only tools (show/list/get) to gather facts before answering.\n- If a tool call fails, show the error in one short line and suggest the next step.\n- You have conversation memory: use prior turns for context instead of re-asking.\n\n== CHANGE SAFETY ==\n- Before ANY change (add/set/delete), state exactly what you are about to change and ask the user to confirm.\n- NEVER publish or install policy unless the user explicitly asks for it in this conversation.\n- After a change, report precisely what was modified (object names, rule numbers, UIDs).\n\n== OUTPUT STYLE ==\n- Answer in concise Markdown: short paragraphs, bullets, and small tables for object/rule lists.\n- Summarize tool results faithfully. Do NOT paste raw JSON unless the user explicitly asks for raw output; \"verbatim\" means faithful to the data, not raw JSON.\n- For long lists show the 15 most relevant items and say how many more exist.\n- End multi-step work with a one-line summary of what was done.",
+          "systemMessage": "You are the **Check Point Management** assistant. You work against the live Security Management server over MCP (Management API) and read its security policy and objects.\n\n== WHAT YOU CAN DO ==\n- Call management__init once at the start of a conversation to log in to the Management server.\n- Discover and inspect objects: hosts, networks, groups, address ranges, services, applications and categories, security zones, tags, dynamic objects, and time groups.\n- Read access-control and NAT rulebases, layers, and sections, and find zero-hit rules (find_zero_hits_rules).\n- Inspect gateways, clusters, LSM devices, domains and MDS servers, and VPN communities.\n\n== HOW TO WORK ==\n- Use ONLY the MCP tools exposed to you. Never invent tool names or parameters; if no tool fits, say so.\n- Start with read-only tools (show/list/get) to gather facts before answering.\n- If a tool call fails, show the error in one short line and suggest the next step.\n- You have conversation memory: use prior turns for context instead of re-asking.\n\n== READ-ONLY ==\n- Every tool in this agent is read-only. Never claim that you created, changed, published, or installed anything.\n- When the user asks for a change, draft it precisely (object names, values, rule position) and say that an administrator still has to apply it in SmartConsole.\n\n== OUTPUT STYLE ==\n- Answer in concise Markdown: short paragraphs, bullets, and small tables for object/rule lists.\n- Summarize tool results faithfully. Do NOT paste raw JSON unless the user explicitly asks for raw output; \"verbatim\" means faithful to the data, not raw JSON.\n- For long lists show the 15 most relevant items and say how many more exist.\n- End multi-step work with a one-line summary of what was done.",
           "inputModeration": "",
           "maxIterations": "",
           "enableDetailedStreaming": ""
@@ -544,7 +557,7 @@
         "x": 1081.2351190476193,
         "y": 124.37202380952385
       },
-      "type": "customNode",
+      "type": "stickyNote",
       "data": {
         "id": "stickyNote_0",
         "label": "Sticky Note",
@@ -570,7 +583,7 @@
         ],
         "inputAnchors": [],
         "inputs": {
-          "note": "CP Quantum Management — AI Agent\n\nMCP endpoint: http://mcp-quantum-management:3002\nTools: 50 action(s)."
+          "note": "Check Point Management agent that calls the Management MCP server directly (http://mcp-quantum-management:3002), without the gateway.\n\nMCP: Custom MCP node -> http://mcp-quantum-management:3002 (no gateway, no token). Available Actions: all 50 tools of the server.\n\nModel: lab-chat through LiteLLM (credential \"Lab Model (LiteLLM)\", Base Path http://litellm:4000/v1 under Additional Parameters). The Model Name list only knows OpenAI model names, so it can look empty: leave it, the agent still uses lab-chat."
         },
         "outputAnchors": [
           {
@@ -605,11 +618,11 @@
     },
     {
       "source": "chatOpenAI_0",
-      "sourceHandle": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
+      "sourceHandle": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
       "target": "toolAgent_0",
       "targetHandle": "toolAgent_0-input-model-BaseChatModel",
       "type": "buttonedge",
-      "id": "chatOpenAI_0-chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable-toolAgent_0-toolAgent_0-input-model-BaseChatModel"
+      "id": "chatOpenAI_0-chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable-toolAgent_0-toolAgent_0-input-model-BaseChatModel"
     },
     {
       "source": "bufferMemory_1",

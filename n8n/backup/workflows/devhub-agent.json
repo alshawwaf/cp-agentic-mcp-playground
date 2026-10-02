@@ -1,63 +1,48 @@
 {
-  "name": "DevHub — Operations Agent",
+  "name": "DevHub Operations Agent",
   "nodes": [
     {
       "parameters": {
-        "content": "## DevHub — Operations Agent\n\nChat-drives the DevHub board over MCP (https://hub.{{DOMAIN}}/api/mcp).\n\n**Setup**\n1. Credential “DevHub Bearer Auth” carries a devhub_ API key (Admin → API keys, scopes read+write).\n2. OpenAI credential powers the model.\n\n**Tools**: list/get/probe/status + create/update/delete app + power start/stop/restart.",
-        "height": 120,
-        "width": 1320,
-        "color": 4
+        "content": "## DevHub operations agent\n**Manages the DevHub app board over MCP** (`https://hub.{{DOMAIN}}/api/mcp`): what is running, probes, card changes, and deployment power actions.",
+        "width": 1400,
+        "height": 150,
+        "color": 6
       },
+      "id": "165be628-de09-5050-a1ff-e3027730d479",
+      "name": "Banner",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
         -140,
-        -240
-      ],
-      "id": "note-header",
-      "name": "README"
+        -260
+      ]
     },
     {
       "parameters": {
-        "content": "## Try these\n\n- what apps are on the board?\n- probe the n8n app — can the hub embed it?\n- status of policypilot\n- rename the card “AI Guardrails Demo” to “AI Guardrails Playground”\n- restart openclaw (it will ask you to confirm)",
-        "height": 620,
-        "width": 520,
-        "color": 5
+        "content": "### Try these\n- What apps are on the board?\n- Probe the n8n app: can the hub embed it?\n- What is the status of policypilot?\n- Rename the card \"AI Guardrails\" to \"AI Guardrails Lab\"\n- Restart openclaw (it asks you to confirm)\n\n### How it works\n- Chat trigger → Normalize input → AI Agent → answer. If the model or the DevHub endpoint fails, \"Friendly error\" explains why.\n- The MCP Client Tool \"DevHub MCP\" calls `https://hub.{{DOMAIN}}/api/mcp` with the \"DevHub Bearer Auth\" credential (DEVHUB_MCP_TOKEN). Tools: list, get, probe, and status, plus create, update, and delete app cards and start, stop, or restart deployments.\n- Next steps: add an admin-scope key to manage users, chain it with the PolicyPilot agent, or call probe_app from a scheduled health-report workflow.\n\n### Before you start\nSet DOMAIN and DEVHUB_MCP_TOKEN (a devhub_ API key with read and write scopes) in `.env`, then run `docker compose run --rm n8n-import`. Until then n8n-import imports this agent but does not publish it.\n\n### Notes\n- Model: **OpenAI Chat Model** with the credential \"Lab Model (LiteLLM)\" calls `lab-chat` on LiteLLM (http://litellm:4000/v1). LiteLLM picks the provider from `.env`; change providers there, not in n8n.\n- Chat: use **Open chat** in the editor. The hosted chat URL and the webhook ask for HTTP Basic auth: the lab admin email and password (credential \"Lab Agents Chat\", filled in by n8n-import).\n- Updates: n8n-import refreshes this workflow on every run unless you changed it in n8n. To keep your own variant, duplicate it first.",
+        "width": 540,
+        "height": 760,
+        "color": 7
       },
+      "id": "1296fa98-e56e-5e80-99cb-78f2b1d66425",
+      "name": "Guide",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
         -720,
         60
-      ],
-      "id": "note-examples",
-      "name": "Demo script"
-    },
-    {
-      "parameters": {
-        "content": "## Next level\n\n- Add an admin-scope key to manage users.\n- Chain with the PolicyPilot agent: open access for an app you just created.\n- Wire probe_app into a scheduled health-report workflow.",
-        "height": 120,
-        "width": 1320,
-        "color": 6
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -140,
-        -240
-      ],
-      "id": "note-next",
-      "name": "Next level"
+      ]
     },
     {
       "parameters": {
         "public": true,
-        "initialMessages": "Hi — I manage the DevHub board. Ask me what's running, probe an app, or change a card.",
+        "authentication": "basicAuth",
+        "initialMessages": "I manage the DevHub app board. Ask me what is running, probe an app, or change a card.\n\n**Try one of these:**\n- What apps are on the board?\n- Probe the n8n app: can the hub embed it?\n- What is the status of policypilot?",
         "options": {
           "responseMode": "lastNode",
-          "title": "DevHub Ops",
-          "subtitle": "Manage the DevHub app board in plain language",
-          "inputPlaceholder": "e.g. Allow 10.1.1.50 to the DNS servers and publish"
+          "title": "DevHub Operations Agent",
+          "subtitle": "Manage the DevHub app board in plain language.",
+          "inputPlaceholder": "e.g. What apps are on the board?"
         }
       },
       "id": "trigger",
@@ -68,6 +53,12 @@
         -140,
         80
       ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "LabAgentsChatAuth",
+          "name": "Lab Agents Chat"
+        }
+      },
       "webhookId": "28ff8b80-8c36-57c3-bc85-36b83d418e7e"
     },
     {
@@ -95,68 +86,9 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        160,
+        140,
         80
       ]
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "mode": "list",
-          "value": "gpt-5.1",
-          "cachedResultName": "gpt-5.1"
-        },
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        900,
-        600
-      ],
-      "id": "model",
-      "name": "OpenAI gpt-5.1",
-      "credentials": {
-        "openAiApi": {
-          "id": "6oZqD0UJampaYWCy",
-          "name": "OpenAi account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "contextWindowLength": 20
-      },
-      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
-      "typeVersion": 1.3,
-      "position": [
-        420,
-        380
-      ],
-      "id": "memory",
-      "name": "Conversation Memory"
-    },
-    {
-      "parameters": {
-        "endpointUrl": "https://hub.{{DOMAIN}}/api/mcp",
-        "authentication": "bearerAuth",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
-      "typeVersion": 1.2,
-      "position": [
-        700,
-        380
-      ],
-      "id": "mcp",
-      "name": "DevHub MCP",
-      "credentials": {
-        "httpBearerAuth": {
-          "id": "DevHubBearerCred01",
-          "name": "DevHub Bearer Auth"
-        }
-      }
     },
     {
       "parameters": {
@@ -169,140 +101,86 @@
       "id": "agent",
       "name": "DevHub Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1.6,
-      "position": [
-        480,
-        60
-      ],
-      "retryOnFail": true,
-      "onError": "continueErrorOutput"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "e1",
-              "name": "output",
-              "value": "=⚠️ I hit an error and made **no changes** to your policy.\n\n```\n{{ ($json.error && $json.error.message) || $json.error || $json.message || 'Unknown error' }}\n```\nPlease retry, or rephrase the request.",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "errreply",
-      "name": "Friendly error",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        940,
-        180
-      ]
-    },
-    {
-      "parameters": {
-        "model": "gpt-5.4-2026-03-05",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
-      "typeVersion": 1,
-      "position": [
-        240,
-        600
-      ],
-      "name": "Azure OpenAI (default)",
-      "credentials": {
-        "azureOpenAiApi": {
-          "id": "nmUI0INbLO2IrroY",
-          "name": "Azure Open AI account"
-        }
-      },
-      "id": "2a3ccda6-76b0-5248-972c-a105a1fb4915"
-    },
-    {
-      "parameters": {
-        "model": "qwen3.5:4b",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
-      "typeVersion": 1,
+      "typeVersion": 3.1,
       "position": [
         460,
-        600
+        60
       ],
-      "name": "Ollama — local qwen3.5",
-      "credentials": {
-        "ollamaApi": {
-          "id": "i8fXatxwj12xOABO",
-          "name": "Ollama account"
-        }
-      },
-      "id": "d8a50d8b-0599-50e9-880f-d6f879067d54"
-    },
-    {
-      "parameters": {
-        "modelName": "models/gemini-2.5-pro",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        680,
-        600
-      ],
-      "name": "Gemini 2.5 Pro",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "jQWvIJNDs6CeSDiN",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      },
-      "id": "d7b8ab30-b4a5-50d6-b2a0-6cea08c181f0"
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
         "model": {
           "__rl": true,
-          "mode": "list",
-          "value": "claude-opus-4-8",
-          "cachedResultName": "Claude Opus 4.8"
+          "mode": "id",
+          "value": "lab-chat"
         },
         "options": {}
       },
-      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
-      "typeVersion": 1.3,
+      "id": "2a3ccda6-76b0-5248-972c-a105a1fb4915",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
       "position": [
-        1120,
-        600
+        240,
+        400
       ],
-      "name": "Claude Opus 4.8",
       "credentials": {
-        "anthropicApi": {
-          "id": "AnthropicCred001",
-          "name": "Anthropic account"
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "Lab Model (LiteLLM)"
         }
-      },
-      "id": "1d6ea38b-c4a9-590e-a698-73c07bd595ec"
+      }
     },
     {
       "parameters": {
-        "content": "### 🧠 Model gallery\n\n**Azure OpenAI** is the wired default — swap by connecting another model to the agent's *Chat Model* port. Local **Ollama** needs no API key.",
-        "width": 520,
-        "height": 620,
-        "color": 7
+        "contextWindowLength": 20
       },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
+      "id": "memory",
+      "name": "Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
       "position": [
-        -720,
-        60
+        460,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "endpointUrl": "https://hub.{{DOMAIN}}/api/mcp",
+        "authentication": "bearerAuth",
+        "options": {}
+      },
+      "id": "mcp",
+      "name": "DevHub MCP",
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        680,
+        400
       ],
-      "name": "Zone Models",
-      "id": "8d05ad25-17d0-5055-bc03-a39cc434cd31"
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "DevHubBearerCred01",
+          "name": "DevHub Bearer Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// The agent's error output carries only a short message. Explain the likely cause in plain words.\nconst TOOLS = {\"DevHub MCP\": \"https://hub.<DOMAIN>/api/mcp. Set DOMAIN and DEVHUB_MCP_TOKEN in .env, then run docker compose run --rm n8n-import.\"};\nconst MODEL_NODES = [\"OpenAI Chat Model\"];\nconst READ_ONLY = false;\nconst raw = String(($json.error && ($json.error.message || $json.error)) || $json.message || 'Unknown error');\nconst sub = raw.match(/Error in sub-node (.+)$/);\nconst modelHint = 'The lab model endpoint (lab-chat on LiteLLM, http://litellm:4000/v1) is not reachable. ' +\n  'Start it with docker compose up -d litellm and try again.';\nlet hint;\nif (sub && TOOLS[sub[1]]) {\n  hint = `The tool node \"${sub[1]}\" could not reach ${TOOLS[sub[1]]}`;\n} else if (sub && MODEL_NODES.includes(sub[1])) {\n  hint = 'The \"OpenAI Chat Model\" node could not start. Check that the \"Lab Model (LiteLLM)\" credential exists: ' +\n    'run docker compose run --rm n8n-import.';\n} else if (sub) {\n  hint = `The node \"${sub[1]}\" failed. Open the execution in the Executions tab for details.`;\n} else if (/connection error|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|getaddrinfo|fetch failed|socket hang up|timed? ?out/i.test(raw)) {\n  hint = modelHint;\n} else if (/\\b40[13]\\b|authori[sz]|api key|unauthori[sz]ed|credentials/i.test(raw)) {\n  hint = 'LiteLLM rejected the key in the \"Lab Model (LiteLLM)\" credential. LITELLM_MASTER_KEY in .env is the ' +\n    'source of truth: run docker compose run --rm n8n-import to sync the credential.';\n} else if (/not able to process|failed to process|bad request|bad gateway|service unavailable|gateway timed out|too many requests|model|deployment|provider|\\b429\\b|rate limit|quota|\\b5\\d\\d\\b/i.test(raw)) {\n  hint = 'LiteLLM could not serve the lab-chat model. Check that a model provider key is set in .env and look at ' +\n    'docker compose logs litellm.';\n} else {\n  hint = 'Open the execution in the Executions tab for the full error.';\n}\nconst safe = READ_ONLY ? ' This agent only reads, so nothing was changed.' : '';\nreturn { json: { output: `I could not complete this request.${safe}\\n\\nReason: ${raw}\\n\\n${hint}` } };\n"
+      },
+      "id": "errreply",
+      "name": "Friendly error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        200
+      ]
     }
   ],
-  "pinData": {},
   "connections": {
     "When chat message received": {
       "main": [
@@ -326,9 +204,27 @@
         ]
       ]
     },
-    "OpenAI gpt-5.1": {
+    "DevHub Agent": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Friendly error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
       "ai_languageModel": [
-        []
+        [
+          {
+            "node": "DevHub Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
       ]
     },
     "Conversation Memory": {
@@ -352,34 +248,17 @@
           }
         ]
       ]
-    },
-    "DevHub Agent": {
-      "main": [
-        [],
-        [
-          {
-            "node": "Friendly error",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Azure OpenAI (default)": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "DevHub Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
     }
   },
+  "pinData": {},
   "active": false,
   "settings": {
     "executionOrder": "v1"
+  },
+  "versionId": "8d33e484-416d-5818-b17f-edd7c5b3033c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "labRequires": "DOMAIN DEVHUB_MCP_TOKEN"
   },
   "id": "DevHubOpsAgentWf01",
   "tags": []

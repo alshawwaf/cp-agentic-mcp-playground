@@ -1,6 +1,22 @@
 {
-  "name": "RAG · CP Docs Retriever (embed + Qdrant search)",
+  "name": "Documentation RAG Retriever",
   "nodes": [
+    {
+      "parameters": {
+        "content": "## RAG retriever (sub-workflow, agent tool)\n**query → embed (Ollama `nomic-embed-text`) → Qdrant search `cp_docs` → top 4 snippets scoring at least 0.5, with sources.**\n\nThe documentation RAG agent calls it as the `search_cp_docs` tool, so it must stay published. To test it alone, pin `{ \"query\": \"How do I enable Identity Awareness?\" }` on the trigger and select Execute workflow.\n\nRun the rag-ingest job first so `cp_docs` has vectors. When Qdrant API-key auth is on, the search uses the \"Lab Qdrant\" credential (QDRANT_API_KEY from `.env`). If Ollama or Qdrant fails, \"Explain retrieval error\" returns the cause and the fix as the tool result.\n\nRelevance threshold: Qdrant drops snippets scoring below `score_threshold` (0.5) in \"Search cp_docs (Qdrant)\". To change it, calibrate with `ingest.py --search` and edit that value: n8n blocks `$env` in nodes, so RAG_MIN_SCORE in `.env` is not read here.",
+        "width": 900,
+        "height": 340,
+        "color": 4
+      },
+      "id": "251d745e-d9b1-421b-b1df-cfe0039dc737",
+      "name": "Guide",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -380
+      ]
+    },
     {
       "parameters": {
         "inputSource": "workflowInputs",
@@ -13,14 +29,14 @@
           ]
         }
       },
+      "id": "0b327961-fc30-4278-b49e-f2b28337fbd6",
+      "name": "When called by the agent",
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
       "position": [
         -40,
         0
-      ],
-      "id": "0b327961-fc30-4278-b49e-f2b28337fbd6",
-      "name": "When called by the agent"
+      ]
     },
     {
       "parameters": {
@@ -29,66 +45,76 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"model\": \"nomic-embed-text\",\n  \"prompt\": {{ JSON.stringify($json.query || '') }}\n}",
-        "options": {}
+        "options": {
+          "timeout": 60000
+        }
       },
+      "id": "25baead9-8b47-4280-9ab6-862ea501988c",
+      "name": "Embed query (Ollama)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
         200,
         0
       ],
-      "id": "25baead9-8b47-4280-9ab6-862ea501988c",
-      "name": "Embed query (Ollama)"
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
         "method": "POST",
         "url": "http://qdrant:6333/collections/cp_docs/points/search",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "qdrantApi",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"vector\": {{ JSON.stringify($json.embedding) }},\n  \"limit\": 4,\n  \"with_payload\": true\n}",
-        "options": {}
+        "jsonBody": "={\n  \"vector\": {{ JSON.stringify($json.embedding) }},\n  \"limit\": 4,\n  \"with_payload\": true,\n  \"score_threshold\": 0.5\n}",
+        "options": {
+          "timeout": 30000
+        }
       },
+      "id": "5f7cb7da-51d8-42f1-8dac-bbfbce4b6557",
+      "name": "Search cp_docs (Qdrant)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
         440,
         0
       ],
-      "id": "5f7cb7da-51d8-42f1-8dac-bbfbce4b6557",
-      "name": "Search cp_docs (Qdrant)"
+      "credentials": {
+        "qdrantApi": {
+          "id": "hsWhgXyxb7NQNxdM",
+          "name": "Lab Qdrant"
+        }
+      },
+      "onError": "continueErrorOutput"
     },
     {
       "parameters": {
-        "jsCode": "const hits = ($input.first().json.result) || [];\nif (!Array.isArray(hits) || hits.length === 0) {\n  return [{ json: { response: \"No matching snippets were found in the 'cp_docs' Qdrant collection. It may be empty — run the one-shot 'rag-ingest' job (see integrations/rag-cp-docs/INTEGRATION.md).\" } }];\n}\nconst blocks = hits.map((h, i) => {\n  const p = h.payload || {};\n  const score = (typeof h.score === 'number') ? h.score.toFixed(3) : 'n/a';\n  const title = p.title || p.source || 'snippet';\n  return `### Result ${i + 1} — ${title}\\n(source: ${p.source || 'unknown'} · score: ${score})\\n\\n${p.text || ''}`;\n});\nconst response = `Retrieved ${hits.length} snippet(s) from the 'cp_docs' collection. Answer ONLY from these snippets and cite each \\`source\\` filename you use.\\n\\n` + blocks.join('\\n\\n');\nreturn [{ json: { response } }];\n"
+        "jsCode": "// Qdrant returns only hits scoring at least score_threshold (the relevance threshold) in \"Search cp_docs (Qdrant)\".\nlet threshold = '0.5';\ntry {\n  const m = String($('Search cp_docs (Qdrant)').params.jsonBody || '').match(/\"score_threshold\"\\s*:\\s*([0-9.]+)/);\n  if (m) threshold = m[1];\n} catch (e) { /* keep the default */ }\nconst hits = ($input.first().json.result) || [];\nif (!Array.isArray(hits) || hits.length === 0) {\n  return [{ json: { response: `No snippet in the 'cp_docs' collection scored at least ${threshold} (the relevance threshold) for this query, so the indexed documentation does not cover it. Say so plainly; do not answer from memory. If a match was expected: run the rag-ingest job (docker compose up rag-ingest) when the collection is empty, or lower score_threshold in \"Search cp_docs (Qdrant)\" after calibrating it with ingest.py --search.` } }];\n}\nconst blocks = hits.map((h, i) => {\n  const p = h.payload || {};\n  const score = (typeof h.score === 'number') ? h.score.toFixed(3) : 'n/a';\n  const title = p.title || p.source || 'snippet';\n  return `### Result ${i + 1} - ${title}\\n(source: ${p.source || 'unknown'} - score: ${score})\\n\\n${p.text || ''}`;\n});\nconst response = `Retrieved ${hits.length} snippet(s) scoring at least ${threshold} from the 'cp_docs' collection. Answer ONLY from these snippets and cite each \\`source\\` filename you use.\\n\\n` + blocks.join('\\n\\n');\nreturn [{ json: { response } }];\n"
       },
+      "id": "b60bd5cd-bd0f-4fa0-8eaf-e71869fb81a1",
+      "name": "Format hits + sources",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         680,
         0
-      ],
-      "id": "b60bd5cd-bd0f-4fa0-8eaf-e71869fb81a1",
-      "name": "Format hits + sources"
+      ]
     },
     {
       "parameters": {
-        "content": "## 🔎 RAG Retriever (sub-workflow / agent tool)\n**query → embed (Ollama `nomic-embed-text`) → Qdrant search `cp_docs` → top-4 snippets + sources.**\n\nCalled by the *CP Docs RAG Agent* as the `search_cp_docs` tool. To test it alone: pin `{ \"query\": \"How do I enable Identity Awareness?\" }` on the trigger and Execute.\n\nRun the `rag-ingest` job first so `cp_docs` has vectors.",
-        "width": 760,
-        "height": 200,
-        "color": 4
+        "jsCode": "// Embedding or search failed. Return a plain explanation as the tool result, so the agent can relay it.\nconst e = $json.error || {};\nconst msg = String(typeof e === 'string' ? e : (e.message || e.description || 'no response'));\n// n8n replaces HTTP errors with fixed messages; map them back to status codes.\nconst STATUS = [[/authori[sz]ation failed/i, '401'], [/forbidden/i, '403'], [/could not be found/i, '404'],\n  [/too many requests/i, '429'], [/not able to process|failed to process/i, '500'], [/bad gateway/i, '502'],\n  [/service unavailable/i, '503'], [/gateway timed out/i, '504']];\nconst code = String(e.httpCode || e.status || ((msg.match(/\\b([1-5]\\d\\d)\\b/) || [])[1]) ||\n  (STATUS.find(([re]) => re.test(msg)) || [])[1] || '');\nlet response;\nif (!$('Search cp_docs (Qdrant)').isExecuted) {\n  response = `Could not embed the query with Ollama (http://ollama-cpu:11434, model nomic-embed-text): ${msg}. Check that the Ollama service is running and nomic-embed-text is pulled, then retry.`;\n} else if (code === '404') {\n  response = \"The Qdrant collection 'cp_docs' does not exist yet. Run the rag-ingest job (docker compose up rag-ingest), then retry.\";\n} else if (code === '401' || code === '403') {\n  response = `Qdrant rejected the search (HTTP ${code}): API-key auth is on. Set QDRANT_API_KEY in .env and run docker compose run --rm n8n-import so the \"Lab Qdrant\" credential matches.`;\n} else {\n  response = `Could not search Qdrant (http://qdrant:6333): ${msg}.`;\n}\nreturn [{ json: { response } }];\n"
       },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
+      "id": "53963799-46d8-54ef-9f00-33e9f762411a",
+      "name": "Explain retrieval error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
-        -40,
-        -260
-      ],
-      "id": "251d745e-d9b1-421b-b1df-cfe0039dc737",
-      "name": "Guide"
+        680,
+        200
+      ]
     }
   ],
-  "pinData": {},
   "connections": {
     "When called by the agent": {
       "main": [
@@ -109,6 +135,13 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Explain retrieval error",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     },
@@ -120,11 +153,19 @@
             "type": "main",
             "index": 0
           }
+        ],
+        [
+          {
+            "node": "Explain retrieval error",
+            "type": "main",
+            "index": 0
+          }
         ]
       ]
     }
   },
-  "active": true,
+  "pinData": {},
+  "active": false,
   "settings": {
     "executionOrder": "v1"
   },

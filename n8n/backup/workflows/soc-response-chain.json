@@ -1,57 +1,64 @@
 {
-  "name": "CP SOC Response Chain — Logs→Reputation→Rule",
+  "name": "SOC Response Chain Agent",
   "nodes": [
     {
       "parameters": {
-        "content": "## 🚨 SOC Response Chain — three agents, three MCP servers\n**Logs → Reputation → Policy**, fully agentic. A log-hunter finds the noisiest blocked IP, a reputation analyst classifies it, and a policy drafter proposes a block rule (confirm-gated, never auto-published). One narrative across the Check Point estate.",
+        "content": "## SOC response chain: three agents, three MCP servers\n**Logs, then reputation, then a drafted rule.** A log hunter finds the noisiest blocked IP, a reputation analyst classifies it, and a policy drafter drafts a block rule. Nothing is published.",
         "width": 1800,
-        "height": 120,
+        "height": 150,
         "color": 5
       },
+      "id": "cf3a68a8-d4e6-593f-86ab-b5935b837795",
+      "name": "Banner",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
         -140,
         -280
-      ],
-      "id": "cf3a68a8-d4e6-593f-86ab-b5935b837795",
-      "name": "Banner"
+      ]
     },
     {
       "parameters": {
-        "content": "### ▶️ Run it\nOpen the chat and send anything (e.g. `run the triage`). The chain runs left → right; each agent hands its finding to the next.\n\n### 🔗 The chain\n1. **Log Hunter** → noisiest dropped source IP\n2. **Reputation Analyst** → risk classification\n3. **Policy Drafter** → proposed block rule (DRAFT ONLY)\n\nAll three call the **MCP Gateway**; nothing is published.",
-        "width": 460,
-        "height": 300,
+        "content": "### Try these\n- run the triage\n\n### How it works\n- Chat trigger → Normalize input → three AI Agents in a row → answer. If a model or the gateway fails, \"Friendly error\" explains why.\n- 1. Log Hunter (Management Logs tools) finds the noisiest dropped source IP.\n- 2. Reputation Analyst (Reputation Service tools plus the two Threat Prevention IOC feed reads) classifies it.\n- 3. Policy Drafter (read-only Management tools) drafts a block rule for an administrator.\n- All three call the MCP Gateway (`http://mcp-gateway:8080/mcp`); together they select 62 tools. Nothing is changed or published.\n\n### Before you start\nSet MANAGEMENT_HOST and MANAGEMENT_API_KEY and REPUTATION_API_KEY in `.env`.\n\n### Notes\n- Model: **OpenAI Chat Model** with the credential \"Lab Model (LiteLLM)\" calls `lab-chat` on LiteLLM (http://litellm:4000/v1). LiteLLM picks the provider from `.env`; change providers there, not in n8n.\n- Chat: use **Open chat** in the editor. The hosted chat URL and the webhook ask for HTTP Basic auth: the lab admin email and password (credential \"Lab Agents Chat\", filled in by n8n-import).\n- Updates: n8n-import refreshes this workflow on every run unless you changed it in n8n. To keep your own variant, duplicate it first.",
+        "width": 540,
+        "height": 760,
         "color": 7
       },
+      "id": "614a5e52-a909-5f30-b4dd-2b807ecfbeec",
+      "name": "Guide",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -660,
-        -280
-      ],
-      "id": "614a5e52-a909-5f30-b4dd-2b807ecfbeec",
-      "name": "Guide"
+        -720,
+        60
+      ]
     },
     {
       "parameters": {
         "public": true,
-        "initialMessages": "🚨 This is a **three-agent SOC triage chain**. Send anything (e.g. *run the triage*) and watch: a log-hunter finds the noisiest blocked IP, a reputation analyst classifies it, and a policy drafter proposes a block rule — confirm-gated, never auto-published.",
+        "authentication": "basicAuth",
+        "initialMessages": "This is a **three-agent SOC triage chain**. Send any message (for example, *run the triage*) and it runs left to right: a log hunter finds the noisiest blocked source IP, a reputation analyst classifies it, and a policy drafter drafts a block rule for an administrator to apply. Nothing is changed or published.",
         "options": {
           "responseMode": "lastNode",
-          "title": "🚨 SOC Response Chain",
-          "subtitle": "Logs → Reputation → drafted block rule, agentic.",
-          "inputPlaceholder": "Type 'run the triage' to start…"
+          "title": "SOC Response Chain Agent",
+          "subtitle": "Logs, reputation, and a drafted block rule.",
+          "inputPlaceholder": "Type 'run the triage' to start"
         }
       },
+      "id": "2447f6d2-e803-544c-90b9-92097fd414a5",
+      "name": "When chat message received",
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
         -140,
         80
       ],
-      "id": "2447f6d2-e803-544c-90b9-92097fd414a5",
-      "name": "When chat message received",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "LabAgentsChatAuth",
+          "name": "Lab Agents Chat"
+        }
+      },
       "webhookId": "28f939f7-e257-5ac9-8a78-0668f6f1595b"
     },
     {
@@ -74,311 +81,291 @@
         },
         "options": {}
       },
+      "id": "388d2649-f100-5cc1-92f2-ae496e280c54",
+      "name": "Normalize input",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
         120,
         80
-      ],
-      "id": "388d2649-f100-5cc1-92f2-ae496e280c54",
-      "name": "Normalize input"
+      ]
     },
     {
       "parameters": {
         "promptType": "define",
         "text": "={{ $('Normalize input').item.json.chatInput }}",
         "options": {
-          "systemMessage": "You are a Check Point **log hunter**. Use the logs tools over the MCP gateway to find the SINGLE most active DROPPED source IP in roughly the last 24 hours. Return ONLY a compact JSON object: {\"ip\":\"<addr>\",\"drop_count\":<n>,\"note\":\"<one line>\"}. No prose."
+          "systemMessage": "You are a Check Point **log hunter**. Call management-logs__init once, then use the log tools (build_logs_query_filter, run_logs_query, get_next_query_page) to find the SINGLE most active DROPPED source IP in roughly the last 24 hours. Return ONLY a compact JSON object: {\"ip\":\"<addr>\",\"drop_count\":<n>,\"note\":\"<one line>\"}. If the tools return an error or no drops, return {\"ip\":null,\"drop_count\":0,\"note\":\"<the reason in one line>\"}. No prose."
         }
       },
+      "id": "9fe6c6dc-6dbf-5b7a-9d2b-0d913ff25425",
+      "name": "1 · Log Hunter",
       "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1.6,
+      "typeVersion": 3.1,
       "position": [
         360,
         60
       ],
-      "id": "9fe6c6dc-6dbf-5b7a-9d2b-0d913ff25425",
-      "name": "1 · Log Hunter",
       "onError": "continueErrorOutput"
     },
     {
       "parameters": {
-        "promptType": "define",
-        "text": "={{ $json.output }}",
-        "options": {
-          "systemMessage": "You are a Check Point **reputation analyst**. The prior step found a suspicious IP (see the incoming text). Use the reputation tools over the MCP gateway to classify it. Return a short Markdown verdict: the IP, its risk/classification, and a one-line recommendation (block / monitor / ignore)."
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1.6,
-      "position": [
-        700,
-        60
-      ],
-      "id": "b1fb1e10-f779-58ec-80d0-0dbf7458dd2c",
-      "name": "2 · Reputation Analyst",
-      "onError": "continueErrorOutput"
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "={{ $json.output }}",
-        "options": {
-          "systemMessage": "You are a Check Point **policy drafter**. Given the IP and its reputation verdict from the prior steps, DRAFT (do NOT publish, do NOT install) an access rule that blocks that source IP. Describe exactly the rule you would create (name, source, destination=Any, service=Any, action=Drop, track=Log, target layer) and the tool call you would make — then STOP and ask the operator to confirm before any change is applied."
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1.6,
-      "position": [
-        1040,
-        60
-      ],
-      "id": "6fcb07e2-159e-5e4e-a238-e542e2d92cac",
-      "name": "3 · Policy Drafter",
-      "onError": "continueErrorOutput"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "e1",
-              "name": "output",
-              "value": "=⚠️ I hit an error and made **no changes**.\n\n```\n{{ ($json.error && $json.error.message) || $json.error || $json.message || 'Unknown error' }}\n```\nPlease retry, or rephrase.",
-              "type": "string"
-            }
-          ]
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "lab-chat"
         },
         "options": {}
       },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1380,
-        200
-      ],
-      "id": "cd8bd5d6-60c4-5f0d-ab04-7979e67e1643",
-      "name": "Friendly error"
-    },
-    {
-      "parameters": {
-        "endpointUrl": "http://mcp-gateway:8080/mcp",
-        "authentication": "bearerAuth",
-        "options": {},
-        "include": "selected",
-        "includeTools": [
-          "build_logs_query_filter",
-          "get_next_query_page",
-          "management-logs__init",
-          "management-logs__show_gateways_and_servers",
-          "management-logs__show_object",
-          "management-logs__show_objects",
-          "run_logs_query"
-        ]
-      },
-      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
-      "typeVersion": 1.2,
-      "position": [
-        360,
-        320
-      ],
-      "id": "311db663-9ee5-5e0d-85fd-6fa91579a907",
-      "name": "Gateway · logs",
-      "credentials": {
-        "httpBearerAuth": {
-          "id": "McpGatewayBearer",
-          "name": "CP MCP Gateway Bearer"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "endpointUrl": "http://mcp-gateway:8080/mcp",
-        "authentication": "bearerAuth",
-        "options": {},
-        "include": "selected",
-        "includeTools": [
-          "reputation_file",
-          "reputation_ip",
-          "reputation_url",
-          "show_threat_ioc_feed",
-          "show_threat_ioc_feeds"
-        ]
-      },
-      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
-      "typeVersion": 1.2,
-      "position": [
-        700,
-        320
-      ],
-      "id": "1e0ccbd2-d014-57be-98c3-3611480931a7",
-      "name": "Gateway · reputation",
-      "credentials": {
-        "httpBearerAuth": {
-          "id": "McpGatewayBearer",
-          "name": "CP MCP Gateway Bearer"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "endpointUrl": "http://mcp-gateway:8080/mcp",
-        "authentication": "bearerAuth",
-        "options": {},
-        "include": "selected",
-        "includeTools": [
-          "find_zero_hits_rules",
-          "management__init",
-          "management__show_gateways_and_servers",
-          "management__show_object",
-          "management__show_objects",
-          "show_access_layer",
-          "show_access_layers",
-          "show_access_point_names",
-          "show_access_rule",
-          "show_access_rulebase",
-          "show_access_section",
-          "show_address_ranges",
-          "show_application_site_categories",
-          "show_application_site_groups",
-          "show_application_sites",
-          "show_cluster_member",
-          "show_cluster_members",
-          "show_domains",
-          "show_dynamic_objects",
-          "show_groups",
-          "show_hosts",
-          "show_lsm_cluster",
-          "show_lsm_clusters",
-          "show_lsm_gateway",
-          "show_lsm_gateways",
-          "show_mdss",
-          "show_multicast_address_ranges",
-          "show_nat_rulebase",
-          "show_nat_section",
-          "show_networks",
-          "show_security_zones",
-          "show_service_groups",
-          "show_services_icmp",
-          "show_services_icmp6",
-          "show_services_tcp",
-          "show_services_udp",
-          "show_simple_cluster",
-          "show_simple_clusters",
-          "show_simple_gateway",
-          "show_simple_gateways",
-          "show_static_mroutes",
-          "show_static_routes",
-          "show_tags",
-          "show_time_groups",
-          "show_vpn_communities_meshed",
-          "show_vpn_communities_remote_access",
-          "show_vpn_communities_star",
-          "show_vpn_community_meshed",
-          "show_vpn_community_remote_access",
-          "show_vpn_community_star",
-          "show_wildcards"
-        ]
-      },
-      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
-      "typeVersion": 1.2,
-      "position": [
-        1040,
-        320
-      ],
-      "id": "e0b866af-e39e-5d80-bc4c-736b6be47093",
-      "name": "Gateway · management",
-      "credentials": {
-        "httpBearerAuth": {
-          "id": "McpGatewayBearer",
-          "name": "CP MCP Gateway Bearer"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "model": "gpt-5.4-2026-03-05",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
-      "typeVersion": 1,
-      "position": [
-        240,
-        320
-      ],
       "id": "e2a46892-5358-5c1d-8993-7f0890572aaa",
       "name": "Model · Hunter",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        340
+      ],
       "credentials": {
-        "azureOpenAiApi": {
-          "id": "nmUI0INbLO2IrroY",
-          "name": "Azure Open AI account"
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "Lab Model (LiteLLM)"
         }
       }
     },
     {
       "parameters": {
-        "model": "gpt-5.4-2026-03-05",
+        "endpointUrl": "http://mcp-gateway:8080/mcp",
+        "authentication": "bearerAuth",
+        "include": "selected",
+        "includeTools": [
+          "management-logs__init",
+          "run_logs_query",
+          "get_next_query_page",
+          "build_logs_query_filter",
+          "management-logs__show_gateways_and_servers",
+          "management-logs__show_objects",
+          "management-logs__show_object"
+        ],
         "options": {}
       },
-      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
-      "typeVersion": 1,
+      "id": "311db663-9ee5-5e0d-85fd-6fa91579a907",
+      "name": "Gateway · logs",
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
       "position": [
-        580,
-        320
+        420,
+        340
       ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "McpGatewayBearer",
+          "name": "MCP Gateway Bearer"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "options": {
+          "systemMessage": "You are a Check Point **reputation analyst**. The previous step found a suspicious source IP (see the incoming text). Classify it with reputation_ip; use the Threat Prevention IOC feed tools (show_threat_ioc_feeds, show_threat_ioc_feed) when they help. Return a short Markdown verdict: the IP, its risk and classification, and a one-line recommendation (block, monitor, or ignore). If the previous step found no IP, say so and stop."
+        }
+      },
+      "id": "b1fb1e10-f779-58ec-80d0-0dbf7458dd2c",
+      "name": "2 · Reputation Analyst",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        700,
+        60
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "lab-chat"
+        },
+        "options": {}
+      },
       "id": "7ac4befb-631e-5fdd-9f51-2f681045abb0",
       "name": "Model · Analyst",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        580,
+        340
+      ],
       "credentials": {
-        "azureOpenAiApi": {
-          "id": "nmUI0INbLO2IrroY",
-          "name": "Azure Open AI account"
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "Lab Model (LiteLLM)"
         }
       }
     },
     {
       "parameters": {
-        "model": "gpt-5.4-2026-03-05",
+        "endpointUrl": "http://mcp-gateway:8080/mcp",
+        "authentication": "bearerAuth",
+        "include": "selected",
+        "includeTools": [
+          "reputation_url",
+          "reputation_ip",
+          "reputation_file",
+          "show_threat_ioc_feed",
+          "show_threat_ioc_feeds"
+        ],
         "options": {}
       },
-      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
-      "typeVersion": 1,
+      "id": "1e0ccbd2-d014-57be-98c3-3611480931a7",
+      "name": "Gateway · reputation",
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
       "position": [
-        920,
-        320
+        760,
+        340
       ],
-      "id": "cbe165ee-e630-55f5-89c4-fa2c2dfbf96f",
-      "name": "Model · Drafter",
       "credentials": {
-        "azureOpenAiApi": {
-          "id": "nmUI0INbLO2IrroY",
-          "name": "Azure Open AI account"
+        "httpBearerAuth": {
+          "id": "McpGatewayBearer",
+          "name": "MCP Gateway Bearer"
         }
       }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "options": {
+          "systemMessage": "You are a Check Point **policy drafter**. Given the IP and its reputation verdict from the previous steps, DRAFT an access rule that blocks that source IP: name, source, destination Any, service Any, action Drop, track Log, and the target layer. Your Management tools are read-only: call management__init once, then use them to find the right access layer and to check whether a matching host object or rule already exists. Never claim that you created, changed, published, or installed anything. End with the draft for an administrator to apply in SmartConsole. If the previous steps found no IP or recommend no block, say that no rule is needed."
+        }
+      },
+      "id": "6fcb07e2-159e-5e4e-a238-e542e2d92cac",
+      "name": "3 · Policy Drafter",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1040,
+        60
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "lab-chat"
+        },
+        "options": {}
+      },
+      "id": "cbe165ee-e630-55f5-89c4-fa2c2dfbf96f",
+      "name": "Model · Drafter",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        920,
+        340
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "Lab Model (LiteLLM)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "endpointUrl": "http://mcp-gateway:8080/mcp",
+        "authentication": "bearerAuth",
+        "include": "selected",
+        "includeTools": [
+          "management__init",
+          "show_access_rulebase",
+          "show_hosts",
+          "show_access_rule",
+          "show_access_layer",
+          "show_access_layers",
+          "show_nat_rulebase",
+          "show_access_section",
+          "show_nat_section",
+          "show_vpn_community_star",
+          "show_vpn_communities_star",
+          "show_vpn_community_meshed",
+          "show_vpn_communities_meshed",
+          "show_vpn_community_remote_access",
+          "show_vpn_communities_remote_access",
+          "show_domains",
+          "show_mdss",
+          "management__show_gateways_and_servers",
+          "show_simple_gateway",
+          "show_simple_gateways",
+          "show_lsm_clusters",
+          "show_cluster_member",
+          "show_cluster_members",
+          "show_lsm_gateway",
+          "show_simple_clusters",
+          "show_simple_cluster",
+          "show_lsm_gateways",
+          "show_lsm_cluster",
+          "show_groups",
+          "show_services_tcp",
+          "show_application_sites",
+          "show_application_site_groups",
+          "show_services_udp",
+          "show_wildcards",
+          "show_security_zones",
+          "show_tags",
+          "show_address_ranges",
+          "show_application_site_categories",
+          "show_dynamic_objects",
+          "show_services_icmp6",
+          "show_services_icmp",
+          "show_service_groups",
+          "show_multicast_address_ranges",
+          "show_dns_domains",
+          "show_time_groups",
+          "show_access_point_names",
+          "management__show_objects",
+          "management__show_object",
+          "find_zero_hits_rules",
+          "show_networks"
+        ],
+        "options": {}
+      },
+      "id": "e0b866af-e39e-5d80-bc4c-736b6be47093",
+      "name": "Gateway · management",
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.2,
+      "position": [
+        1100,
+        340
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "McpGatewayBearer",
+          "name": "MCP Gateway Bearer"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// The agent's error output carries only a short message. Explain the likely cause in plain words.\nconst TOOLS = {\"Gateway · logs\": \"the MCP Gateway (http://mcp-gateway:8080/mcp). Check that mcp-gateway is running (docker compose ps mcp-gateway). If it is, MCP_GATEWAY_TOKEN in .env and the \\\"MCP Gateway Bearer\\\" credential may differ: run docker compose run --rm n8n-import.\", \"Gateway · reputation\": \"the MCP Gateway (http://mcp-gateway:8080/mcp). Check that mcp-gateway is running (docker compose ps mcp-gateway). If it is, MCP_GATEWAY_TOKEN in .env and the \\\"MCP Gateway Bearer\\\" credential may differ: run docker compose run --rm n8n-import.\", \"Gateway · management\": \"the MCP Gateway (http://mcp-gateway:8080/mcp). Check that mcp-gateway is running (docker compose ps mcp-gateway). If it is, MCP_GATEWAY_TOKEN in .env and the \\\"MCP Gateway Bearer\\\" credential may differ: run docker compose run --rm n8n-import.\"};\nconst MODEL_NODES = [\"Model \\u00b7 Hunter\", \"Model \\u00b7 Analyst\", \"Model \\u00b7 Drafter\"];\nconst READ_ONLY = true;\nconst raw = String(($json.error && ($json.error.message || $json.error)) || $json.message || 'Unknown error');\nconst sub = raw.match(/Error in sub-node (.+)$/);\nconst modelHint = 'The lab model endpoint (lab-chat on LiteLLM, http://litellm:4000/v1) is not reachable. ' +\n  'Start it with docker compose up -d litellm and try again.';\nlet hint;\nif (sub && TOOLS[sub[1]]) {\n  hint = `The tool node \"${sub[1]}\" could not reach ${TOOLS[sub[1]]}`;\n} else if (sub && MODEL_NODES.includes(sub[1])) {\n  hint = 'The \"OpenAI Chat Model\" node could not start. Check that the \"Lab Model (LiteLLM)\" credential exists: ' +\n    'run docker compose run --rm n8n-import.';\n} else if (sub) {\n  hint = `The node \"${sub[1]}\" failed. Open the execution in the Executions tab for details.`;\n} else if (/connection error|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|getaddrinfo|fetch failed|socket hang up|timed? ?out/i.test(raw)) {\n  hint = modelHint;\n} else if (/\\b40[13]\\b|authori[sz]|api key|unauthori[sz]ed|credentials/i.test(raw)) {\n  hint = 'LiteLLM rejected the key in the \"Lab Model (LiteLLM)\" credential. LITELLM_MASTER_KEY in .env is the ' +\n    'source of truth: run docker compose run --rm n8n-import to sync the credential.';\n} else if (/not able to process|failed to process|bad request|bad gateway|service unavailable|gateway timed out|too many requests|model|deployment|provider|\\b429\\b|rate limit|quota|\\b5\\d\\d\\b/i.test(raw)) {\n  hint = 'LiteLLM could not serve the lab-chat model. Check that a model provider key is set in .env and look at ' +\n    'docker compose logs litellm.';\n} else {\n  hint = 'Open the execution in the Executions tab for the full error.';\n}\nconst safe = READ_ONLY ? ' This agent only reads, so nothing was changed.' : '';\nreturn { json: { output: `I could not complete this request.${safe}\\n\\nReason: ${raw}\\n\\n${hint}` } };\n"
+      },
+      "id": "cd8bd5d6-60c4-5f0d-ab04-7979e67e1643",
+      "name": "Friendly error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        220
+      ]
     }
   ],
   "connections": {
-    "When chat message received": {
-      "main": [
-        [
-          {
-            "node": "Normalize input",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Normalize input": {
-      "main": [
-        [
-          {
-            "node": "1 · Log Hunter",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Model · Hunter": {
       "ai_languageModel": [
         [
@@ -396,24 +383,6 @@
           {
             "node": "1 · Log Hunter",
             "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "1 · Log Hunter": {
-      "main": [
-        [
-          {
-            "node": "2 · Reputation Analyst",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Friendly error",
-            "type": "main",
             "index": 0
           }
         ]
@@ -441,24 +410,6 @@
         ]
       ]
     },
-    "2 · Reputation Analyst": {
-      "main": [
-        [
-          {
-            "node": "3 · Policy Drafter",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Friendly error",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Model · Drafter": {
       "ai_languageModel": [
         [
@@ -481,6 +432,64 @@
         ]
       ]
     },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Normalize input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize input": {
+      "main": [
+        [
+          {
+            "node": "1 · Log Hunter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1 · Log Hunter": {
+      "main": [
+        [
+          {
+            "node": "2 · Reputation Analyst",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Friendly error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2 · Reputation Analyst": {
+      "main": [
+        [
+          {
+            "node": "3 · Policy Drafter",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Friendly error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "3 · Policy Drafter": {
       "main": [
         [],
@@ -494,9 +503,14 @@
       ]
     }
   },
+  "pinData": {},
   "active": false,
   "settings": {
     "executionOrder": "v1"
+  },
+  "versionId": "ec70cfc3-5250-5b50-8944-cab8f0a2adf5",
+  "meta": {
+    "templateCredsSetupCompleted": true
   },
   "id": "SocResponseChainWf1",
   "tags": []

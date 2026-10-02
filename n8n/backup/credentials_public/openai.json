@@ -2,7 +2,7 @@
   "createdAt": "2025-10-31T03:58:30.906Z",
   "updatedAt": "2025-10-31T03:58:30.904Z",
   "id": "6oZqD0UJampaYWCy",
-  "name": "OpenAi account",
+  "name": "Lab Model (LiteLLM)",
   "data": {
     "apiKey": "__LITELLM_MASTER_KEY__",
     "url": "http://litellm:4000/v1"

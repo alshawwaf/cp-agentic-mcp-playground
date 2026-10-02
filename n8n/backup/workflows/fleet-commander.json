@@ -1,57 +1,64 @@
 {
-  "name": "CP Fleet Commander — Estate Agent",
+  "name": "Fleet Commander Estate Agent",
   "nodes": [
     {
       "parameters": {
-        "content": "## 🎖️ Check Point Fleet Commander\n**One chat. Your whole Check Point estate.** Ask anything — management, Gaia, gateway CLI, threat prevention & emulation, reputation, HTTPS inspection, logs, cpinfo, docs — this agent routes to the right MCP tool through the Docker MCP Gateway.",
-        "width": 1420,
-        "height": 120,
-        "color": 5
+        "content": "## Check Point Fleet Commander\n**One chat for your whole Check Point estate.** Management, logs, Threat Prevention, HTTPS Inspection, Policy Insights, Gaia, gateway diagnostics, CPInfo, Threat Emulation, reputation, and documentation, through one MCP gateway.",
+        "width": 1400,
+        "height": 150,
+        "color": 6
       },
+      "id": "d22eea71-bc48-5134-808e-bd7cd114e4c4",
+      "name": "Banner",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
         -140,
-        -300
-      ],
-      "id": "d22eea71-bc48-5134-808e-bd7cd114e4c4",
-      "name": "Banner"
+        -260
+      ]
     },
     {
       "parameters": {
-        "content": "### 💬 Try these\n- Which gateways are in my estate and are their policies installed?\n- Any drops from 10.1.1.222 in the last 24h — and what's that IP's reputation?\n- Draft (don't publish) a rule blocking Facebook for the Guest network\n- Summarize the strictest Threat Prevention profile\n\n### ⚙️ How it works\n**One endpoint, every tool.** Calls ride the Docker MCP Gateway (`mcp-gateway:8080/mcp`, Bearer auth) which aggregates the whole Check Point MCP fleet — a curated 113-tool core across every domain (the model API caps tools at 128).\n\n### 🧠 Models\nAzure OpenAI **gpt-5.4** is the wired default; Ollama (local), Gemini 2.5 Pro, GPT-5.1 and Claude Opus 4.8 are one click away.",
-        "width": 460,
-        "height": 640,
+        "content": "### Try these\n- Which gateways are in my estate?\n- Any drops from 10.1.1.222 in the last 24 hours, and what is that IP's reputation?\n- Summarize the strictest Threat Prevention profile\n\n### How it works\n- Chat trigger → Normalize input → AI Agent → answer. If the model or the gateway fails, \"Friendly error\" explains why.\n- One MCP Client Tool calls the lab's MCP Gateway (`http://mcp-gateway:8080/mcp`) and selects a curated core of 117 of its 190 tools. Every server is represented with its init tool and its essential read tools; the model API accepts at most 128 tools per agent.\n- The Guarded agent uses the same core.\n\n### Before you start\nSet MANAGEMENT_HOST and MANAGEMENT_API_KEY (and the other product keys you have) in `.env`.\n\n### Notes\n- Model: **OpenAI Chat Model** with the credential \"Lab Model (LiteLLM)\" calls `lab-chat` on LiteLLM (http://litellm:4000/v1). LiteLLM picks the provider from `.env`; change providers there, not in n8n.\n- Chat: use **Open chat** in the editor. The hosted chat URL and the webhook ask for HTTP Basic auth: the lab admin email and password (credential \"Lab Agents Chat\", filled in by n8n-import).\n- Updates: n8n-import refreshes this workflow on every run unless you changed it in n8n. To keep your own variant, duplicate it first.",
+        "width": 540,
+        "height": 760,
         "color": 7
       },
+      "id": "a29322e7-9d6c-5236-856d-86dd7242f0fc",
+      "name": "Guide",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -660,
-        -300
-      ],
-      "id": "a29322e7-9d6c-5236-856d-86dd7242f0fc",
-      "name": "Guide"
+        -720,
+        60
+      ]
     },
     {
       "parameters": {
         "public": true,
-        "initialMessages": "🎖️ I'm the **Check Point Fleet Commander** — I operate your entire estate through one MCP gateway: management, Gaia, gateway CLI, threat prevention & emulation, reputation, HTTPS inspection, logs, cpinfo and docs.\n\n**Try one of these:**\n- Which gateways are in my estate and are their policies installed?\n- Any drops from 10.1.1.222 in the last 24h — and that IP's reputation?\n- Summarize the strictest Threat Prevention profile",
+        "authentication": "basicAuth",
+        "initialMessages": "I'm the **Check Point Fleet Commander**. I work across your whole estate through one MCP gateway: management, logs, Threat Prevention, HTTPS Inspection, Policy Insights, Gaia, gateway diagnostics, CPInfo, Threat Emulation, reputation, and documentation. My management tools are read-only.\n\n**Try one of these:**\n- Which gateways are in my estate?\n- Any drops from 10.1.1.222 in the last 24 hours, and what is that IP's reputation?\n- Summarize the strictest Threat Prevention profile",
         "options": {
           "responseMode": "lastNode",
-          "title": "🎖️ CP Fleet Commander",
+          "title": "Fleet Commander Estate Agent",
           "subtitle": "One chat for your whole Check Point estate.",
-          "inputPlaceholder": "Ask anything about your Check Point estate…"
+          "inputPlaceholder": "e.g. Which gateways are in my estate?"
         }
       },
+      "id": "3cef2949-36bd-5849-8754-2fc108e12191",
+      "name": "When chat message received",
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.1,
       "position": [
         -140,
-        60
+        80
       ],
-      "id": "3cef2949-36bd-5849-8754-2fc108e12191",
-      "name": "When chat message received",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "LabAgentsChatAuth",
+          "name": "Lab Agents Chat"
+        }
+      },
       "webhookId": "0e5e1455-3148-5047-88ab-d999b6002eb3"
     },
     {
@@ -74,313 +81,222 @@
         },
         "options": {}
       },
+      "id": "99eb34aa-ad84-5a6c-a054-d5aba1c8c484",
+      "name": "Normalize input",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
         140,
-        60
-      ],
-      "id": "99eb34aa-ad84-5a6c-a054-d5aba1c8c484",
-      "name": "Normalize input"
+        80
+      ]
     },
     {
       "parameters": {
         "promptType": "define",
         "text": "={{ $json.chatInput }}",
         "options": {
-          "systemMessage": "You are the **Check Point Fleet Commander** — a single AI agent that operates the entire Check Point estate through one MCP gateway. Every Check Point MCP tool is available to you: management (objects, access rules, NAT, packages), Gaia OS (interfaces, routes, DNS/NTP, BGP), gateway CLI diagnostics (cluster, VPN, acceleration), threat prevention (profiles, IPS), threat emulation (sandbox verdicts), reputation (URL/IP/hash), HTTPS inspection, management & audit logs, cpinfo analysis, and documentation search.\n\n== HOW TO WORK ==\n- Read the request, pick the RIGHT domain and the right tool. Discover with show/list/get before you conclude.\n- Chain across domains when it helps: e.g. a log finding -> a reputation lookup -> a proposed policy change.\n- Use ONLY real MCP tools; never invent tool names/params. If nothing fits, say so.\n- You have conversation memory — use earlier turns for context.\n\n== CHANGE SAFETY ==\n- State exactly what you will change and ask for confirmation before any add/set/delete.\n- NEVER publish or install policy unless the user explicitly says so in this conversation.\n\n== OUTPUT STYLE ==\n- Concise Markdown: short paragraphs, bullets, small tables for object/rule/log lists.\n- Summarize tool results faithfully; never dump raw JSON unless asked.\n- Name the domain/tool you used, and end multi-step work with a one-line summary."
+          "systemMessage": "You are the **Check Point Fleet Commander**, a single AI agent that operates the Check Point estate through one MCP gateway. You have a curated core of 117 of the gateway's 190 tools (the model API accepts at most 128 tools per agent), and every Check Point MCP server is represented: Management (objects, access and NAT rules, gateways, clusters, domains, VPN communities), Management Logs, Threat Prevention (profiles, protections, IPS, indicators, exceptions, CVE coverage), HTTPS Inspection, Policy Insights, Gaia (interfaces, routes, BGP and OSPF, DNS, ARP), Gateway CLI diagnostics (cluster state, acceleration, licenses, hardware, disk), CPInfo Analysis, Threat Emulation (sandbox verdicts), Reputation Service (URL, IP, file), and Documentation search. Management-backed servers need their init tool once per conversation before other calls: management__init, management-logs__init, threat-prevention__init, https-inspection__init, and policy-insights__init; CPInfo Analysis starts with check_initialization_status. Detail tools that are not in the core (for example single-object lookups, LSM devices, and low-level fw ctl counters) are on the per-product agents; say so when a request needs them.\n\n== HOW TO WORK ==\n- Read the request, pick the RIGHT domain and the right tool. Discover with show/list/get before you conclude.\n- Chain across domains when it helps: e.g. a log finding -> a reputation lookup -> a proposed policy change.\n- Use ONLY real MCP tools; never invent tool names/params. If nothing fits, say so.\n- You have conversation memory — use earlier turns for context.\n\n== READ-FIRST SAFETY ==\n- The management-side tools are read-only. Never claim that you created, changed, published, or installed anything; draft changes for an administrator to apply in SmartConsole instead.\n- Ask before you submit a file to the Threat Emulation sandbox (upload_file, scan_file).\n\n== OUTPUT STYLE ==\n- Concise Markdown: short paragraphs, bullets, small tables for object/rule/log lists.\n- Summarize tool results faithfully; never dump raw JSON unless asked.\n- Name the domain/tool you used, and end multi-step work with a one-line summary."
         }
       },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1.6,
-      "position": [
-        420,
-        40
-      ],
       "id": "9b799904-1120-5fe5-8e05-52a1ba258e79",
       "name": "Fleet Commander",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        460,
+        60
+      ],
       "onError": "continueErrorOutput"
     },
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "e1",
-              "name": "output",
-              "value": "=⚠️ I hit an error and made **no changes**.\n\n```\n{{ ($json.error && $json.error.message) || $json.error || $json.message || 'Unknown error' }}\n```\nPlease retry, or rephrase.",
-              "type": "string"
-            }
-          ]
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "lab-chat"
         },
         "options": {}
       },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "id": "e922df5c-b1a2-59c6-a781-8d417fd117e9",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
       "position": [
-        920,
-        160
+        240,
+        400
       ],
-      "id": "3ec6bedc-9a36-57db-89a7-bba5b83913bd",
-      "name": "Friendly error"
+      "credentials": {
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "Lab Model (LiteLLM)"
+        }
+      }
     },
     {
       "parameters": {},
+      "id": "466f41b7-5cd1-560f-83ca-4cb414ed71b0",
+      "name": "Conversation Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        420,
-        320
-      ],
-      "id": "466f41b7-5cd1-560f-83ca-4cb414ed71b0",
-      "name": "Conversation Memory"
+        460,
+        400
+      ]
     },
     {
       "parameters": {
         "endpointUrl": "http://mcp-gateway:8080/mcp",
         "authentication": "bearerAuth",
-        "options": {},
         "include": "selected",
         "includeTools": [
-          "find_zero_hits_rules",
+          "ask-checkpoint-docs",
           "management__init",
           "management__show_gateways_and_servers",
-          "management__show_object",
           "management__show_objects",
-          "show_access_layer",
-          "show_access_layers",
-          "show_access_point_names",
-          "show_access_rule",
-          "show_access_rulebase",
-          "show_access_section",
-          "show_address_ranges",
-          "show_application_site_categories",
-          "show_application_site_groups",
-          "show_application_sites",
-          "show_cluster_member",
-          "show_cluster_members",
-          "show_domains",
-          "show_dynamic_objects",
-          "show_groups",
+          "management__show_object",
           "show_hosts",
-          "show_lsm_cluster",
-          "show_lsm_clusters",
-          "show_lsm_gateway",
-          "show_lsm_gateways",
-          "show_mdss",
-          "show_multicast_address_ranges",
+          "show_networks",
+          "show_groups",
+          "show_address_ranges",
+          "show_services_tcp",
+          "show_services_udp",
+          "show_service_groups",
+          "show_application_sites",
+          "show_application_site_categories",
+          "show_dynamic_objects",
+          "show_security_zones",
+          "show_time_groups",
+          "show_tags",
+          "show_access_layers",
+          "show_access_layer",
+          "show_access_rulebase",
+          "show_access_rule",
+          "show_access_section",
           "show_nat_rulebase",
           "show_nat_section",
-          "show_networks",
-          "show_security_zones",
-          "show_service_groups",
-          "manage_gaia_credentials",
-          "show_arp",
-          "show_bgp_groups",
-          "show_bgp_paths",
-          "show_bgp_peers",
-          "show_bgp_routemaps",
-          "show_bgp_routes_in",
-          "show_bgp_routes_out",
-          "show_bgp_summary",
-          "show_bootp_interfaces",
-          "show_configuration_bgp",
-          "show_date_time",
-          "show_dhcp",
-          "show_dhcp6",
-          "cphaprob_if",
-          "cphaprob_stat",
-          "cphaprob_syncstat",
-          "cpinfo_all",
-          "cplic_print",
-          "disk_usage",
-          "dmidecode",
-          "dynamic_balancing",
-          "fw_accel_conns",
-          "fw_accel_stat",
-          "fw_accel_stats",
-          "fw_ctl_arp",
-          "fw_ctl_chain",
-          "fw_ctl_conn",
-          "check_cve_protection",
-          "show_exception_group",
+          "find_zero_hits_rules",
+          "show_simple_gateways",
+          "show_simple_gateway",
+          "show_simple_clusters",
+          "show_simple_cluster",
+          "show_cluster_members",
+          "show_domains",
+          "show_mdss",
+          "show_vpn_communities_star",
+          "show_vpn_communities_meshed",
+          "show_vpn_communities_remote_access",
+          "management-logs__init",
+          "build_logs_query_filter",
+          "run_logs_query",
+          "get_next_query_page",
+          "threat-prevention__init",
+          "show_threat_profiles",
+          "show_threat_profile",
+          "show_threat_protections",
+          "show_threat_protection",
+          "show_threat_layers",
+          "show_threat_layer",
+          "show_threat_rulebase",
+          "show_threat_rule",
+          "show_threat_rule_exception_rulebase",
           "show_exception_groups",
-          "show_ips_protection_extended_attribute",
-          "show_ips_protection_extended_attributes",
+          "show_threat_indicators",
+          "show_threat_ioc_feeds",
           "show_ips_status",
           "show_ips_update_schedule",
           "show_threat_advanced_settings",
-          "show_threat_indicator",
-          "show_threat_indicators",
-          "show_threat_layer",
-          "show_threat_layers",
-          "show_threat_profile",
-          "show_threat_profiles",
-          "show_threat_protection",
-          "show_threat_protections",
-          "show_threat_rule",
-          "show_threat_rule_exception_rulebase",
-          "download_report",
-          "get_quota",
-          "query_file",
-          "scan_file",
-          "upload_file",
-          "reputation_file",
-          "reputation_ip",
-          "reputation_url",
-          "analyze_cpinfo_overview",
-          "analyze_performance_metrics",
-          "audit_security_settings",
-          "browse_sections_by_category",
-          "check_initialization_status",
-          "comprehensive_health_analysis",
-          "detect_system_crashes",
-          "extract_license_information",
-          "extract_network_config",
-          "extract_system_details",
+          "check_cve_protection",
           "https-inspection__init",
-          "https-inspection__show_gateways_and_servers",
-          "https-inspection__show_object",
-          "https-inspection__show_objects",
-          "show_https_layer",
           "show_https_layers",
-          "show_https_rule",
+          "show_https_layer",
           "show_https_rulebase",
+          "show_https_rule",
           "show_https_section",
-          "build_logs_query_filter",
-          "get_next_query_page",
-          "management-logs__init",
-          "management-logs__show_gateways_and_servers",
-          "management-logs__show_object",
-          "management-logs__show_objects",
-          "run_logs_query",
-          "ask-checkpoint-docs"
-        ]
+          "policy-insights__init",
+          "ShowPolicyInsightsStatus",
+          "ShowState",
+          "ShowSuggestionsSummary",
+          "ShowRulesUidsWithSuggestions",
+          "ShowSuggestions",
+          "manage_gaia_credentials",
+          "show_interfaces_by_type",
+          "show_routes",
+          "show_static_routes",
+          "show_routes_bgp",
+          "show_routes_ospf",
+          "show_router_id",
+          "show_dns",
+          "show_proxy",
+          "show_arp",
+          "show_date_time",
+          "show_dhcp",
+          "show_bgp_summary",
+          "show_bgp_peers",
+          "show_ospf_summary",
+          "show_ipv6",
+          "cphaprob_stat",
+          "cphaprob_if",
+          "cphaprob_syncstat",
+          "cplic_print",
+          "show_interfaces",
+          "show_route",
+          "fw_accel_stats",
+          "fw_accel_stat",
+          "fw_ctl_pstat",
+          "fw_ctl_iflist",
+          "disk_usage",
+          "show_asset_all",
+          "hcp_protect_info",
+          "cpinfo_all",
+          "check_initialization_status",
+          "analyze_cpinfo_overview",
+          "comprehensive_health_analysis",
+          "extract_system_details",
+          "extract_license_information",
+          "detect_system_crashes",
+          "extract_network_config",
+          "smart_content_search",
+          "audit_security_settings",
+          "analyze_performance_metrics",
+          "reputation_url",
+          "reputation_ip",
+          "reputation_file",
+          "query_file",
+          "upload_file",
+          "scan_file",
+          "download_report",
+          "get_quota"
+        ],
+        "options": {}
       },
+      "id": "1acdc5e2-6e6b-5c39-9b6a-f121aa86d35b",
+      "name": "MCP Gateway (core toolset)",
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        640,
-        320
+        680,
+        400
       ],
-      "id": "1acdc5e2-6e6b-5c39-9b6a-f121aa86d35b",
-      "name": "CP MCP Gateway (core toolset)",
       "credentials": {
         "httpBearerAuth": {
           "id": "McpGatewayBearer",
-          "name": "CP MCP Gateway Bearer"
+          "name": "MCP Gateway Bearer"
         }
       }
     },
     {
       "parameters": {
-        "model": "gpt-5.4-2026-03-05",
-        "options": {}
+        "mode": "runOnceForEachItem",
+        "jsCode": "// The agent's error output carries only a short message. Explain the likely cause in plain words.\nconst TOOLS = {\"MCP Gateway (core toolset)\": \"the MCP Gateway (http://mcp-gateway:8080/mcp). Check that mcp-gateway is running (docker compose ps mcp-gateway). If it is, MCP_GATEWAY_TOKEN in .env and the \\\"MCP Gateway Bearer\\\" credential may differ: run docker compose run --rm n8n-import.\"};\nconst MODEL_NODES = [\"OpenAI Chat Model\"];\nconst READ_ONLY = false;\nconst raw = String(($json.error && ($json.error.message || $json.error)) || $json.message || 'Unknown error');\nconst sub = raw.match(/Error in sub-node (.+)$/);\nconst modelHint = 'The lab model endpoint (lab-chat on LiteLLM, http://litellm:4000/v1) is not reachable. ' +\n  'Start it with docker compose up -d litellm and try again.';\nlet hint;\nif (sub && TOOLS[sub[1]]) {\n  hint = `The tool node \"${sub[1]}\" could not reach ${TOOLS[sub[1]]}`;\n} else if (sub && MODEL_NODES.includes(sub[1])) {\n  hint = 'The \"OpenAI Chat Model\" node could not start. Check that the \"Lab Model (LiteLLM)\" credential exists: ' +\n    'run docker compose run --rm n8n-import.';\n} else if (sub) {\n  hint = `The node \"${sub[1]}\" failed. Open the execution in the Executions tab for details.`;\n} else if (/connection error|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|getaddrinfo|fetch failed|socket hang up|timed? ?out/i.test(raw)) {\n  hint = modelHint;\n} else if (/\\b40[13]\\b|authori[sz]|api key|unauthori[sz]ed|credentials/i.test(raw)) {\n  hint = 'LiteLLM rejected the key in the \"Lab Model (LiteLLM)\" credential. LITELLM_MASTER_KEY in .env is the ' +\n    'source of truth: run docker compose run --rm n8n-import to sync the credential.';\n} else if (/not able to process|failed to process|bad request|bad gateway|service unavailable|gateway timed out|too many requests|model|deployment|provider|\\b429\\b|rate limit|quota|\\b5\\d\\d\\b/i.test(raw)) {\n  hint = 'LiteLLM could not serve the lab-chat model. Check that a model provider key is set in .env and look at ' +\n    'docker compose logs litellm.';\n} else {\n  hint = 'Open the execution in the Executions tab for the full error.';\n}\nconst safe = READ_ONLY ? ' This agent only reads, so nothing was changed.' : '';\nreturn { json: { output: `I could not complete this request.${safe}\\n\\nReason: ${raw}\\n\\n${hint}` } };\n"
       },
-      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
-      "typeVersion": 1,
+      "id": "3ec6bedc-9a36-57db-89a7-bba5b83913bd",
+      "name": "Friendly error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
-        -140,
-        480
-      ],
-      "id": "e922df5c-b1a2-59c6-a781-8d417fd117e9",
-      "name": "Azure OpenAI (default)",
-      "credentials": {
-        "azureOpenAiApi": {
-          "id": "nmUI0INbLO2IrroY",
-          "name": "Azure Open AI account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "model": "qwen3.5:4b",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
-      "typeVersion": 1,
-      "position": [
-        60,
-        480
-      ],
-      "id": "063136b5-930b-5a0a-9c9d-06b8cdb1b300",
-      "name": "Ollama — local qwen3.5",
-      "credentials": {
-        "ollamaApi": {
-          "id": "i8fXatxwj12xOABO",
-          "name": "Ollama account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "modelName": "models/gemini-2.5-pro",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        260,
-        480
-      ],
-      "id": "57f71b83-a396-575c-98b0-71fda270d3d1",
-      "name": "Gemini 2.5 Pro",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "jQWvIJNDs6CeSDiN",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "mode": "list",
-          "value": "gpt-5.1",
-          "cachedResultName": "gpt-5.1"
-        },
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        460,
-        480
-      ],
-      "id": "77971c50-8e2a-544c-a432-f4b815c335b0",
-      "name": "OpenAI gpt-5.1",
-      "credentials": {
-        "openAiApi": {
-          "id": "6oZqD0UJampaYWCy",
-          "name": "OpenAi account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "mode": "list",
-          "value": "claude-opus-4-8",
-          "cachedResultName": "Claude Opus 4.8"
-        },
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
-      "typeVersion": 1.3,
-      "position": [
-        660,
-        480
-      ],
-      "id": "2e2d21b8-ee97-5603-bc04-b3edda7d9459",
-      "name": "Claude Opus 4.8",
-      "credentials": {
-        "anthropicApi": {
-          "id": "AnthropicCred001",
-          "name": "Anthropic account"
-        }
-      }
+        900,
+        200
+      ]
     }
   ],
   "connections": {
@@ -406,7 +322,19 @@
         ]
       ]
     },
-    "Azure OpenAI (default)": {
+    "Fleet Commander": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Friendly error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
       "ai_languageModel": [
         [
           {
@@ -428,19 +356,7 @@
         ]
       ]
     },
-    "Fleet Commander": {
-      "main": [
-        [],
-        [
-          {
-            "node": "Friendly error",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "CP MCP Gateway (core toolset)": {
+    "MCP Gateway (core toolset)": {
       "ai_tool": [
         [
           {
@@ -452,9 +368,14 @@
       ]
     }
   },
+  "pinData": {},
   "active": false,
   "settings": {
     "executionOrder": "v1"
+  },
+  "versionId": "2cf811bf-a67a-5482-9798-dab069ce55f3",
+  "meta": {
+    "templateCredsSetupCompleted": true
   },
   "id": "FleetCommanderWf01",
   "tags": []

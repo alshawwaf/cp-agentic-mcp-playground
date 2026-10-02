@@ -1,14 +1,47 @@
 {
-  "name": "CP Gaia OS — AI Agent (Gateway)",
+  "name": "Gaia Agent (MCP Gateway)",
   "nodes": [
     {
       "parameters": {
+        "content": "## Check Point Gaia agent · MCP Gateway path\n**Reads the Gaia configuration of the gateway: interfaces, routes, BGP and OSPF, DNS, ARP, and more.** Same tools as the direct agent; the calls go through the MCP Gateway.",
+        "width": 1400,
+        "height": 150,
+        "color": 6
+      },
+      "id": "652071f0-229a-50e6-ac8a-8efe46efd16c",
+      "name": "Banner",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -140,
+        -260
+      ]
+    },
+    {
+      "parameters": {
+        "content": "### Try these\n- Show the interfaces and their IPs\n- What are the static routes?\n- Show the DNS and proxy settings\n\n### How it works\n- Chat trigger → Normalize input → AI Agent → answer. If the model or the tool server fails, \"Friendly error\" explains why.\n- Calls ride the lab's MCP Gateway (`http://mcp-gateway:8080/mcp`, Bearer token from the \"MCP Gateway Bearer\" credential). The gateway fronts every Check Point MCP server; this agent selects the Gaia MCP server's 42 tools, the same set as its direct twin.\n- Tool names reach the model with the node name as a prefix (for example `MCP_Gateway_show_dns`).\n\n### Before you start\nSet GAIA_GATEWAY_IP, GAIA_USERNAME, and GAIA_PASSWORD (optional: GAIA_ALLOWED_GATEWAYS for more gateways) in `.env`, then run `docker compose up -d quantum-gaia-mcp`.\n\n### Notes\n- Model: **OpenAI Chat Model** with the credential \"Lab Model (LiteLLM)\" calls `lab-chat` on LiteLLM (http://litellm:4000/v1). LiteLLM picks the provider from `.env`; change providers there, not in n8n.\n- Chat: use **Open chat** in the editor. The hosted chat URL and the webhook ask for HTTP Basic auth: the lab admin email and password (credential \"Lab Agents Chat\", filled in by n8n-import).\n- Updates: n8n-import refreshes this workflow on every run unless you changed it in n8n. To keep your own variant, duplicate it first.",
+        "width": 540,
+        "height": 760,
+        "color": 7
+      },
+      "id": "716df4c2-9c60-5c5b-b5f2-6f9c76ec40ae",
+      "name": "Guide",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        60
+      ]
+    },
+    {
+      "parameters": {
         "public": true,
-        "initialMessages": "👋 I'm the **Check Point Gaia OS** AI agent — I inspect and configure the Gaia OS of your gateways and management servers over the Gaia REST API.\n\n⚡ Every call rides through the **Docker MCP Gateway** — one endpoint, Bearer auth, the whole Check Point MCP fleet.\n\n**Try one of these:**\n• Show the interfaces and their IPs\n• What are the static routes?\n• Check the DNS and NTP configuration",
+        "authentication": "basicAuth",
+        "initialMessages": "I'm the **Check Point Gaia** agent on the MCP Gateway path. I read the Gaia configuration of the gateway: interfaces, routes, BGP and OSPF, DNS, ARP, and more. My tools only read, so I never change your environment.\n\n**Try one of these:**\n- Show the interfaces and their IPs\n- What are the static routes?\n- Show the DNS and proxy settings",
         "options": {
           "responseMode": "lastNode",
-          "title": "CP Gaia OS — AI Agent (Gateway)",
-          "subtitle": "Gateway OS configuration — interfaces, routes, DNS, NTP.",
+          "title": "Gaia Agent (MCP Gateway)",
+          "subtitle": "Gaia interfaces, routes, and services, read-only.",
           "inputPlaceholder": "e.g. Show the interfaces and their IPs"
         }
       },
@@ -20,36 +53,13 @@
         -140,
         80
       ],
-      "webhookId": "b65c5069-69c6-56c8-83c3-7ba83219a3bd"
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "={{ $json.chatInput }}",
-        "options": {
-          "systemMessage": "You are the **Check Point Gaia OS** assistant. You work over MCP against the Gaia REST API of gateways / management servers: read and, when authorized, change OS-level configuration. All calls go through the Docker MCP Gateway.\n\n== WHAT YOU CAN DO ==\n- Read interfaces, routes, DNS, NTP, hostname, time zone, and general system info.\n- Diagnose connectivity/OS issues from the Gaia view (interface state, routing table).\n- Apply OS configuration changes (interfaces, static routes, DNS/NTP) when asked.\n\n== HOW TO WORK ==\n- Use ONLY the MCP tools exposed to you. Never invent tool names or parameters; if no tool fits, say so.\n- Start with read-only tools (show/list/get) to gather facts before answering.\n- If a tool call fails, show the error in one short line and suggest the next step.\n- You have conversation memory: use prior turns for context instead of re-asking.\n\n== CHANGE SAFETY ==\n- Before ANY change (add/set/delete), state exactly what you are about to change and ask the user to confirm.\n- NEVER publish or install policy unless the user explicitly asks for it in this conversation.\n- After a change, report precisely what was modified (object names, rule numbers, UIDs).\n\n== GATEWAY ==\nYour tools arrive through the Check Point Docker MCP Gateway: ONE endpoint with Bearer auth that aggregates EVERY CP MCP server. You will therefore see tools from other Check Point domains too (management, Gaia, logs, threat prevention, reputation, ...). Prefer the tools relevant to this agent's domain; use the others only when the user's request clearly needs them.\n\n== OUTPUT STYLE ==\n- Answer in concise Markdown: short paragraphs, bullets, and small tables for object/rule lists.\n- Summarize tool results faithfully. Do NOT paste raw JSON unless the user explicitly asks for raw output; \"verbatim\" means faithful to the data, not raw JSON.\n- For long lists show the 15 most relevant items and say how many more exist.\n- End multi-step work with a one-line summary of what was done."
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "LabAgentsChatAuth",
+          "name": "Lab Agents Chat"
         }
       },
-      "id": "e59d38fb-2b32-4d6c-834f-3065a2eaaf34",
-      "name": "CP Gaia AI Agent",
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1.6,
-      "position": [
-        480,
-        60
-      ],
-      "onError": "continueErrorOutput"
-    },
-    {
-      "parameters": {},
-      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
-      "typeVersion": 1.3,
-      "position": [
-        420,
-        380
-      ],
-      "id": "c956e47f-0004-4e28-a4ba-cbcb9a7ce709",
-      "name": "Conversation Memory"
+      "webhookId": "b65c5069-69c6-56c8-83c3-7ba83219a3bd"
     },
     {
       "parameters": {
@@ -71,236 +81,149 @@
         },
         "options": {}
       },
+      "id": "62f60a38-0518-5800-bf50-93efb750ffaf",
+      "name": "Normalize input",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        160,
+        140,
         80
-      ],
-      "name": "Normalize input",
-      "id": "62f60a38-0518-5800-bf50-93efb750ffaf"
+      ]
     },
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "e1",
-              "name": "output",
-              "value": "=⚠️ I hit an error and made **no changes**.\n\n```\n{{ ($json.error && $json.error.message) || $json.error || $json.message || 'Unknown error' }}\n```\nPlease retry, or rephrase the request.",
-              "type": "string"
-            }
-          ]
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are the **Check Point Gaia** assistant. You work over MCP against the Gaia REST API of gateways and management servers and read their OS-level configuration. All calls go through the lab's MCP Gateway.\n\n== WHAT YOU CAN DO ==\n- Read routing: the routing table, static, BGP, OSPF, RIP, kernel and direct routes, route maps, route filters, and policy-based routing.\n- Read interfaces by type, ARP, DNS, proxy, DHCP, date and time, router ID, NAT pools, and multicast (PIM, IGMP).\n- Diagnose connectivity and OS issues from the Gaia view.\n- manage_gaia_credentials only clears cached gateway logins; it does not change the gateway.\n\n== HOW TO WORK ==\n- Use ONLY the MCP tools exposed to you. Never invent tool names or parameters; if no tool fits, say so.\n- Start with read-only tools (show/list/get) to gather facts before answering.\n- If a tool call fails, show the error in one short line and suggest the next step.\n- You have conversation memory: use prior turns for context instead of re-asking.\n\n== READ-ONLY ==\n- No tool here changes interfaces, routes, DNS, or NTP. Never claim that you changed the gateway.\n- When the user asks for an OS change, give the exact Gaia clish commands an administrator would run, and say that you did not apply them.\n\n== GATEWAY ==\nYour tools arrive through the lab's MCP Gateway (Docker MCP Gateway): one Bearer-authenticated endpoint in front of every Check Point MCP server. This agent is scoped to the Gaia MCP server's 42 tools, the same set its direct twin uses, so the only difference between the two agents is the path the calls take. If a request needs another Check Point product's tools, say which agent to use instead.\n\n== OUTPUT STYLE ==\n- Answer in concise Markdown: short paragraphs, bullets, and small tables for object/rule lists.\n- Summarize tool results faithfully. Do NOT paste raw JSON unless the user explicitly asks for raw output; \"verbatim\" means faithful to the data, not raw JSON.\n- For long lists show the 15 most relevant items and say how many more exist.\n- End multi-step work with a one-line summary of what was done."
+        }
+      },
+      "id": "e59d38fb-2b32-4d6c-834f-3065a2eaaf34",
+      "name": "Gaia Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        460,
+        60
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "lab-chat"
         },
         "options": {}
       },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
+      "id": "979d0fce-8c56-5389-ac5d-43d6b697290a",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
       "position": [
-        940,
-        180
+        240,
+        400
       ],
-      "name": "Friendly error",
-      "id": "07f68512-8e0f-5a2e-8f54-d9476b0e67b0"
+      "credentials": {
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "Lab Model (LiteLLM)"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "c956e47f-0004-4e28-a4ba-cbcb9a7ce709",
+      "name": "Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        460,
+        400
+      ]
     },
     {
       "parameters": {
         "endpointUrl": "http://mcp-gateway:8080/mcp",
-        "options": {},
         "authentication": "bearerAuth",
         "include": "selected",
         "includeTools": [
-          "manage_gaia_credentials",
+          "show_dns",
+          "show_proxy",
+          "show_dhcp",
+          "show_dhcp6",
           "show_arp",
+          "show_date_time",
+          "show_static_mroutes",
+          "show_pim_summary",
+          "show_ipv6_pim_summary",
+          "show_igmp_interfaces",
+          "show_igmp_groups",
+          "show_static_routes",
+          "show_routes",
+          "show_routes_aggregate",
+          "show_routes_bgp",
+          "show_routes_ospf",
+          "show_routes_static",
+          "show_routes_rip",
+          "show_routes_kernel",
+          "show_routes_direct",
           "show_bgp_groups",
           "show_bgp_paths",
           "show_bgp_peers",
-          "show_bgp_routemaps",
           "show_bgp_routes_in",
           "show_bgp_routes_out",
+          "show_bgp_routemaps",
           "show_bgp_summary",
-          "show_bootp_interfaces",
           "show_configuration_bgp",
-          "show_date_time",
-          "show_dhcp",
-          "show_dhcp6",
-          "show_dns",
-          "show_dns_domains",
-          "show_igmp_groups",
-          "show_igmp_interfaces",
-          "show_inbound_route_filter_bgp_policy",
-          "show_inbound_route_filter_ospf",
-          "show_inbound_route_filter_rip",
-          "show_ipv6",
-          "show_ipv6_pim_summary",
-          "show_isis_info",
-          "show_nat_pools",
           "show_ospf_summary",
           "show_pbr_rules",
           "show_pbr_tables",
-          "show_pim_summary",
-          "show_proxy"
-        ]
+          "show_isis_info",
+          "show_inbound_route_filter_bgp_policy",
+          "show_inbound_route_filter_rip",
+          "show_inbound_route_filter_ospf",
+          "show_ipv6",
+          "show_router_id",
+          "show_bootp_interfaces",
+          "show_routemaps",
+          "show_nat_pools",
+          "show_interfaces_by_type",
+          "manage_gaia_credentials"
+        ],
+        "options": {}
       },
+      "id": "7f416562-4695-54bb-a277-cb0d372444d6",
+      "name": "MCP Gateway",
       "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
       "typeVersion": 1.2,
       "position": [
-        700,
-        380
+        680,
+        400
       ],
-      "name": "CP MCP Gateway",
       "credentials": {
         "httpBearerAuth": {
           "id": "McpGatewayBearer",
-          "name": "CP MCP Gateway Bearer"
+          "name": "MCP Gateway Bearer"
         }
-      },
-      "id": "7f416562-4695-54bb-a277-cb0d372444d6"
+      }
     },
     {
       "parameters": {
-        "model": "gpt-5.4-2026-03-05",
-        "options": {}
+        "mode": "runOnceForEachItem",
+        "jsCode": "// The agent's error output carries only a short message. Explain the likely cause in plain words.\nconst TOOLS = {\"MCP Gateway\": \"the MCP Gateway (http://mcp-gateway:8080/mcp). Check that mcp-gateway is running (docker compose ps mcp-gateway). If it is, MCP_GATEWAY_TOKEN in .env and the \\\"MCP Gateway Bearer\\\" credential may differ: run docker compose run --rm n8n-import.\"};\nconst MODEL_NODES = [\"OpenAI Chat Model\"];\nconst READ_ONLY = true;\nconst raw = String(($json.error && ($json.error.message || $json.error)) || $json.message || 'Unknown error');\nconst sub = raw.match(/Error in sub-node (.+)$/);\nconst modelHint = 'The lab model endpoint (lab-chat on LiteLLM, http://litellm:4000/v1) is not reachable. ' +\n  'Start it with docker compose up -d litellm and try again.';\nlet hint;\nif (sub && TOOLS[sub[1]]) {\n  hint = `The tool node \"${sub[1]}\" could not reach ${TOOLS[sub[1]]}`;\n} else if (sub && MODEL_NODES.includes(sub[1])) {\n  hint = 'The \"OpenAI Chat Model\" node could not start. Check that the \"Lab Model (LiteLLM)\" credential exists: ' +\n    'run docker compose run --rm n8n-import.';\n} else if (sub) {\n  hint = `The node \"${sub[1]}\" failed. Open the execution in the Executions tab for details.`;\n} else if (/connection error|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|getaddrinfo|fetch failed|socket hang up|timed? ?out/i.test(raw)) {\n  hint = modelHint;\n} else if (/\\b40[13]\\b|authori[sz]|api key|unauthori[sz]ed|credentials/i.test(raw)) {\n  hint = 'LiteLLM rejected the key in the \"Lab Model (LiteLLM)\" credential. LITELLM_MASTER_KEY in .env is the ' +\n    'source of truth: run docker compose run --rm n8n-import to sync the credential.';\n} else if (/not able to process|failed to process|bad request|bad gateway|service unavailable|gateway timed out|too many requests|model|deployment|provider|\\b429\\b|rate limit|quota|\\b5\\d\\d\\b/i.test(raw)) {\n  hint = 'LiteLLM could not serve the lab-chat model. Check that a model provider key is set in .env and look at ' +\n    'docker compose logs litellm.';\n} else {\n  hint = 'Open the execution in the Executions tab for the full error.';\n}\nconst safe = READ_ONLY ? ' This agent only reads, so nothing was changed.' : '';\nreturn { json: { output: `I could not complete this request.${safe}\\n\\nReason: ${raw}\\n\\n${hint}` } };\n"
       },
-      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
-      "typeVersion": 1,
-      "position": [
-        240,
-        600
-      ],
-      "name": "Azure OpenAI (default)",
-      "credentials": {
-        "azureOpenAiApi": {
-          "id": "nmUI0INbLO2IrroY",
-          "name": "Azure Open AI account"
-        }
-      },
-      "id": "979d0fce-8c56-5389-ac5d-43d6b697290a"
-    },
-    {
-      "parameters": {
-        "model": "qwen3.5:4b",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
-      "typeVersion": 1,
-      "position": [
-        460,
-        600
-      ],
-      "name": "Ollama — local qwen3.5",
-      "credentials": {
-        "ollamaApi": {
-          "id": "i8fXatxwj12xOABO",
-          "name": "Ollama account"
-        }
-      },
-      "id": "5a531cc6-a810-51a3-824d-4295ea089244"
-    },
-    {
-      "parameters": {
-        "modelName": "models/gemini-2.5-pro",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        680,
-        600
-      ],
-      "name": "Gemini 2.5 Pro",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "jQWvIJNDs6CeSDiN",
-          "name": "Google Gemini(PaLM) Api account"
-        }
-      },
-      "id": "60f763df-48c7-5b50-ace7-c411533567b1"
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "mode": "list",
-          "value": "gpt-5.1",
-          "cachedResultName": "gpt-5.1"
-        },
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
+      "id": "07f68512-8e0f-5a2e-8f54-d9476b0e67b0",
+      "name": "Friendly error",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         900,
-        600
-      ],
-      "name": "OpenAI gpt-5.1",
-      "credentials": {
-        "openAiApi": {
-          "id": "6oZqD0UJampaYWCy",
-          "name": "OpenAi account"
-        }
-      },
-      "id": "d6f359b4-df65-5b1d-8627-d2d83ba49aa4"
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "mode": "list",
-          "value": "claude-opus-4-8",
-          "cachedResultName": "Claude Opus 4.8"
-        },
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
-      "typeVersion": 1.3,
-      "position": [
-        1120,
-        600
-      ],
-      "name": "Claude Opus 4.8",
-      "credentials": {
-        "anthropicApi": {
-          "id": "AnthropicCred001",
-          "name": "Anthropic account"
-        }
-      },
-      "id": "48a217ca-0226-50ce-a930-af3119dc83b6"
-    },
-    {
-      "parameters": {
-        "content": "## 🛡️ Check Point Gaia OS — AI Agent · via MCP Gateway\n**Inspects and configures the Gaia OS of your gateways — interfaces, routes, DNS, NTP.**",
-        "width": 1320,
-        "height": 120,
-        "color": 6
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -140,
-        -240
-      ],
-      "name": "Banner",
-      "id": "652071f0-229a-50e6-ac8a-8efe46efd16c"
-    },
-    {
-      "parameters": {
-        "content": "### 💬 Try these\n- Show the interfaces and their IPs\n- What are the static routes?\n- Check the DNS and NTP configuration\n\n### ⚙️ How it works\n**One endpoint. Every CP tool.** Calls ride the Docker MCP Gateway (`mcp-gateway:8080/mcp`, Bearer auth) which aggregates the entire Check Point MCP fleet.\n\n### 🧠 Models\nAzure OpenAI **gpt-5.4** wired as default — Ollama (local, no key), Gemini 2.5 Pro, GPT-5.1 and Claude Opus 4.8 are one click away.",
-        "width": 520,
-        "height": 620,
-        "color": 7
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        -720,
-        60
-      ],
-      "name": "Guide",
-      "id": "716df4c2-9c60-5c5b-b5f2-6f9c76ec40ae"
+        200
+      ]
     }
   ],
-  "pinData": {},
   "connections": {
     "When chat message received": {
       "main": [
@@ -313,51 +236,18 @@
         ]
       ]
     },
-    "Conversation Memory": {
-      "ai_memory": [
-        [
-          {
-            "node": "CP Gaia AI Agent",
-            "type": "ai_memory",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Normalize input": {
       "main": [
         [
           {
-            "node": "CP Gaia AI Agent",
+            "node": "Gaia Agent",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Azure OpenAI (default)": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "CP Gaia AI Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "CP MCP Gateway": {
-      "ai_tool": [
-        [
-          {
-            "node": "CP Gaia AI Agent",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "CP Gaia AI Agent": {
+    "Gaia Agent": {
       "main": [
         [],
         [
@@ -368,16 +258,49 @@
           }
         ]
       ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Gaia Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Gaia Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP Gateway": {
+      "ai_tool": [
+        [
+          {
+            "node": "Gaia Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": true,
+  "pinData": {},
+  "active": false,
   "settings": {
     "executionOrder": "v1"
   },
   "versionId": "3bc9d96e-5796-4ea8-8afb-8ea813d04c16",
   "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec"
+    "templateCredsSetupCompleted": true
   },
   "id": "GwQuantumGaiaWf1",
   "tags": []

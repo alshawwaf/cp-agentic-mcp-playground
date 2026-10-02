@@ -11,12 +11,13 @@
       "type": "customNode",
       "data": {
         "id": "chatOpenAI_0",
-        "label": "ChatOpenAI",
-        "version": 8.2,
+        "label": "OpenAI",
+        "version": 8.3,
         "name": "chatOpenAI",
         "type": "ChatOpenAI",
         "baseClasses": [
           "ChatOpenAI",
+          "BaseChatOpenAI",
           "BaseChatModel",
           "BaseLanguageModel",
           "Runnable"
@@ -62,6 +63,84 @@
             "additionalParams": true,
             "id": "chatOpenAI_0-input-streaming-boolean",
             "display": true
+          },
+          {
+            "label": "Allow Image Uploads",
+            "name": "allowImageUploads",
+            "type": "boolean",
+            "description": "Allow image input. Refer to the <a href=\"https://docs.flowiseai.com/using-flowise/uploads#image\" target=\"_blank\">docs</a> for more details.",
+            "default": false,
+            "optional": true,
+            "id": "chatOpenAI_0-input-allowImageUploads-boolean",
+            "display": true
+          },
+          {
+            "label": "Reasoning",
+            "description": "Whether the model supports reasoning. Only applicable for reasoning models (gpt-5 and o-series models only)",
+            "name": "reasoning",
+            "type": "boolean",
+            "default": false,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-reasoning-boolean",
+            "display": true
+          },
+          {
+            "label": "Reasoning Effort",
+            "description": "Constrains effort on reasoning. Only applicable for reasoning models (gpt-5 and o-series models only)",
+            "name": "reasoningEffort",
+            "type": "options",
+            "options": [
+              {
+                "label": "Low",
+                "name": "low"
+              },
+              {
+                "label": "Medium",
+                "name": "medium"
+              },
+              {
+                "label": "High",
+                "name": "high"
+              },
+              {
+                "label": "X-High",
+                "name": "xhigh",
+                "description": "X-High is supported for all models after gpt-5.1-codex-max"
+              }
+            ],
+            "additionalParams": true,
+            "show": {
+              "reasoning": true
+            },
+            "id": "chatOpenAI_0-input-reasoningEffort-options",
+            "display": false
+          },
+          {
+            "label": "Reasoning Summary",
+            "description": "A summary of the reasoning performed by the model. This can be useful for debugging and understanding the model's reasoning process",
+            "name": "reasoningSummary",
+            "type": "options",
+            "options": [
+              {
+                "label": "Auto",
+                "name": "auto"
+              },
+              {
+                "label": "Concise",
+                "name": "concise"
+              },
+              {
+                "label": "Detailed",
+                "name": "detailed"
+              }
+            ],
+            "additionalParams": true,
+            "show": {
+              "reasoning": true
+            },
+            "id": "chatOpenAI_0-input-reasoningSummary-options",
+            "display": false
           },
           {
             "label": "Max Tokens",
@@ -135,92 +214,23 @@
             "display": true
           },
           {
-            "label": "BasePath",
+            "label": "Base Path",
             "name": "basepath",
             "type": "string",
             "optional": true,
+            "description": "Override the default base URL for the API, e.g., \"https://api.example.com/v2/",
             "additionalParams": true,
             "id": "chatOpenAI_0-input-basepath-string",
             "display": true
           },
           {
-            "label": "Proxy Url",
-            "name": "proxyUrl",
-            "type": "string",
-            "optional": true,
-            "additionalParams": true,
-            "id": "chatOpenAI_0-input-proxyUrl-string",
-            "display": true
-          },
-          {
-            "label": "BaseOptions",
+            "label": "Base Options",
             "name": "baseOptions",
             "type": "json",
             "optional": true,
+            "description": "Default headers to include with every request to the API.",
             "additionalParams": true,
             "id": "chatOpenAI_0-input-baseOptions-json",
-            "display": true
-          },
-          {
-            "label": "Allow Image Uploads",
-            "name": "allowImageUploads",
-            "type": "boolean",
-            "description": "Allow image input. Refer to the <a href=\"https://docs.flowiseai.com/using-flowise/uploads#image\" target=\"_blank\">docs</a> for more details.",
-            "default": false,
-            "optional": true,
-            "id": "chatOpenAI_0-input-allowImageUploads-boolean",
-            "display": true
-          },
-          {
-            "label": "Image Resolution",
-            "description": "This parameter controls the resolution in which the model views the image.",
-            "name": "imageResolution",
-            "type": "options",
-            "options": [
-              {
-                "label": "Low",
-                "name": "low"
-              },
-              {
-                "label": "High",
-                "name": "high"
-              },
-              {
-                "label": "Auto",
-                "name": "auto"
-              }
-            ],
-            "default": "low",
-            "optional": false,
-            "show": {
-              "allowImageUploads": true
-            },
-            "id": "chatOpenAI_0-input-imageResolution-options",
-            "display": false
-          },
-          {
-            "label": "Reasoning Effort",
-            "description": "Constrains effort on reasoning for reasoning models. Only applicable for o1 and o3 models.",
-            "name": "reasoningEffort",
-            "type": "options",
-            "options": [
-              {
-                "label": "Low",
-                "name": "low"
-              },
-              {
-                "label": "Medium",
-                "name": "medium"
-              },
-              {
-                "label": "High",
-                "name": "high"
-              }
-            ],
-            "default": "medium",
-            "optional": false,
-            "additionalParams": true,
-            "id": "chatOpenAI_0-input-reasoningEffort-options",
             "display": true
           }
         ],
@@ -236,9 +246,13 @@
         ],
         "inputs": {
           "cache": "",
-          "modelName": "gpt-5.4",
+          "modelName": "lab-chat",
           "temperature": 0.2,
           "streaming": true,
+          "allowImageUploads": false,
+          "reasoning": "",
+          "reasoningEffort": "",
+          "reasoningSummary": "",
           "maxTokens": "",
           "topP": "",
           "frequencyPenalty": "",
@@ -246,21 +260,17 @@
           "timeout": "",
           "strictToolCalling": "",
           "stopSequence": "",
-          "basepath": "",
-          "proxyUrl": "",
+          "basepath": "http://litellm:4000/v1",
           "baseOptions": "",
-          "allowImageUploads": false,
-          "imageResolution": "low",
-          "reasoningEffort": "",
           "credential": ""
         },
         "outputAnchors": [
           {
-            "id": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
+            "id": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
             "name": "chatOpenAI",
             "label": "ChatOpenAI",
             "description": "Wrapper around OpenAI large language models that use the Chat endpoint",
-            "type": "ChatOpenAI | BaseChatModel | BaseLanguageModel | Runnable"
+            "type": "ChatOpenAI | BaseChatOpenAI | BaseChatModel | BaseLanguageModel | Runnable"
           }
         ],
         "outputs": {},
@@ -305,7 +315,8 @@
             "default": "",
             "additionalParams": true,
             "optional": true,
-            "id": "bufferMemory_1-input-sessionId-string"
+            "id": "bufferMemory_1-input-sessionId-string",
+            "display": true
           },
           {
             "label": "Memory Key",
@@ -313,7 +324,8 @@
             "type": "string",
             "default": "chat_history",
             "additionalParams": true,
-            "id": "bufferMemory_1-input-memoryKey-string"
+            "id": "bufferMemory_1-input-memoryKey-string",
+            "display": true
           }
         ],
         "inputAnchors": [],
@@ -326,6 +338,7 @@
             "id": "bufferMemory_1-output-bufferMemory-BufferMemory|BaseChatMemory|BaseMemory",
             "name": "bufferMemory",
             "label": "BufferMemory",
+            "description": "Retrieve chat messages stored in database",
             "type": "BufferMemory | BaseChatMemory | BaseMemory"
           }
         ],
@@ -365,9 +378,9 @@
             "hideCodeExecute": true,
             "hint": {
               "label": "How to use",
-              "value": "Remote MCP over streamable HTTP. Bearer auth in headers."
+              "value": "\nYou can use variables in the MCP Server Config with double curly braces `{{ }}` and prefix `$vars.<variableName>`. \n\nFor example, you have a variable called \"var1\":\n```json\n{\n    \"command\": \"docker\",\n    \"args\": [\n        \"run\",\n        \"-i\",\n        \"--rm\",\n        \"-e\", \"API_TOKEN\"\n    ],\n    \"env\": {\n        \"API_TOKEN\": \"{{$vars.var1}}\"\n    }\n}\n```\n\nFor example, when using SSE, you can use the variable \"var1\" in the headers:\n```json\n{\n    \"url\": \"https://api.example.com/endpoint/sse\",\n    \"headers\": {\n        \"Authorization\": \"Bearer {{$vars.var1}}\"\n    }\n}\n```\n"
             },
-            "placeholder": "{\n    \"url\": \"http://host:port/mcp\"\n}",
+            "placeholder": "{\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/path/to/allowed/files\"]\n}",
             "id": "customMCP_0-input-mcpServerConfig-code",
             "display": true
           },
@@ -384,13 +397,13 @@
         "inputAnchors": [],
         "inputs": {
           "mcpServerConfig": "{\n    \"url\": \"http://reputation-service-mcp:3007\"\n}",
-          "mcpActions": "[\"reputation_file\", \"reputation_ip\", \"reputation_url\"]"
+          "mcpActions": "[\"reputation_url\", \"reputation_ip\", \"reputation_file\"]"
         },
         "outputAnchors": [
           {
             "id": "customMCP_0-output-customMCP-Tool",
             "name": "customMCP",
-            "label": "Tool",
+            "label": "Custom MCP Tool",
             "description": "Custom MCP Config",
             "type": "Tool"
           }
@@ -544,7 +557,7 @@
         "x": 1081.2351190476193,
         "y": 124.37202380952385
       },
-      "type": "customNode",
+      "type": "stickyNote",
       "data": {
         "id": "stickyNote_0",
         "label": "Sticky Note",
@@ -570,7 +583,7 @@
         ],
         "inputAnchors": [],
         "inputs": {
-          "note": "CP Reputation — AI Agent\n\nMCP endpoint: http://reputation-service-mcp:3007\nTools: 0 action(s)."
+          "note": "Check Point Reputation Service agent that calls the Reputation Service MCP server directly (http://reputation-service-mcp:3007), without the gateway.\n\nMCP: Custom MCP node -> http://reputation-service-mcp:3007 (no gateway, no token). Available Actions: all 3 tools of the server.\n\nModel: lab-chat through LiteLLM (credential \"Lab Model (LiteLLM)\", Base Path http://litellm:4000/v1 under Additional Parameters). The Model Name list only knows OpenAI model names, so it can look empty: leave it, the agent still uses lab-chat."
         },
         "outputAnchors": [
           {
@@ -605,11 +618,11 @@
     },
     {
       "source": "chatOpenAI_0",
-      "sourceHandle": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
+      "sourceHandle": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
       "target": "toolAgent_0",
       "targetHandle": "toolAgent_0-input-model-BaseChatModel",
       "type": "buttonedge",
-      "id": "chatOpenAI_0-chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable-toolAgent_0-toolAgent_0-input-model-BaseChatModel"
+      "id": "chatOpenAI_0-chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable-toolAgent_0-toolAgent_0-input-model-BaseChatModel"
     },
     {
       "source": "bufferMemory_1",
