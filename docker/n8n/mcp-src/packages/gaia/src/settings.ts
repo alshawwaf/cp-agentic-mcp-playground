@@ -19,7 +19,8 @@ export class Settings {
   }
 
   static fromArgs(options: any): Settings {
-    console.error('Settings fromArgs called with:', options);
+    // LAB PATCH (log noise): no longer prints every CLI option; fromArgs now
+    // runs for every HTTP session (see mcp-utils SettingsManager).
     return new Settings({
       verbose: options.verbose
     });
@@ -27,7 +28,6 @@ export class Settings {
 
   static fromHeaders(headers: Record<string, string | string[]>): Settings {
     const verbose = getHeaderValue(headers, 'VERBOSE') === 'true';
-    console.error('Settings fromHeaders called');
     
     return new Settings({
       verbose

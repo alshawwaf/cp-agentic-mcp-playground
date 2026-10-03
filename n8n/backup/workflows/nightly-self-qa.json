@@ -1,37 +1,37 @@
 {
-  "name": "CP Agents — Nightly Self-QA",
+  "name": "Nightly Agent Self-Check",
   "nodes": [
     {
       "parameters": {
-        "content": "## 🌙 Nightly Self-QA — the fleet tests itself\nOn a schedule, this workflow sends one real chat turn to **every** agent's webhook, checks each answered without an error, and builds a pass/fail digest. Catch a broken agent before a customer does.",
+        "content": "## Nightly Agent Self-Check: the agents test themselves\nOn a schedule, this workflow sends one read-only chat turn to each of the 32 chat agents, checks that each one answered, and builds a pass/fail digest. When an agent fails, the execution fails, so it shows in red in the Executions list.",
         "width": 1500,
-        "height": 110,
+        "height": 150,
         "color": 3
       },
+      "id": "36d74c52-bbe9-5353-a84f-b5e6ec20752f",
+      "name": "Banner",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
         -140,
-        -260
-      ],
-      "id": "36d74c52-bbe9-5353-a84f-b5e6ec20752f",
-      "name": "Banner"
+        -300
+      ]
     },
     {
       "parameters": {
-        "content": "### ⚙️ How it works\n1. **Schedule** fires (default 02:00 daily)\n2. **Build probe list** — one `{name,url,prompt}` per agent (internal `n8n:5678` webhooks)\n3. **HTTP Request** hits each (continue-on-fail)\n4. **Score** → Markdown digest (`report_markdown`)\n\nWire the digest to Slack/email to get a nightly report. Runs manually too — click **Test workflow**.",
-        "width": 460,
-        "height": 300,
+        "content": "### How it works\n- Schedule fires at 02:00 UTC (change it in the trigger or the time zone in Workflow settings).\n- \"Build probe list\" holds one {name, url, prompt} per chat agent (the agents' internal webhooks). scripts/flows/n8n_fix.py regenerates it.\n- \"Ping agent\" calls each webhook, one at a time, with the \"Lab Agents Chat\" credential and a fresh session per agent per run, so no conversation memory leaks between runs.\n- \"Score & digest\" needs HTTP 2xx and a real answer, then builds `report_markdown`. Agents that are not published (HTTP 404, for example an agent whose prerequisites are missing) are skipped. \"Any failures?\" stops the execution with an error that names the failed agents.\n\n### Opt-in\nn8n-import publishes this workflow only when NIGHTLY_SELF_QA=1 is set in `.env`. Each run makes one model call per agent (more for agents that use tools), so leave it off on laptops.\n\n### Send the digest somewhere\nAdd a Slack, Microsoft Teams, or email node after \"Score & digest\" and send `report_markdown`. To run it now, open the workflow and select **Execute workflow**.",
+        "width": 540,
+        "height": 700,
         "color": 7
       },
+      "id": "184ca4f6-3ee1-5a5d-a7e1-d50f1d858698",
+      "name": "Guide",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -660,
-        -260
-      ],
-      "id": "184ca4f6-3ee1-5a5d-a7e1-d50f1d858698",
-      "name": "Guide"
+        -720,
+        60
+      ]
     },
     {
       "parameters": {
@@ -43,98 +43,131 @@
           ]
         }
       },
+      "id": "50a0b1b8-c110-5b26-bd20-69b19208c850",
+      "name": "Schedule (nightly 02:00 UTC)",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
         -140,
         60
-      ],
-      "id": "50a0b1b8-c110-5b26-bd20-69b19208c850",
-      "name": "Schedule (nightly 02:00)"
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const probes = [{\"name\": \"CP CPinfo Analysis — AI Agent\", \"url\": \"http://n8n:5678/webhook/f68c312c-1ad1-4d8b-b7c1-a5ced2248f23/chat\", \"prompt\": \"What cpinfo bundles are available?\"}, {\"name\": \"CP Documentation — AI Agent\", \"url\": \"http://n8n:5678/webhook/6457b028-9b78-42c9-b3a7-2e43073c468e/chat\", \"prompt\": \"Find the SK about the Gaia API\"}, {\"name\": \"CP Fleet Commander — Estate Agent\", \"url\": \"http://n8n:5678/webhook/0e5e1455-3148-5047-88ab-d999b6002eb3/chat\", \"prompt\": \"Which gateways are in my estate?\"}, {\"name\": \"CP HTTPS Inspection — AI Agent\", \"url\": \"http://n8n:5678/webhook/df6e86fa-f71a-4dce-bf1f-86b8b8a01a49/chat\", \"prompt\": \"Show the HTTPS inspection rules\"}, {\"name\": \"CP Logs — AI Agent\", \"url\": \"http://n8n:5678/webhook/35bcabf8-caf6-4033-b66d-4658abbaa057/chat\", \"prompt\": \"Show the last 10 dropped connections\"}, {\"name\": \"CP Gaia OS — AI Agent\", \"url\": \"http://n8n:5678/webhook/414009d6-7ae2-471c-9f11-f3590bc2e024/chat\", \"prompt\": \"Show the interfaces and their IPs\"}, {\"name\": \"CP Gateway CLI — AI Agent\", \"url\": \"http://n8n:5678/webhook/7b1a963d-5338-4954-97bf-77f18643fdc3/chat\", \"prompt\": \"Show the cluster status\"}, {\"name\": \"CP Quantum Management — AI Agent\", \"url\": \"http://n8n:5678/webhook/799f12a9-0a0c-40e2-9302-799f2c23a881/chat\", \"prompt\": \"List the gateways and their IPs\"}, {\"name\": \"CP Reputation — AI Agent\", \"url\": \"http://n8n:5678/webhook/d9e1213c-ea8c-4482-aa48-36dffdb2e837/chat\", \"prompt\": \"What's the reputation of 1.2.3.4?\"}, {\"name\": \"CP Threat Emulation — AI Agent\", \"url\": \"http://n8n:5678/webhook/dac0e01a-cbec-41fd-8de0-c9fa951c1369/chat\", \"prompt\": \"What file types can you emulate?\"}, {\"name\": \"CP Threat Prevention — AI Agent\", \"url\": \"http://n8n:5678/webhook/f9c04e85-08a8-405c-9835-5426c9b01420/chat\", \"prompt\": \"List the Threat Prevention profiles\"}];\nreturn probes.map(p => ({ json: p }));"
+        "jsCode": "// Generated by scripts/flows/n8n_fix.py from the chat triggers in n8n/backup/workflows.\nconst probes = [\n  {\n    \"name\": \"CPInfo Analysis Agent (Direct)\",\n    \"url\": \"http://n8n:5678/webhook/f68c312c-1ad1-4d8b-b7c1-a5ced2248f23/chat\",\n    \"prompt\": \"Which CPInfo files are loaded?\"\n  },\n  {\n    \"name\": \"CPInfo Analysis Agent (MCP Gateway)\",\n    \"url\": \"http://n8n:5678/webhook/3f6e7eb2-a4e8-570d-98b0-d73dedf22249/chat\",\n    \"prompt\": \"Which CPInfo files are loaded?\"\n  },\n  {\n    \"name\": \"DevHub Operations Agent\",\n    \"url\": \"http://n8n:5678/webhook/28ff8b80-8c36-57c3-bc85-36b83d418e7e/chat\",\n    \"prompt\": \"What apps are on the board?\"\n  },\n  {\n    \"name\": \"Documentation Agent (Direct)\",\n    \"url\": \"http://n8n:5678/webhook/6457b028-9b78-42c9-b3a7-2e43073c468e/chat\",\n    \"prompt\": \"How do I enable Identity Awareness on R82?\"\n  },\n  {\n    \"name\": \"Documentation Agent (MCP Gateway)\",\n    \"url\": \"http://n8n:5678/webhook/f9f73bc0-f425-54ea-8a5e-3c6a0d3c8cf8/chat\",\n    \"prompt\": \"How do I enable Identity Awareness on R82?\"\n  },\n  {\n    \"name\": \"Fleet Commander Estate Agent\",\n    \"url\": \"http://n8n:5678/webhook/0e5e1455-3148-5047-88ab-d999b6002eb3/chat\",\n    \"prompt\": \"Which gateways are in my estate?\"\n  },\n  {\n    \"name\": \"Guarded Agent (Lakera Guard)\",\n    \"url\": \"http://n8n:5678/webhook/cfe09cab-4e06-5fd6-b5d2-e5c426e0e2f7/chat\",\n    \"prompt\": \"List the Threat Prevention profiles\"\n  },\n  {\n    \"name\": \"HTTPS Inspection Agent (Direct)\",\n    \"url\": \"http://n8n:5678/webhook/df6e86fa-f71a-4dce-bf1f-86b8b8a01a49/chat\",\n    \"prompt\": \"Show the HTTPS Inspection rules\"\n  },\n  {\n    \"name\": \"HTTPS Inspection Agent (MCP Gateway)\",\n    \"url\": \"http://n8n:5678/webhook/f8a2c2e9-ed9a-5ddf-b101-3bda12921a90/chat\",\n    \"prompt\": \"Show the HTTPS Inspection rules\"\n  },\n  {\n    \"name\": \"Identity Provisioning Agent (SCIM)\",\n    \"url\": \"http://n8n:5678/webhook/9b9f12a9-0a0c-40e2-9302-799f2c23aa03/chat\",\n    \"prompt\": \"List the users in the Identity Provider\"\n  },\n  {\n    \"name\": \"Lakera Guard Screening Agent\",\n    \"url\": \"http://n8n:5678/webhook/c334aaa8-9adc-4cf0-a6f6-c6883f7bd257/chat\",\n    \"prompt\": \"How much sleep does an adult need?\"\n  },\n  {\n    \"name\": \"Management Logs Agent (Direct)\",\n    \"url\": \"http://n8n:5678/webhook/35bcabf8-caf6-4033-b66d-4658abbaa057/chat\",\n    \"prompt\": \"Show the last 10 dropped connections\"\n  },\n  {\n    \"name\": \"Management Logs Agent (MCP Gateway)\",\n    \"url\": \"http://n8n:5678/webhook/947f4a60-c2b5-5d51-90af-30286dc57997/chat\",\n    \"prompt\": \"Show the last 10 dropped connections\"\n  },\n  {\n    \"name\": \"Check Point MCP Gateway Agent\",\n    \"url\": \"http://n8n:5678/webhook/abcbf616-df41-5708-b690-1b1bc796e66f/chat\",\n    \"prompt\": \"Which gateways do I have, and what are their IP addresses?\"\n  },\n  {\n    \"name\": \"Policy Insights Agent (Direct)\",\n    \"url\": \"http://n8n:5678/webhook/59e620a4-5bcb-4ac5-ba98-50c5805480ba/chat\",\n    \"prompt\": \"What is my Policy Insights status?\"\n  },\n  {\n    \"name\": \"Policy Insights Agent (MCP Gateway)\",\n    \"url\": \"http://n8n:5678/webhook/0f949c69-2c5c-4525-9984-0dfe9c7c98e4/chat\",\n    \"prompt\": \"What is my Policy Insights status?\"\n  },\n  {\n    \"name\": \"PolicyPilot Dynamic Layers Agent\",\n    \"url\": \"http://n8n:5678/webhook/c96e2702-92bc-4ab9-bbfa-f280573a16c1/chat\",\n    \"prompt\": \"List the dynamic layers\"\n  },\n  {\n    \"name\": \"PolicyPilot Access Automation Agent (Pro)\",\n    \"url\": \"http://n8n:5678/webhook/c96e2702-92bc-4ab9-bbfa-f280573a16c0/chat\",\n    \"prompt\": \"Summarize the Network layer\"\n  },\n  {\n    \"name\": \"Gaia Agent (Direct)\",\n    \"url\": \"http://n8n:5678/webhook/414009d6-7ae2-471c-9f11-f3590bc2e024/chat\",\n    \"prompt\": \"Show the interfaces and their IPs\"\n  },\n  {\n    \"name\": \"Gaia Agent (MCP Gateway)\",\n    \"url\": \"http://n8n:5678/webhook/b65c5069-69c6-56c8-83c3-7ba83219a3bd/chat\",\n    \"prompt\": \"Show the interfaces and their IPs\"\n  },\n  {\n    \"name\": \"Gateway CLI Agent (Direct)\",\n    \"url\": \"http://n8n:5678/webhook/7b1a963d-5338-4954-97bf-77f18643fdc3/chat\",\n    \"prompt\": \"Show the cluster status\"\n  },\n  {\n    \"name\": \"Gateway CLI Agent (MCP Gateway)\",\n    \"url\": \"http://n8n:5678/webhook/ec13f1ce-4715-514a-987b-7015860efa1b/chat\",\n    \"prompt\": \"Show the cluster status\"\n  },\n  {\n    \"name\": \"Management Agent (Direct)\",\n    \"url\": \"http://n8n:5678/webhook/799f12a9-0a0c-40e2-9302-799f2c23a881/chat\",\n    \"prompt\": \"Show me all the gateways and their IPs\"\n  },\n  {\n    \"name\": \"Management Agent (MCP Gateway)\",\n    \"url\": \"http://n8n:5678/webhook/8a9f12a9-0a0c-40e2-9302-799f2c23a992/chat\",\n    \"prompt\": \"Show me all the gateways and their IPs\"\n  },\n  {\n    \"name\": \"Documentation RAG Agent\",\n    \"url\": \"http://n8n:5678/webhook/b18e89c8-901a-4620-936e-bbcda2684fbf/chat\",\n    \"prompt\": \"How do I enable Identity Awareness?\"\n  },\n  {\n    \"name\": \"Reputation Service Agent (Direct)\",\n    \"url\": \"http://n8n:5678/webhook/d9e1213c-ea8c-4482-aa48-36dffdb2e837/chat\",\n    \"prompt\": \"What is the reputation of 8.8.8.8?\"\n  },\n  {\n    \"name\": \"Reputation Service Agent (MCP Gateway)\",\n    \"url\": \"http://n8n:5678/webhook/1235d65d-0e5b-5e0c-ac08-64a19a3d7bd2/chat\",\n    \"prompt\": \"What is the reputation of 8.8.8.8?\"\n  },\n  {\n    \"name\": \"SOC Response Chain Agent\",\n    \"url\": \"http://n8n:5678/webhook/28f939f7-e257-5ac9-8a78-0668f6f1595b/chat\",\n    \"prompt\": \"run the triage\"\n  },\n  {\n    \"name\": \"Threat Emulation Agent (Direct)\",\n    \"url\": \"http://n8n:5678/webhook/dac0e01a-cbec-41fd-8de0-c9fa951c1369/chat\",\n    \"prompt\": \"How much Threat Emulation quota is left?\"\n  },\n  {\n    \"name\": \"Threat Emulation Agent (MCP Gateway)\",\n    \"url\": \"http://n8n:5678/webhook/52cd6077-c236-5ad9-be24-89f6dc656a62/chat\",\n    \"prompt\": \"How much Threat Emulation quota is left?\"\n  },\n  {\n    \"name\": \"Threat Prevention Agent (Direct)\",\n    \"url\": \"http://n8n:5678/webhook/f9c04e85-08a8-405c-9835-5426c9b01420/chat\",\n    \"prompt\": \"List the Threat Prevention profiles\"\n  },\n  {\n    \"name\": \"Threat Prevention Agent (MCP Gateway)\",\n    \"url\": \"http://n8n:5678/webhook/abf348ac-e83f-51d1-89f0-f04119d6fc16/chat\",\n    \"prompt\": \"List the Threat Prevention profiles\"\n  }\n];\nreturn probes.map(p => ({ json: p }));"
       },
+      "id": "50b75465-92d4-5fda-9f55-75f44f65c8af",
+      "name": "Build probe list",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
         120,
         60
-      ],
-      "id": "50b75465-92d4-5fda-9f55-75f44f65c8af",
-      "name": "Build probe list"
+      ]
     },
     {
       "parameters": {
         "method": "POST",
         "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"action\": \"sendMessage\",\n  \"chatInput\": {{ JSON.stringify($json.prompt) }},\n  \"sessionId\": \"nightly-qa\"\n}",
+        "jsonBody": "={{ JSON.stringify({ action: 'sendMessage', chatInput: $json.prompt, sessionId: 'nightly-qa-' + $execution.id + '-' + $itemIndex }) }}",
         "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 2000
+            }
+          },
           "response": {
             "response": {
+              "fullResponse": true,
               "neverError": true
             }
-          }
+          },
+          "timeout": 300000
         }
       },
+      "id": "48ed2d59-b712-51a5-9766-9cd7e715e5da",
+      "name": "Ping agent",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        400,
+        380,
         60
       ],
-      "id": "48ed2d59-b712-51a5-9766-9cd7e715e5da",
-      "name": "Ping agent",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "LabAgentsChatAuth",
+          "name": "Lab Agents Chat"
+        }
+      },
       "onError": "continueRegularOutput"
     },
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "m1",
-              "name": "name",
-              "value": "={{ $('Build probe list').item.json.name }}",
-              "type": "string"
-            },
-            {
-              "id": "m2",
-              "name": "__response",
-              "value": "={{ $json }}",
-              "type": "object"
-            }
-          ]
-        },
-        "options": {}
+        "jsCode": "// Pass = HTTP 2xx and a real answer (not an error or setup message). Fails the execution when any agent fails.\nconst FAIL = /I could not complete this request|Error in workflow|is not configured|did not complete|could not be reached|not registered/i;\nconst rows = $input.all().map((item, i) => {\n  const probe = $('Build probe list').all()[i].json;\n  const r = item.json || {};\n  const status = Number(r.statusCode || 0);\n  const body = (r.body && typeof r.body === 'object') ? r.body : {};\n  const out = String(body.output || body.text || (typeof r.body === 'string' ? r.body : '') || '');\n  let reason = '';\n  if (status === 404) return { agent: probe.name, ok: true, skipped: true, reason: 'not published', sample: '' };\n  if (!(status >= 200 && status < 300)) reason = `HTTP ${status || 'no response'}`;\n  else if (!out.trim()) reason = 'empty answer';\n  else if (FAIL.test(out)) reason = 'agent reported an error';\n  return { agent: probe.name, ok: !reason, reason, sample: out.replace(/\\s+/g, ' ').slice(0, 160) };\n});\nconst passed = rows.filter(r => r.ok && !r.skipped).length;\nconst skipped = rows.filter(r => r.skipped).length;\nconst report_markdown = `# Nightly Agent Self-Check\\n\\n**${passed}/${rows.length - skipped} passed** (${skipped} not published, skipped)\\n\\n` +\n  rows.map(r => `- ${r.skipped ? 'SKIP' : (r.ok ? 'PASS' : 'FAIL')} **${r.agent}**${r.ok ? '' : ' (' + r.reason + ')'}${r.sample ? ': ' + r.sample : ''}`).join('\\n');\nconst failed = rows.filter(r => !r.ok).map(r => `${r.agent} (${r.reason})`);\nreturn [{ json: { passed, skipped, total: rows.length - skipped, failed, report_markdown, rows } }];\n"
       },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        660,
-        60
-      ],
-      "id": "01b8dcbf-06f1-50f7-8175-addcc0efa022",
-      "name": "Merge response"
-    },
-    {
-      "parameters": {
-        "jsCode": "const items = $input.all();\nconst rows = items.map(i => {\n  const p = i.json;\n  const body = p.__response || {};\n  const out = (body.output || body.text || JSON.stringify(body) || '');\n  const failed = !out || /I hit an error|Connection error|Error in sub-node/i.test(out);\n  return { agent: p.name, ok: !failed, sample: String(out).slice(0, 140) };\n});\nconst pass = rows.filter(r => r.ok).length;\nconst md = `# CP Agent self-QA\\n\\n**${pass}/${rows.length} passed**\\n\\n` +\n  rows.map(r => `- ${r.ok ? '✅' : '❌'} **${r.agent}** — ${r.sample}`).join('\\n');\nreturn [{ json: { passed: pass, total: rows.length, report_markdown: md, rows } }];"
-      },
+      "id": "945402c7-c616-5e2b-a67e-d836be68ff27",
+      "name": "Score & digest",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        920,
+        640,
         60
-      ],
-      "id": "945402c7-c616-5e2b-a67e-d836be68ff27",
-      "name": "Score & digest"
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f1",
+              "leftValue": "={{ $json.failed.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4893e5af-2813-5c22-84af-1c10a8347b64",
+      "name": "Any failures?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ $json.failed.length }} of {{ $json.total }} agents failed: {{ $json.failed.join('; ') }}"
+      },
+      "id": "4dc257c9-4b82-5bda-ba44-e3a4fa505c0e",
+      "name": "Report failures",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        -20
+      ]
     }
   ],
   "connections": {
-    "Schedule (nightly 02:00)": {
+    "Schedule (nightly 02:00 UTC)": {
       "main": [
         [
           {
@@ -160,18 +193,29 @@
       "main": [
         [
           {
-            "node": "Merge response",
+            "node": "Score & digest",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Merge response": {
+    "Score & digest": {
       "main": [
         [
           {
-            "node": "Score & digest",
+            "node": "Any failures?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any failures?": {
+      "main": [
+        [
+          {
+            "node": "Report failures",
             "type": "main",
             "index": 0
           }
@@ -179,9 +223,16 @@
       ]
     }
   },
+  "pinData": {},
   "active": false,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "timezone": "UTC"
+  },
+  "versionId": "e9f72a97-3e28-523a-9b79-d39d77ad457b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "labRequires": "NIGHTLY_SELF_QA=1"
   },
   "id": "NightlySelfQaWf01",
   "tags": []

@@ -2,7 +2,7 @@
   "createdAt": "2025-01-01T05:36:54.072Z",
   "updatedAt": "2025-01-01T05:36:54.071Z",
   "id": "hsWhgXyxb7NQNxdM",
-  "name": "QdrantApi account",
+  "name": "Lab Qdrant",
   "data": {
     "apiKey": "__QDRANT_API_KEY__",
     "qdrantUrl": "http://qdrant:6333"

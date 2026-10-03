@@ -1,0 +1,403 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1640 1064" width="1640" height="1064" class="dg" role="img" aria-label="Architecture of the Agentic MCP Lab: trainees reach n8n, Flowise, Langflow and Open WebUI; every agent calls models through LiteLLM (lab-chat) and Check Point tools either through the Bearer-protected MCP Gateway or directly on 14 MCP sidecars, which call the Management API, Gaia, Check Point cloud services or CPInfo files; secrets flow from .env or 1Password into the services at start; opt-in profiles add the security lab, AI-Infra-Guard, exercises, evals, PolicyPilot and GPU.">
+<style>
+.cv{fill:#111017}
+.g-a,.g-e{fill:#1D1E26;stroke:#4C5563}
+.g-b{fill:#1B1E2C;stroke:#42557F}
+.g-c{fill:#162126;stroke:#286560}
+.g-d{fill:#261722;stroke:#7C3350}
+.g-p{fill:#241E1C;stroke:#6F542F;stroke-dasharray:6 4}
+.box{fill:#1B1A22;stroke:#3B3746;stroke-width:1}
+.box-cp{fill:#1B1A22;stroke:#7C3350;stroke-width:1}
+.box-dir{fill:#1B1A22;stroke:#7C3350;stroke-width:1;stroke-dasharray:4 3}
+.box-risk{fill:#1B1A22;stroke:#FF7E62;stroke-width:1.2;stroke-dasharray:4 3}
+.box-opt{fill:#1B1A22;stroke:#6F542F;stroke-width:1}
+.dg text{font-family:'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif}
+.dg .t0{font-size:16px;font-weight:700;fill:#ECEAF1}
+.dg .t1{font-size:13px;font-weight:600;fill:#ECEAF1}
+.dg .tr{font-size:12px;font-weight:600;fill:#ECEAF1}
+.dg .t2{font-size:11px;fill:#A49EAF}
+.dg .tk{font-size:11px;font-weight:600;fill:#ECEAF1}
+.dg .tm{font-family:'JetBrains Mono',Menlo,Consolas,monospace;font-size:10px;fill:#A49EAF}
+.dg .gl{font-size:10.5px;font-weight:700;letter-spacing:.08em}
+.dg .c-ext{fill:#95A9BF}.dg .c-build{fill:#7EA9FF}.dg .c-core{fill:#45CDB9}.dg .c-cp{fill:#FF5E95}.dg .c-opt{fill:#E2A64C}.dg .c-risk{fill:#FF7E62}
+.dg .tl{font-size:10px;fill:#A49EAF;paint-order:stroke;stroke:#111017;stroke-width:4px;stroke-linejoin:round}
+.ch-cp{fill:#4D293B}.ch-core{fill:#244143}.ch-opt{fill:#47392B}.ch-risk{fill:#4D3030}.ch-ext{fill:#363945}
+.dg .ct{font-family:'JetBrains Mono',Menlo,Consolas,monospace;font-size:9px;font-weight:600;letter-spacing:.04em}
+.e{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.e-mcp{stroke:#FF5E95;stroke-width:1.6}
+.e-direct{stroke:#FF5E95;stroke-width:1.4;stroke-dasharray:6 4}
+.e-model{stroke:#45CDB9;stroke-width:1.8}
+.e-trace{stroke:#A49EAF;stroke-width:1.5;stroke-dasharray:1 4}
+.e-data{stroke:#A49EAF;stroke-width:1.2}
+.e-secret{stroke:#ECEAF1;stroke-width:1.2;stroke-dasharray:3 3}
+.e-egress{stroke:#95A9BF;stroke-width:1.6}
+.mk-cp{fill:#FF5E95}.mk-core{fill:#45CDB9}.mk-muted{fill:#A49EAF}.mk-fg{fill:#ECEAF1}.mk-ext{fill:#95A9BF}
+</style>
+<defs>
+<marker id="a-cp" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mk-cp"/></marker>
+<marker id="a-core" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mk-core"/></marker>
+<marker id="a-muted" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mk-muted"/></marker>
+<marker id="a-fg" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mk-fg"/></marker>
+<marker id="a-ext" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="mk-ext"/></marker>
+</defs>
+<rect x="0" y="0" width="1640" height="1064" class="cv"/>
+<text x="28" y="26" class="t0">Agentic MCP Lab architecture</text>
+<text x="1616" y="26" class="tm" text-anchor="end">Standard lab and Complete lab · tested end to end</text>
+<rect x="16" y="84" width="226" height="664" rx="12" class="g-a"/>
+<text x="30" y="104" class="gl c-ext">ACCESS AND SETUP</text>
+<rect x="28" y="116" width="202" height="56" rx="8" class="box"/>
+<text x="40" y="136" class="t1">Trainee browser</text>
+<text x="40" y="153" class="t2">HTTPS to the lab subdomains</text>
+<rect x="28" y="196" width="202" height="80" rx="8" class="box"/>
+<text x="40" y="216" class="t1">Traefik on Dokploy</text>
+<text x="40" y="233" class="t2">lab host routing and TLS</text>
+<text x="40" y="248" class="tm">n8n · flowise · langflow</text>
+<text x="40" y="262" class="tm">chat · trace</text>
+<rect x="28" y="300" width="202" height="56" rx="8" class="box"/>
+<text x="40" y="320" class="t1">setup.sh</text>
+<text x="40" y="337" class="t2">wizard: keys once, secrets made</text>
+<rect x="28" y="374" width="202" height="56" rx="8" class="box"/>
+<text x="40" y="394" class="t1">.env</text>
+<text x="218" y="394" class="tm" text-anchor="end">mode 600</text>
+<text x="40" y="411" class="t2">every key and secret, one file</text>
+<rect x="28" y="448" width="202" height="56" rx="8" class="box"/>
+<text x="40" y="468" class="t1">1Password CLI</text>
+<text x="40" y="485" class="t2">op run resolves op:// refs</text>
+<rect x="28" y="522" width="202" height="56" rx="8" class="box"/>
+<text x="40" y="542" class="t1">Docker Compose</text>
+<text x="40" y="559" class="t2">docker compose up -d</text>
+<rect x="28" y="596" width="202" height="56" rx="8" class="box"/>
+<text x="40" y="616" class="t1">doctor.sh</text>
+<text x="40" y="633" class="t2">checks keys, services, agents</text>
+<text x="28" y="690" class="t2">No host ports are published.</text>
+<text x="28" y="705" class="t2">Plain Docker: add a local override.</text>
+<rect x="290" y="84" width="290" height="532" rx="12" class="g-b"/>
+<text x="304" y="104" class="gl c-build">AGENT BUILDERS AND CHAT</text>
+<rect x="304" y="116" width="262" height="64" rx="8" class="box"/>
+<text x="316" y="136" class="t1">n8n</text>
+<text x="554" y="136" class="tm" text-anchor="end">2.41.5 · :5678</text>
+<text x="316" y="153" class="t2">35 workflows · MCP Client Tool</text>
+<rect x="304" y="188" width="262" height="64" rx="8" class="box"/>
+<text x="316" y="208" class="t1">Flowise</text>
+<text x="554" y="208" class="tm" text-anchor="end">3.1.4 · :3020</text>
+<text x="316" y="225" class="t2">33 flows · native Langfuse tracing</text>
+<rect x="304" y="260" width="262" height="64" rx="8" class="box"/>
+<text x="316" y="280" class="t1">Langflow</text>
+<text x="554" y="280" class="tm" text-anchor="end">1.10.1 · :7860</text>
+<text x="316" y="297" class="t2">33 flows · MCP Tools component</text>
+<rect x="304" y="332" width="262" height="56" rx="8" class="box"/>
+<text x="316" y="352" class="t1">Open WebUI</text>
+<text x="554" y="352" class="tm" text-anchor="end">0.11.4 · :8080</text>
+<text x="316" y="369" class="t2">chat on local Ollama models</text>
+<rect x="304" y="396" width="262" height="56" rx="8" class="box"/>
+<text x="316" y="416" class="t1">Code-first agent</text>
+<text x="554" y="416" class="tm" text-anchor="end">Python</text>
+<text x="316" y="433" class="t2">raw MCP client and tool loop</text>
+<rect x="304" y="460" width="262" height="146" rx="8" class="box"/>
+<text x="316" y="480" class="t1">Seeded agents in every builder</text>
+<text x="316" y="500" class="tk">MCP Gateway</text>
+<text x="408" y="500" class="t2">11 + 4 composite agents</text>
+<text x="316" y="517" class="tk">Direct</text>
+<text x="408" y="517" class="t2">11, one per sidecar</text>
+<text x="316" y="534" class="tk">External</text>
+<text x="408" y="534" class="t2">DevHub, PolicyPilot, SCIM</text>
+<text x="316" y="551" class="tk">RAG</text>
+<text x="408" y="551" class="t2">Qdrant retrieval</text>
+<text x="316" y="568" class="tk">Security Lab</text>
+<text x="408" y="568" class="t2">needs security-lab profile</text>
+<text x="316" y="596" class="tm">All use lab-chat; tools scoped to ≤128</text>
+<rect x="290" y="632" width="290" height="116" rx="8" class="box"/>
+<text x="302" y="652" class="t1">One-shot seeders</text>
+<text x="302" y="668" class="t2">run on every deploy, then exit</text>
+<text x="302" y="688" class="tm">n8n-provision</text>
+<text x="428" y="688" class="t2">n8n owner account</text>
+<text x="302" y="704" class="tm">n8n-import</text>
+<text x="428" y="704" class="t2">35 workflows + credentials</text>
+<text x="302" y="720" class="tm">builders-import</text>
+<text x="428" y="720" class="t2">Flowise + Langflow agents</text>
+<text x="302" y="736" class="tm">openwebui-provision</text>
+<text x="428" y="736" class="t2">Open WebUI admin</text>
+<rect x="640" y="84" width="280" height="664" rx="12" class="g-c"/>
+<text x="654" y="104" class="gl c-core">CORE SERVICES</text>
+<rect x="660" y="116" width="240" height="72" rx="8" class="box"/>
+<text x="672" y="136" class="t1">MCP Gateway</text>
+<text x="888" y="136" class="tm" text-anchor="end">:8080/mcp</text>
+<text x="672" y="153" class="t2">one Bearer-protected endpoint</text>
+<text x="672" y="168" class="t2">11 servers · 190 tools</text>
+<rect x="660" y="200" width="240" height="46" rx="8" class="box"/>
+<text x="672" y="218" class="t1">Docker socket proxy</text>
+<text x="672" y="234" class="t2">read-only: containers, networks</text>
+<rect x="660" y="262" width="240" height="80" rx="8" class="box"/>
+<text x="672" y="282" class="t1">LiteLLM</text>
+<text x="888" y="282" class="tm" text-anchor="end">:4000</text>
+<text x="672" y="299" class="t2">model name: lab-chat</text>
+<text x="672" y="314" class="t2">routes to the provider you set</text>
+<text x="672" y="329" class="t2">logs every call to Langfuse</text>
+<rect x="660" y="360" width="240" height="60" rx="8" class="box"/>
+<text x="672" y="380" class="t1">Langfuse</text>
+<text x="888" y="380" class="tm" text-anchor="end">2 · :3000</text>
+<text x="672" y="397" class="t2">traces: prompts, tools, tokens</text>
+<rect x="660" y="432" width="240" height="60" rx="8" class="box"/>
+<text x="672" y="452" class="t1">Qdrant</text>
+<text x="888" y="452" class="tm" text-anchor="end">1.19.1 · :6333</text>
+<text x="672" y="469" class="t2">cp_docs vectors for RAG</text>
+<rect x="660" y="504" width="240" height="60" rx="8" class="box"/>
+<text x="672" y="524" class="t1">Ollama</text>
+<text x="888" y="524" class="tm" text-anchor="end">0.31.1 · :11434</text>
+<text x="672" y="541" class="t2">qwen3.5:4b · nomic-embed-text</text>
+<rect x="660" y="576" width="240" height="60" rx="8" class="box"/>
+<text x="672" y="596" class="t1">PostgreSQL</text>
+<text x="888" y="596" class="tm" text-anchor="end">16</text>
+<text x="672" y="613" class="t2">n8n, Langfuse and Flowise data</text>
+<rect x="660" y="652" width="240" height="80" rx="8" class="box"/>
+<text x="672" y="672" class="t1">Setup one-shots</text>
+<text x="672" y="690" class="tm">langfuse-db-init · flowise-db-init</text>
+<text x="672" y="704" class="tm">ollama-pull-models-cpu · rag-ingest</text>
+<text x="672" y="720" class="t2">databases, models, RAG corpus</text>
+<rect x="970" y="84" width="320" height="664" rx="12" class="g-d"/>
+<text x="984" y="104" class="gl c-cp">CHECK POINT MCP SERVERS · 14 SIDECARS</text>
+<text x="984" y="124" class="tk">Behind the MCP Gateway</text>
+<rect x="984" y="132" width="292" height="32" rx="6" class="box-cp"/>
+<text x="996" y="153" class="tr">Documentation</text>
+<text x="1190" y="153" class="tm" text-anchor="end">:3000</text>
+<rect x="1218" y="141" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1242" y="151" class="ct c-cp" text-anchor="middle">CLOUD</text>
+<rect x="984" y="170" width="292" height="32" rx="6" class="box-cp"/>
+<text x="996" y="191" class="tr">HTTPS Inspection</text>
+<text x="1190" y="191" class="tm" text-anchor="end">:3001</text>
+<rect x="1218" y="179" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1242" y="189" class="ct c-cp" text-anchor="middle">MGMT</text>
+<rect x="984" y="208" width="292" height="32" rx="6" class="box-cp"/>
+<text x="996" y="229" class="tr">Management</text>
+<text x="1190" y="229" class="tm" text-anchor="end">:3002</text>
+<rect x="1218" y="217" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1242" y="227" class="ct c-cp" text-anchor="middle">MGMT</text>
+<rect x="984" y="246" width="292" height="32" rx="6" class="box-cp"/>
+<text x="996" y="267" class="tr">Management Logs</text>
+<text x="1190" y="267" class="tm" text-anchor="end">:3003</text>
+<rect x="1218" y="255" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1242" y="265" class="ct c-cp" text-anchor="middle">MGMT</text>
+<rect x="984" y="284" width="292" height="32" rx="6" class="box-cp"/>
+<text x="996" y="305" class="tr">Threat Emulation</text>
+<text x="1190" y="305" class="tm" text-anchor="end">:3004</text>
+<rect x="1218" y="293" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1242" y="303" class="ct c-cp" text-anchor="middle">CLOUD</text>
+<rect x="984" y="322" width="292" height="32" rx="6" class="box-cp"/>
+<text x="996" y="343" class="tr">Threat Prevention</text>
+<text x="1190" y="343" class="tm" text-anchor="end">:3005</text>
+<rect x="1218" y="331" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1242" y="341" class="ct c-cp" text-anchor="middle">MGMT</text>
+<rect x="984" y="360" width="292" height="32" rx="6" class="box-cp"/>
+<text x="996" y="381" class="tr">Reputation Service</text>
+<text x="1190" y="381" class="tm" text-anchor="end">:3007</text>
+<rect x="1218" y="369" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1242" y="379" class="ct c-cp" text-anchor="middle">CLOUD</text>
+<rect x="984" y="398" width="292" height="32" rx="6" class="box-cp"/>
+<text x="996" y="419" class="tr">Gateway CLI</text>
+<text x="1190" y="419" class="tm" text-anchor="end">:3009</text>
+<rect x="1218" y="407" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1242" y="417" class="ct c-cp" text-anchor="middle">MGMT</text>
+<rect x="984" y="436" width="292" height="32" rx="6" class="box-cp"/>
+<text x="996" y="457" class="tr">Gaia</text>
+<text x="1190" y="457" class="tm" text-anchor="end">:3011</text>
+<rect x="1218" y="445" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1242" y="455" class="ct c-cp" text-anchor="middle">GAIA</text>
+<rect x="984" y="474" width="292" height="32" rx="6" class="box-cp"/>
+<text x="996" y="495" class="tr">CPInfo Analysis</text>
+<text x="1190" y="495" class="tm" text-anchor="end">:3012</text>
+<rect x="1218" y="483" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1242" y="493" class="ct c-cp" text-anchor="middle">FILES</text>
+<rect x="984" y="512" width="292" height="32" rx="6" class="box-cp"/>
+<text x="996" y="533" class="tr">Policy Insights</text>
+<text x="1190" y="533" class="tm" text-anchor="end">:3013</text>
+<rect x="1218" y="521" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1242" y="531" class="ct c-cp" text-anchor="middle">MGMT</text>
+<text x="984" y="568" class="tk">Direct only</text>
+<rect x="984" y="578" width="292" height="32" rx="6" class="box-dir"/>
+<text x="996" y="599" class="tr">Spark Management</text>
+<text x="1206" y="599" class="tm" text-anchor="end">:3006</text>
+<rect x="1218" y="587" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1242" y="597" class="ct c-cp" text-anchor="middle">CLOUD</text>
+<rect x="984" y="616" width="292" height="32" rx="6" class="box-dir"/>
+<text x="996" y="637" class="tr">SASE</text>
+<text x="1206" y="637" class="tm" text-anchor="end">:3008</text>
+<rect x="1218" y="625" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1242" y="635" class="ct c-cp" text-anchor="middle">CLOUD</text>
+<rect x="984" y="654" width="292" height="32" rx="6" class="box-dir"/>
+<text x="996" y="675" class="tr">Gateway Connection Analysis</text>
+<text x="1206" y="675" class="tm" text-anchor="end">:3010</text>
+<rect x="1218" y="663" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1242" y="673" class="ct c-cp" text-anchor="middle">MGMT</text>
+<text x="984" y="726" class="t2">Each sidecar also serves its direct agent.</text>
+<rect x="1340" y="84" width="276" height="664" rx="12" class="g-e"/>
+<text x="1354" y="104" class="gl c-ext">EXTERNAL SYSTEMS</text>
+<rect x="1352" y="116" width="252" height="64" rx="8" class="box"/>
+<text x="1364" y="136" class="t1">Check Point Management server</text>
+<text x="1364" y="153" class="t2">Management API · MANAGEMENT_HOST</text>
+<text x="1364" y="168" class="t2">used by 7 servers</text>
+<rect x="1546" y="160" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1570" y="170" class="ct c-cp" text-anchor="middle">MGMT</text>
+<rect x="1352" y="192" width="252" height="56" rx="8" class="box"/>
+<text x="1364" y="212" class="t1">Check Point gateways</text>
+<text x="1364" y="229" class="t2">Gaia REST API · GAIA_*</text>
+<rect x="1546" y="228" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1570" y="238" class="ct c-cp" text-anchor="middle">GAIA</text>
+<rect x="1352" y="260" width="252" height="64" rx="8" class="box"/>
+<text x="1364" y="280" class="t1">Check Point cloud services</text>
+<text x="1364" y="297" class="t2">Check Point portal APIs</text>
+<text x="1364" y="312" class="t2">used by 5 servers</text>
+<rect x="1546" y="304" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1570" y="314" class="ct c-cp" text-anchor="middle">CLOUD</text>
+<rect x="1352" y="336" width="252" height="50" rx="8" class="box"/>
+<text x="1364" y="356" class="t1">CPInfo files</text>
+<text x="1364" y="373" class="t2">uploaded for analysis</text>
+<rect x="1546" y="366" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1570" y="376" class="ct c-cp" text-anchor="middle">FILES</text>
+<rect x="1352" y="404" width="252" height="74" rx="8" class="box"/>
+<text x="1364" y="424" class="t1">Model providers</text>
+<text x="1364" y="441" class="t2">Azure OpenAI · OpenAI</text>
+<text x="1364" y="456" class="t2">Anthropic · Gemini</text>
+<text x="1364" y="471" class="t2">called by LiteLLM only</text>
+<rect x="1352" y="490" width="252" height="60" rx="8" class="box"/>
+<text x="1364" y="510" class="t1">Lakera Guard</text>
+<text x="1364" y="527" class="t2">screens prompts and answers</text>
+<text x="1364" y="542" class="t2">called by guarded agents</text>
+<rect x="1352" y="562" width="252" height="60" rx="8" class="box"/>
+<text x="1364" y="582" class="t1">Lab endpoints</text>
+<text x="1364" y="599" class="t2">DevHub · PolicyPilot · SCIM IdP</text>
+<text x="1364" y="614" class="t2">called by external agents</text>
+<text x="1352" y="690" class="t2">Each one is called only when</text>
+<text x="1352" y="705" class="t2">its key or endpoint is set.</text>
+<rect x="16" y="804" width="1608" height="170" rx="12" class="g-p"/>
+<text x="30" y="824" class="gl c-opt">OPT-IN PROFILES · OFF BY DEFAULT</text>
+<rect x="28" y="838" width="252" height="122" rx="8" class="box-risk"/>
+<rect x="40" y="848" width="129.6" height="14" rx="3" class="ch-risk"/>
+<text x="104.8" y="858" class="ct c-risk" text-anchor="middle">profile: security-lab</text>
+<text x="40" y="884" class="t1">MCP Security Lab</text>
+<text x="268" y="884" class="tm" text-anchor="end">vuln-mcp · :3099</text>
+<text x="40" y="904" class="t2">intentionally vulnerable, simulated</text>
+<text x="40" y="919" class="t2">internal security-lab network only</text>
+<text x="40" y="934" class="t2">Security Lab agent: its tools only</text>
+<rect x="294" y="838" width="252" height="122" rx="8" class="box-opt"/>
+<rect x="306" y="848" width="124" height="14" rx="3" class="ch-opt"/>
+<text x="368" y="858" class="ct c-opt" text-anchor="middle">profile: ai-red-team</text>
+<text x="306" y="884" class="t1">AI-Infra-Guard</text>
+<text x="534" y="884" class="tm" text-anchor="end">:8088</text>
+<text x="306" y="904" class="t2">MCP scan of vuln-mcp, internal only</text>
+<text x="306" y="919" class="t2">lab-chat registered by aig-provision</text>
+<text x="306" y="934" class="t2">no route to the host or internet</text>
+<rect x="560" y="838" width="252" height="122" rx="8" class="box-opt"/>
+<rect x="572" y="848" width="112.8" height="14" rx="3" class="ch-opt"/>
+<text x="628.4" y="858" class="ct c-opt" text-anchor="middle">profile: exercises</text>
+<text x="572" y="884" class="t1">Build Your Own MCP</text>
+<text x="800" y="884" class="tm" text-anchor="end">ips-cve-mcp</text>
+<text x="572" y="904" class="t2">write an MCP server in Python</text>
+<text x="572" y="919" class="t2">register it with the gateway</text>
+<text x="572" y="934" class="t2">IPS and CVE lookups</text>
+<rect x="826" y="838" width="252" height="122" rx="8" class="box-opt"/>
+<rect x="838" y="848" width="90.4" height="14" rx="3" class="ch-opt"/>
+<text x="883.2" y="858" class="ct c-opt" text-anchor="middle">profile: evals</text>
+<text x="838" y="884" class="t1">Evals harness</text>
+<text x="1066" y="884" class="tm" text-anchor="end">evals-run</text>
+<text x="838" y="904" class="t2">scored cases against</text>
+<text x="838" y="919" class="t2">the agents&#x27; webhooks</text>
+<text x="838" y="934" class="t2">runs after n8n-import</text>
+<rect x="1092" y="838" width="252" height="122" rx="8" class="box-opt"/>
+<rect x="1104" y="848" width="124" height="14" rx="3" class="ch-opt"/>
+<text x="1166" y="858" class="ct c-opt" text-anchor="middle">profile: policypilot</text>
+<text x="1104" y="884" class="t1">PolicyPilot MCP</text>
+<text x="1332" y="884" class="tm" text-anchor="end">policypilot-mcp</text>
+<text x="1104" y="904" class="t2">guarded write actions</text>
+<text x="1104" y="919" class="t2">preview, approve, roll back</text>
+<text x="1104" y="934" class="t2">register with the gateway</text>
+<rect x="1358" y="838" width="252" height="122" rx="8" class="box-opt"/>
+<rect x="1370" y="848" width="118.4" height="14" rx="3" class="ch-opt"/>
+<text x="1429.2" y="858" class="ct c-opt" text-anchor="middle">profile: gpu-nvidia</text>
+<text x="1370" y="884" class="t1">Ollama on GPU</text>
+<text x="1598" y="884" class="tm" text-anchor="end">ollama-gpu</text>
+<text x="1370" y="904" class="t2">NVIDIA container runtime</text>
+<text x="1370" y="919" class="t2">replaces the CPU Ollama</text>
+<text x="1370" y="934" class="t2">same models and port</text>
+<text x="72" y="1008" class="t2">MCP over Streamable HTTP</text>
+<text x="372" y="1008" class="t2">MCP direct, no gateway</text>
+<text x="672" y="1008" class="t2">Model calls through LiteLLM</text>
+<text x="972" y="1008" class="t2">Traces</text>
+<text x="72" y="1040" class="t2">Data and storage</text>
+<text x="372" y="1040" class="t2">Secrets injected at start</text>
+<text x="672" y="1040" class="t2">HTTPS egress</text>
+<rect x="1228" y="996" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1252" y="1006" class="ct c-cp" text-anchor="middle">MGMT</text>
+<text x="1284" y="1007" class="t2">Management API</text>
+<rect x="1228" y="1012" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1252" y="1022" class="ct c-cp" text-anchor="middle">GAIA</text>
+<text x="1284" y="1023" class="t2">Gaia REST API</text>
+<rect x="1228" y="1028" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1252" y="1038" class="ct c-cp" text-anchor="middle">CLOUD</text>
+<text x="1284" y="1039" class="t2">Check Point cloud services</text>
+<rect x="1228" y="1044" width="48" height="14" rx="3" class="ch-cp"/>
+<text x="1252" y="1054" class="ct c-cp" text-anchor="middle">FILES</text>
+<text x="1284" y="1055" class="t2">uploaded CPInfo files</text>
+<path d="M129,172 L129,196" class="e e-data" marker-end="url(#a-muted)"/>
+<path d="M129,356 L129,374" class="e e-secret" marker-end="url(#a-fg)"/>
+<path d="M129,430 L129,448" class="e e-secret" marker-end="url(#a-fg)"/>
+<path d="M129,504 L129,522" class="e e-secret" marker-end="url(#a-fg)"/>
+<path d="M230,236 L290,236" class="e e-data" marker-end="url(#a-muted)"/>
+<path d="M435,632 L435,616" class="e e-data" marker-end="url(#a-muted)"/>
+<path d="M780,188 L780,200" class="e e-data" marker-end="url(#a-muted)"/>
+<path d="M780,342 L780,360" class="e e-trace" marker-end="url(#a-muted)"/>
+<path d="M780,492 L780,504" class="e e-data"/>
+<path d="M900,316 L932,316 L932,534 L900,534" class="e e-model" marker-end="url(#a-core)"/>
+<path d="M900,400 L912,400 L912,606 L900,606" class="e e-data" marker-end="url(#a-muted)"/>
+<path d="M580,152 L660,152" class="e e-mcp" marker-end="url(#a-cp)"/>
+<path d="M580,302 L660,302" class="e e-model" marker-end="url(#a-core)"/>
+<path d="M580,390 L660,390" class="e e-trace" marker-end="url(#a-muted)"/>
+<path d="M580,462 L660,462" class="e e-data" marker-end="url(#a-muted)"/>
+<path d="M580,606 L660,606" class="e e-data" marker-end="url(#a-muted)"/>
+<path d="M900,152 L970,152" class="e e-mcp" marker-end="url(#a-cp)"/>
+<path d="M1290,148 L1352,148" class="e e-mcp" marker-end="url(#a-cp)"/>
+<path d="M1290,220 L1352,220" class="e e-mcp" marker-end="url(#a-cp)"/>
+<path d="M1290,292 L1352,292" class="e e-mcp" marker-end="url(#a-cp)"/>
+<path d="M1290,361 L1352,361" class="e e-mcp" marker-end="url(#a-cp)"/>
+<path d="M470,84 L470,40 L1628,40 L1628,599" class="e e-egress"/>
+<path d="M952,288 L952,40" class="e e-egress"/>
+<path d="M900,288 L952,288" class="e e-egress"/>
+<path d="M1628,441 L1604,441" class="e e-egress" marker-end="url(#a-ext)"/>
+<path d="M1628,520 L1604,520" class="e e-egress" marker-end="url(#a-ext)"/>
+<path d="M1628,599 L1604,599" class="e e-egress" marker-end="url(#a-ext)"/>
+<path d="M548,84 L548,62 L1130,62 L1130,84" class="e e-direct" marker-end="url(#a-cp)"/>
+<path d="M230,550 L262,550 L262,772 L1130,772" class="e e-secret"/>
+<path d="M435,772 L435,748" class="e e-secret" marker-end="url(#a-fg)"/>
+<path d="M780,772 L780,748" class="e e-secret" marker-end="url(#a-fg)"/>
+<path d="M1130,772 L1130,748" class="e e-secret" marker-end="url(#a-fg)"/>
+<path d="M28,1004 L62,1004" class="e e-mcp" marker-end="url(#a-cp)"/>
+<path d="M328,1004 L362,1004" class="e e-direct" marker-end="url(#a-cp)"/>
+<path d="M628,1004 L662,1004" class="e e-model" marker-end="url(#a-core)"/>
+<path d="M928,1004 L962,1004" class="e e-trace" marker-end="url(#a-muted)"/>
+<path d="M28,1036 L62,1036" class="e e-data" marker-end="url(#a-muted)"/>
+<path d="M328,1036 L362,1036" class="e e-secret" marker-end="url(#a-fg)"/>
+<path d="M628,1036 L662,1036" class="e e-egress" marker-end="url(#a-ext)"/>
+<text x="136" y="188" class="tl">HTTPS</text>
+<text x="136" y="369" class="tl">writes</text>
+<text x="136" y="443" class="tl">op:// references</text>
+<text x="136" y="517" class="tl">resolved at start</text>
+<text x="260" y="230" class="tl" text-anchor="middle">routes</text>
+<text x="443" y="628" class="tl">imports agents</text>
+<text x="788" y="355" class="tl">every call</text>
+<text x="788" y="501" class="tl">embeddings</text>
+<text x="944" y="425" class="tl" text-anchor="middle" transform="rotate(-90 944 425)">no key: local fallback</text>
+<text x="620" y="146" class="tl" text-anchor="middle">MCP + Bearer</text>
+<text x="620" y="296" class="tl" text-anchor="middle">lab-chat</text>
+<text x="620" y="384" class="tl" text-anchor="middle">Flowise traces</text>
+<text x="620" y="456" class="tl" text-anchor="middle">RAG retrieval</text>
+<text x="620" y="600" class="tl" text-anchor="middle">app data</text>
+<text x="1321" y="142" class="tl" text-anchor="middle">MGMT</text>
+<text x="1321" y="214" class="tl" text-anchor="middle">GAIA</text>
+<text x="1321" y="286" class="tl" text-anchor="middle">CLOUD</text>
+<text x="1321" y="355" class="tl" text-anchor="middle">FILES</text>
+<text x="640" y="34" class="tl">HTTPS egress to external services, only when a key or endpoint is set</text>
+<text x="640" y="56" class="tl">MCP direct, no gateway: each direct agent calls its sidecar URL</text>
+<text x="443" y="766" class="tl">admin, LiteLLM key, tokens</text>
+<text x="788" y="766" class="tl">provider key, DB passwords</text>
+<text x="1138" y="766" class="tl">Check Point credentials</text>
+<text x="270" y="790" class="tl">secrets from .env or 1Password, injected when the stack starts</text>
+</svg>

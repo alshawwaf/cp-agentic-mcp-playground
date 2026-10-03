@@ -4,17 +4,18 @@
       "id": "chatOpenAI_0",
       "position": {
         "x": -780,
-        "y": 120
+        "y": -260
       },
       "type": "customNode",
       "data": {
         "id": "chatOpenAI_0",
-        "label": "ChatOpenAI",
-        "version": 8.2,
+        "label": "OpenAI",
+        "version": 8.3,
         "name": "chatOpenAI",
         "type": "ChatOpenAI",
         "baseClasses": [
           "ChatOpenAI",
+          "BaseChatOpenAI",
           "BaseChatModel",
           "BaseLanguageModel",
           "Runnable"
@@ -60,6 +61,175 @@
             "additionalParams": true,
             "id": "chatOpenAI_0-input-streaming-boolean",
             "display": true
+          },
+          {
+            "label": "Allow Image Uploads",
+            "name": "allowImageUploads",
+            "type": "boolean",
+            "description": "Allow image input. Refer to the <a href=\"https://docs.flowiseai.com/using-flowise/uploads#image\" target=\"_blank\">docs</a> for more details.",
+            "default": false,
+            "optional": true,
+            "id": "chatOpenAI_0-input-allowImageUploads-boolean",
+            "display": true
+          },
+          {
+            "label": "Reasoning",
+            "description": "Whether the model supports reasoning. Only applicable for reasoning models (gpt-5 and o-series models only)",
+            "name": "reasoning",
+            "type": "boolean",
+            "default": false,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-reasoning-boolean",
+            "display": true
+          },
+          {
+            "label": "Reasoning Effort",
+            "description": "Constrains effort on reasoning. Only applicable for reasoning models (gpt-5 and o-series models only)",
+            "name": "reasoningEffort",
+            "type": "options",
+            "options": [
+              {
+                "label": "Low",
+                "name": "low"
+              },
+              {
+                "label": "Medium",
+                "name": "medium"
+              },
+              {
+                "label": "High",
+                "name": "high"
+              },
+              {
+                "label": "X-High",
+                "name": "xhigh",
+                "description": "X-High is supported for all models after gpt-5.1-codex-max"
+              }
+            ],
+            "additionalParams": true,
+            "show": {
+              "reasoning": true
+            },
+            "id": "chatOpenAI_0-input-reasoningEffort-options",
+            "display": false
+          },
+          {
+            "label": "Reasoning Summary",
+            "description": "A summary of the reasoning performed by the model. This can be useful for debugging and understanding the model's reasoning process",
+            "name": "reasoningSummary",
+            "type": "options",
+            "options": [
+              {
+                "label": "Auto",
+                "name": "auto"
+              },
+              {
+                "label": "Concise",
+                "name": "concise"
+              },
+              {
+                "label": "Detailed",
+                "name": "detailed"
+              }
+            ],
+            "additionalParams": true,
+            "show": {
+              "reasoning": true
+            },
+            "id": "chatOpenAI_0-input-reasoningSummary-options",
+            "display": false
+          },
+          {
+            "label": "Max Tokens",
+            "name": "maxTokens",
+            "type": "number",
+            "step": 1,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-maxTokens-number",
+            "display": true
+          },
+          {
+            "label": "Top Probability",
+            "name": "topP",
+            "type": "number",
+            "step": 0.1,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-topP-number",
+            "display": true
+          },
+          {
+            "label": "Frequency Penalty",
+            "name": "frequencyPenalty",
+            "type": "number",
+            "step": 0.1,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-frequencyPenalty-number",
+            "display": true
+          },
+          {
+            "label": "Presence Penalty",
+            "name": "presencePenalty",
+            "type": "number",
+            "step": 0.1,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-presencePenalty-number",
+            "display": true
+          },
+          {
+            "label": "Timeout",
+            "name": "timeout",
+            "type": "number",
+            "step": 1,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-timeout-number",
+            "display": true
+          },
+          {
+            "label": "Strict Tool Calling",
+            "name": "strictToolCalling",
+            "type": "boolean",
+            "description": "Whether the model supports the `strict` argument when passing in tools. If not specified, the `strict` argument will not be passed to OpenAI.",
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-strictToolCalling-boolean",
+            "display": true
+          },
+          {
+            "label": "Stop Sequence",
+            "name": "stopSequence",
+            "type": "string",
+            "rows": 4,
+            "optional": true,
+            "description": "List of stop words to use when generating. Use comma to separate multiple stop words.",
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-stopSequence-string",
+            "display": true
+          },
+          {
+            "label": "Base Path",
+            "name": "basepath",
+            "type": "string",
+            "optional": true,
+            "description": "Override the default base URL for the API, e.g., \"https://api.example.com/v2/",
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-basepath-string",
+            "display": true
+          },
+          {
+            "label": "Base Options",
+            "name": "baseOptions",
+            "type": "json",
+            "optional": true,
+            "description": "Default headers to include with every request to the API.",
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-baseOptions-json",
+            "display": true
           }
         ],
         "inputAnchors": [
@@ -74,9 +244,13 @@
         ],
         "inputs": {
           "cache": "",
-          "modelName": "gpt-5.4",
+          "modelName": "lab-chat",
           "temperature": 0.2,
           "streaming": true,
+          "allowImageUploads": false,
+          "reasoning": "",
+          "reasoningEffort": "",
+          "reasoningSummary": "",
           "maxTokens": "",
           "topP": "",
           "frequencyPenalty": "",
@@ -84,21 +258,17 @@
           "timeout": "",
           "strictToolCalling": "",
           "stopSequence": "",
-          "basepath": "",
-          "proxyUrl": "",
+          "basepath": "http://litellm:4000/v1",
           "baseOptions": "",
-          "allowImageUploads": false,
-          "imageResolution": "low",
-          "reasoningEffort": "",
           "credential": ""
         },
         "outputAnchors": [
           {
-            "id": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
+            "id": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
             "name": "chatOpenAI",
             "label": "ChatOpenAI",
             "description": "Wrapper around OpenAI large language models that use the Chat endpoint",
-            "type": "ChatOpenAI | BaseChatModel | BaseLanguageModel | Runnable"
+            "type": "ChatOpenAI | BaseChatOpenAI | BaseChatModel | BaseLanguageModel | Runnable"
           }
         ],
         "outputs": {},
@@ -110,7 +280,7 @@
       "selected": false,
       "positionAbsolute": {
         "x": -780,
-        "y": 120
+        "y": -260
       },
       "dragging": false
     },
@@ -118,7 +288,7 @@
       "id": "bufferMemory_0",
       "position": {
         "x": -420,
-        "y": 300
+        "y": 120
       },
       "type": "customNode",
       "data": {
@@ -139,11 +309,12 @@
             "label": "Session Id",
             "name": "sessionId",
             "type": "string",
-            "description": "If not specified, a random id will be used.",
+            "description": "If not specified, a random id will be used. Learn <a target=\"_blank\" href=\"https://docs.flowiseai.com/memory#ui-and-embedded-chat\">more</a>",
             "default": "",
             "additionalParams": true,
             "optional": true,
-            "id": "bufferMemory_0-input-sessionId-string"
+            "id": "bufferMemory_0-input-sessionId-string",
+            "display": true
           },
           {
             "label": "Memory Key",
@@ -151,7 +322,8 @@
             "type": "string",
             "default": "chat_history",
             "additionalParams": true,
-            "id": "bufferMemory_0-input-memoryKey-string"
+            "id": "bufferMemory_0-input-memoryKey-string",
+            "display": true
           }
         ],
         "inputAnchors": [],
@@ -164,6 +336,7 @@
             "id": "bufferMemory_0-output-bufferMemory-BufferMemory|BaseChatMemory|BaseMemory",
             "name": "bufferMemory",
             "label": "BufferMemory",
+            "description": "Retrieve chat messages stored in database",
             "type": "BufferMemory | BaseChatMemory | BaseMemory"
           }
         ],
@@ -175,14 +348,14 @@
       "selected": false,
       "positionAbsolute": {
         "x": -420,
-        "y": 300
+        "y": 120
       },
       "dragging": false
     },
     {
       "id": "ollamaEmbedding_0",
       "position": {
-        "x": -780,
+        "x": -1140,
         "y": 470
       },
       "type": "customNode",
@@ -211,6 +384,7 @@
             "label": "Model Name",
             "name": "modelName",
             "type": "string",
+            "placeholder": "llama2",
             "id": "ollamaEmbedding_0-input-modelName-string",
             "display": true
           },
@@ -218,6 +392,8 @@
             "label": "Number of GPU",
             "name": "numGpu",
             "type": "number",
+            "description": "The number of layers to send to the GPU(s). On macOS it defaults to 1 to enable metal support, 0 to disable. Refer to <a target=\"_blank\" href=\"https://github.com/jmorganca/ollama/blob/main/docs/modelfile.md#valid-parameters-and-values\">docs</a> for more details",
+            "step": 1,
             "optional": true,
             "additionalParams": true,
             "id": "ollamaEmbedding_0-input-numGpu-number",
@@ -227,6 +403,8 @@
             "label": "Number of Thread",
             "name": "numThread",
             "type": "number",
+            "description": "Sets the number of threads to use during computation. By default, Ollama will detect this for optimal performance. It is recommended to set this value to the number of physical CPU cores your system has (as opposed to the logical number of cores). Refer to <a target=\"_blank\" href=\"https://github.com/jmorganca/ollama/blob/main/docs/modelfile.md#valid-parameters-and-values\">docs</a> for more details",
+            "step": 1,
             "optional": true,
             "additionalParams": true,
             "id": "ollamaEmbedding_0-input-numThread-number",
@@ -256,7 +434,7 @@
             "id": "ollamaEmbedding_0-output-ollamaEmbedding-OllamaEmbeddings|Embeddings",
             "name": "ollamaEmbedding",
             "label": "OllamaEmbeddings",
-            "description": "Ollama Embedding models to generate embeddings for a given text",
+            "description": "Generate embeddings for a given text using open source model on Ollama",
             "type": "OllamaEmbeddings | Embeddings"
           }
         ],
@@ -267,7 +445,7 @@
       "height": 430,
       "selected": false,
       "positionAbsolute": {
-        "x": -780,
+        "x": -1140,
         "y": 470
       },
       "dragging": false
@@ -275,7 +453,7 @@
     {
       "id": "qdrant_0",
       "position": {
-        "x": -420,
+        "x": -780,
         "y": 470
       },
       "type": "customNode",
@@ -291,7 +469,7 @@
           "BaseRetriever"
         ],
         "category": "Vector Stores",
-        "description": "Upsert embedded data and perform similarity search upon query using Qdrant",
+        "description": "Upsert embedded data and perform similarity search upon query using Qdrant, a scalable open source vector database written in Rust",
         "inputParams": [
           {
             "label": "Connect Credential",
@@ -324,6 +502,11 @@
           {
             "label": "File Upload",
             "name": "fileUpload",
+            "description": "Allow file upload on the chat",
+            "hint": {
+              "label": "How to use",
+              "value": "\n**File Upload**\n\nThis allows file upload on the chat. Uploaded files will be upserted on the fly to the vector store.\n\n**Note:**\n- You can only turn on file upload for one vector store at a time.\n- At least one Document Loader node should be connected to the document input.\n- Document Loader should be file types like PDF, DOCX, TXT, etc.\n\n**How it works**\n- Uploaded files will have the metadata updated with the chatId.\n- This will allow the file to be associated with the chatId.\n- When querying, metadata will be filtered by chatId to retrieve files associated with the chatId.\n"
+            },
             "type": "boolean",
             "additionalParams": true,
             "optional": true,
@@ -365,14 +548,17 @@
             "label": "Upsert Batch Size",
             "name": "batchSize",
             "type": "number",
-            "optional": true,
+            "step": 1,
+            "description": "Upsert in batches of size N",
             "additionalParams": true,
+            "optional": true,
             "id": "qdrant_0-input-batchSize-number",
             "display": true
           },
           {
             "label": "Similarity",
             "name": "qdrantSimilarity",
+            "description": "Similarity measure used in Qdrant.",
             "type": "options",
             "default": "Cosine",
             "options": [
@@ -396,6 +582,7 @@
           {
             "label": "Additional Collection Cofiguration",
             "name": "qdrantCollectionConfiguration",
+            "description": "Refer to <a target=\"_blank\" href=\"https://qdrant.tech/documentation/concepts/collections\">collection docs</a> for more reference",
             "type": "json",
             "optional": true,
             "additionalParams": true,
@@ -405,18 +592,22 @@
           {
             "label": "Top K",
             "name": "topK",
+            "description": "Number of top results to fetch. Default to 4",
+            "placeholder": "4",
             "type": "number",
-            "optional": true,
             "additionalParams": true,
+            "optional": true,
             "id": "qdrant_0-input-topK-number",
             "display": true
           },
           {
             "label": "Qdrant Search Filter",
             "name": "qdrantFilter",
+            "description": "Only return points which satisfy the conditions",
             "type": "json",
-            "optional": true,
             "additionalParams": true,
+            "optional": true,
+            "acceptVariable": true,
             "id": "qdrant_0-input-qdrantFilter-json",
             "display": true
           }
@@ -442,6 +633,7 @@
             "label": "Record Manager",
             "name": "recordManager",
             "type": "RecordManager",
+            "description": "Keep track of the record to prevent duplication",
             "optional": true,
             "id": "qdrant_0-input-recordManager-RecordManager",
             "display": true
@@ -489,13 +681,138 @@
           }
         ],
         "outputs": {
-          "output": "retriever"
+          "output": "vectorStore"
         },
         "selected": false,
         "credential": ""
       },
       "width": 300,
       "height": 560,
+      "selected": false,
+      "positionAbsolute": {
+        "x": -780,
+        "y": 470
+      },
+      "dragging": false
+    },
+    {
+      "id": "similarityThresholdRetriever_0",
+      "position": {
+        "x": -420,
+        "y": 470
+      },
+      "type": "customNode",
+      "data": {
+        "id": "similarityThresholdRetriever_0",
+        "label": "Similarity Score Threshold Retriever",
+        "version": 2,
+        "name": "similarityThresholdRetriever",
+        "type": "SimilarityThresholdRetriever",
+        "baseClasses": [
+          "SimilarityThresholdRetriever",
+          "BaseRetriever"
+        ],
+        "category": "Retrievers",
+        "description": "Return results based on the minimum similarity percentage",
+        "inputParams": [
+          {
+            "label": "Query",
+            "name": "query",
+            "type": "string",
+            "description": "Query to retrieve documents from retriever. If not specified, user question will be used",
+            "optional": true,
+            "acceptVariable": true,
+            "id": "similarityThresholdRetriever_0-input-query-string",
+            "display": true
+          },
+          {
+            "label": "Minimum Similarity Score (%)",
+            "name": "minSimilarityScore",
+            "description": "Finds results with at least this similarity score",
+            "type": "number",
+            "default": 80,
+            "step": 1,
+            "id": "similarityThresholdRetriever_0-input-minSimilarityScore-number",
+            "display": true
+          },
+          {
+            "label": "Max K",
+            "name": "maxK",
+            "description": "The maximum number of results to fetch",
+            "type": "number",
+            "default": 20,
+            "step": 1,
+            "additionalParams": true,
+            "id": "similarityThresholdRetriever_0-input-maxK-number",
+            "display": true
+          },
+          {
+            "label": "K Increment",
+            "name": "kIncrement",
+            "description": "How much to increase K by each time. It'll fetch N results, then N + kIncrement, then N + kIncrement * 2, etc.",
+            "type": "number",
+            "default": 2,
+            "step": 1,
+            "additionalParams": true,
+            "id": "similarityThresholdRetriever_0-input-kIncrement-number",
+            "display": true
+          }
+        ],
+        "inputAnchors": [
+          {
+            "label": "Vector Store",
+            "name": "vectorStore",
+            "type": "VectorStore",
+            "id": "similarityThresholdRetriever_0-input-vectorStore-VectorStore",
+            "display": true
+          }
+        ],
+        "inputs": {
+          "vectorStore": "{{qdrant_0.data.instance}}",
+          "query": "",
+          "minSimilarityScore": 50,
+          "maxK": 4,
+          "kIncrement": 4
+        },
+        "outputAnchors": [
+          {
+            "name": "output",
+            "label": "Output",
+            "type": "options",
+            "description": "",
+            "options": [
+              {
+                "id": "similarityThresholdRetriever_0-output-retriever-SimilarityThresholdRetriever|BaseRetriever",
+                "name": "retriever",
+                "label": "Similarity Threshold Retriever",
+                "description": "",
+                "type": "SimilarityThresholdRetriever | BaseRetriever"
+              },
+              {
+                "id": "similarityThresholdRetriever_0-output-document-Document|json",
+                "name": "document",
+                "label": "Document",
+                "description": "Array of document objects containing metadata and pageContent",
+                "type": "Document | json"
+              },
+              {
+                "id": "similarityThresholdRetriever_0-output-text-string|json",
+                "name": "text",
+                "label": "Text",
+                "description": "Concatenated string from pageContent of documents",
+                "type": "string | json"
+              }
+            ],
+            "default": "retriever"
+          }
+        ],
+        "outputs": {
+          "output": "retriever"
+        },
+        "selected": false
+      },
+      "width": 300,
+      "height": 480,
       "selected": false,
       "positionAbsolute": {
         "x": -420,
@@ -540,6 +857,7 @@
             "type": "string",
             "description": "When should agent uses to retrieve documents",
             "rows": 3,
+            "placeholder": "Searches and returns documents regarding the state-of-the-union.",
             "id": "retrieverTool_0-input-description-string",
             "display": true
           },
@@ -555,8 +873,13 @@
             "label": "Additional Metadata Filter",
             "name": "retrieverToolMetadataFilter",
             "type": "json",
+            "description": "Add additional metadata filter on top of the existing filter from vector store",
             "optional": true,
             "additionalParams": true,
+            "hint": {
+              "label": "What can you filter?",
+              "value": "Add additional filters to vector store. You can also filter with flow config, including the current \"state\":\n- `$flow.sessionId`\n- `$flow.chatId`\n- `$flow.chatflowId`\n- `$flow.input`\n- `$flow.state`\n"
+            },
             "acceptVariable": true,
             "id": "retrieverTool_0-input-retrieverToolMetadataFilter-json",
             "display": true
@@ -574,7 +897,7 @@
         "inputs": {
           "name": "search_cp_docs",
           "description": "Retrieve the most relevant Check Point documentation snippets for a question. Input: a natural-language query string. Returns the top snippets plus their `source` filename so you can cite them. Call this before answering any Check Point question.",
-          "retriever": "{{qdrant_0.data.instance}}",
+          "retriever": "{{similarityThresholdRetriever_0.data.instance}}",
           "returnSourceDocuments": true,
           "retrieverToolMetadataFilter": ""
         },
@@ -646,6 +969,7 @@
             "name": "enableDetailedStreaming",
             "type": "boolean",
             "default": false,
+            "description": "Stream detailed intermediate steps during agent execution",
             "optional": true,
             "additionalParams": true,
             "id": "toolAgent_0-input-enableDetailedStreaming-boolean",
@@ -672,7 +996,7 @@
             "label": "Tool Calling Chat Model",
             "name": "model",
             "type": "BaseChatModel",
-            "description": "Only compatible with models capable of function calling",
+            "description": "Only compatible with models that are capable of function calling: ChatOpenAI, ChatMistral, ChatAnthropic, ChatGoogleGenerativeAI, ChatVertexAI, GroqChat",
             "id": "toolAgent_0-input-model-BaseChatModel",
             "display": true
           },
@@ -680,12 +1004,14 @@
             "label": "Chat Prompt Template",
             "name": "chatPromptTemplate",
             "type": "ChatPromptTemplate",
+            "description": "Override existing prompt with Chat Prompt Template. Human Message must includes {input} variable",
             "optional": true,
             "id": "toolAgent_0-input-chatPromptTemplate-ChatPromptTemplate",
             "display": true
           },
           {
             "label": "Input Moderation",
+            "description": "Detect text that could generate harmful output and prevent it from being sent to the language model",
             "name": "inputModeration",
             "type": "Moderation",
             "optional": true,
@@ -701,7 +1027,7 @@
           "memory": "{{bufferMemory_0.data.instance}}",
           "model": "{{chatOpenAI_0.data.instance}}",
           "chatPromptTemplate": "",
-          "systemMessage": "You are the **Check Point Documentation RAG assistant**. You answer questions about Check Point using ONLY a small vector-indexed corpus of Check Point concept snippets (Identity Awareness, Threat Prevention profiles, the Gaia API, HTTPS Inspection, access layers, SmartConsole, and more).\n\n== HOW TO WORK ==\n- For EVERY substantive question, FIRST call the `search_cp_docs` tool with a focused query to retrieve relevant snippets.\n- Answer strictly from what the tool returns. If the snippets do not contain the answer, say so plainly — do NOT fall back to your own prior knowledge or invent details.\n- The tool returns each snippet's `source` filename (in the returned source documents). ALWAYS cite the `source` filename(s) you used, e.g. *(source: identity-awareness.md)*.\n- You may call the tool more than once to refine the query.\n\n== OUTPUT STYLE ==\n- Concise Markdown: short paragraphs and bullets.\n- End with a **Sources:** line listing the filenames you cited.\n- The corpus is clearly-marked DEMO content, not official documentation — if asked, say so.",
+          "systemMessage": "You are the **Check Point Documentation RAG assistant**. You answer questions about Check Point using ONLY a small vector-indexed corpus of Check Point concept snippets (Identity Awareness, Threat Prevention profiles, the Gaia API, HTTPS Inspection, access layers, SmartConsole, and more).\n\n== HOW TO WORK ==\n- For EVERY substantive question, FIRST call the `search_cp_docs` tool with a focused query to retrieve relevant snippets.\n- Answer strictly from what the tool returns. If the snippets do not contain the answer, say so plainly — do NOT fall back to your own prior knowledge or invent details.\n- The tool returns each snippet's `source` filename (in the returned source documents). ALWAYS cite the `source` filename(s) you used, e.g. *(source: identity-awareness.md)*.\n- You may call the tool more than once to refine the query.\n\n== OUTPUT STYLE ==\n- Concise Markdown: short paragraphs and bullets.\n- End with a **Sources:** line listing the filenames you cited.\n- The corpus is a small set of sample snippets written for this lab, not official Check Point documentation; if asked, say so.",
           "inputModeration": "",
           "maxIterations": "",
           "enableDetailedStreaming": ""
@@ -738,14 +1064,6 @@
       "id": "ollamaEmbedding_0-ollamaEmbedding_0-output-ollamaEmbedding-OllamaEmbeddings|Embeddings-qdrant_0-qdrant_0-input-embeddings-Embeddings"
     },
     {
-      "source": "qdrant_0",
-      "sourceHandle": "qdrant_0-output-retriever-Qdrant|VectorStoreRetriever|BaseRetriever",
-      "target": "retrieverTool_0",
-      "targetHandle": "retrieverTool_0-input-retriever-BaseRetriever",
-      "type": "buttonedge",
-      "id": "qdrant_0-qdrant_0-output-retriever-Qdrant|VectorStoreRetriever|BaseRetriever-retrieverTool_0-retrieverTool_0-input-retriever-BaseRetriever"
-    },
-    {
       "source": "retrieverTool_0",
       "sourceHandle": "retrieverTool_0-output-retrieverTool-RetrieverTool|DynamicTool|Tool|StructuredTool|Runnable",
       "target": "toolAgent_0",
@@ -755,11 +1073,11 @@
     },
     {
       "source": "chatOpenAI_0",
-      "sourceHandle": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
+      "sourceHandle": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
       "target": "toolAgent_0",
       "targetHandle": "toolAgent_0-input-model-BaseChatModel",
       "type": "buttonedge",
-      "id": "chatOpenAI_0-chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable-toolAgent_0-toolAgent_0-input-model-BaseChatModel"
+      "id": "chatOpenAI_0-chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable-toolAgent_0-toolAgent_0-input-model-BaseChatModel"
     },
     {
       "source": "bufferMemory_0",
@@ -768,6 +1086,22 @@
       "targetHandle": "toolAgent_0-input-memory-BaseChatMemory",
       "type": "buttonedge",
       "id": "bufferMemory_0-bufferMemory_0-output-bufferMemory-BufferMemory|BaseChatMemory|BaseMemory-toolAgent_0-toolAgent_0-input-memory-BaseChatMemory"
+    },
+    {
+      "source": "qdrant_0",
+      "sourceHandle": "qdrant_0-output-vectorStore-Qdrant|VectorStore",
+      "target": "similarityThresholdRetriever_0",
+      "targetHandle": "similarityThresholdRetriever_0-input-vectorStore-VectorStore",
+      "type": "buttonedge",
+      "id": "qdrant_0-qdrant_0-output-vectorStore-Qdrant|VectorStore-similarityThresholdRetriever_0-similarityThresholdRetriever_0-input-vectorStore-VectorStore"
+    },
+    {
+      "source": "similarityThresholdRetriever_0",
+      "sourceHandle": "similarityThresholdRetriever_0-output-retriever-SimilarityThresholdRetriever|BaseRetriever",
+      "target": "retrieverTool_0",
+      "targetHandle": "retrieverTool_0-input-retriever-BaseRetriever",
+      "type": "buttonedge",
+      "id": "similarityThresholdRetriever_0-similarityThresholdRetriever_0-output-retriever-SimilarityThresholdRetriever|BaseRetriever-retrieverTool_0-retrieverTool_0-input-retriever-BaseRetriever"
     }
   ],
   "viewport": {

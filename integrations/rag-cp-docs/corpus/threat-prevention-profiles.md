@@ -1,6 +1,6 @@
 # Threat Prevention Profiles
 
-> Demo content for the Visible RAG lab — a short, paraphrased primer, NOT official Check Point documentation.
+> Training content for the Visible RAG lab — a short, paraphrased primer, NOT official Check Point documentation.
 
 A Threat Prevention profile is a reusable set of protections that you apply to traffic
 through a Threat Prevention policy layer. One profile controls several blades at once:

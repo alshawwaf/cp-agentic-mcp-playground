@@ -19,6 +19,8 @@ export class SMPAPIManager {
    * @returns A new SMPAPIManager instance
    */
   static create(settings: Settings): SMPAPIManager {
+    // LAB PATCH (D031): validate here (per tool call), not at server start-up.
+    settings.validateSMPSettings();
     return new SMPAPIManager(settings);
   }
 

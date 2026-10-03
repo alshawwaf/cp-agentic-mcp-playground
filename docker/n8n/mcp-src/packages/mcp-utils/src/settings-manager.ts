@@ -1,3 +1,5 @@
+import { redactSecrets } from './redact.js';
+
 /**
  * SettingsManager for MCP servers with multi-user support.
  * This class manages settings on a per-session basis for all MCP servers.
@@ -7,8 +9,15 @@ export class SettingsManager {
   private defaultSessionId: string = 'default';
   private settingsClass: any;
   
-  // Global debug state that persists across all sessions and instances
+  // Global debug state that persists across all sessions and instances.
+  // LAB PATCH (D044): set only from the operator's --debug / DEBUG at start-up,
+  // never from a request header (a `debug: true` header used to switch on
+  // global debug logging of every incoming header, credentials included).
   private static globalDebugState: string | string[] | boolean | undefined = undefined;
+
+  // LAB PATCH (D044): the start-up CLI/env options, reused for every session
+  // that does not supply its own credentials in request headers.
+  private bootArgs: Record<string, any> = {};
 
   /**
    * Creates a new SettingsManager
@@ -52,11 +61,11 @@ export class SettingsManager {
    * @param source Source object containing debug information
    * @private
    */
-  private injectDebug(settings: any, source: Record<string, any>): void {
+  private injectDebug(settings: any, source: Record<string, any>, updateGlobal = false): void {
     const debug = source?.debug ?? SettingsManager.globalDebugState ?? process.env.DEBUG;
     if (typeof debug !== 'undefined') {
-      // Update global debug state when debug is explicitly set
-      if (source?.debug !== undefined) {
+      // Update global debug state when debug is explicitly set (LAB PATCH: start-up options only)
+      if (updateGlobal && source?.debug !== undefined) {
         SettingsManager.globalDebugState = source.debug;
       }
       
@@ -67,10 +76,10 @@ export class SettingsManager {
         settings.debug = debug;
       }
 
-      // Print all headers/args when debug is enabled
+      // Print all headers/args when debug is enabled (LAB PATCH: secrets redacted)
       if (debug) {
-        console.error('Debug enabled. Source object contents:');
-        console.error(JSON.stringify(source, null, 2));
+        console.error('Debug enabled. Source object contents (secrets redacted):');
+        console.error(JSON.stringify(redactSecrets(source), null, 2));
       }
     }
   }
@@ -87,7 +96,7 @@ export class SettingsManager {
       
       // If the settings object has a data property or similar, try to iterate over it
       if (settings.data && typeof settings.data === 'object') {
-        Object.entries(settings.data).forEach(([key, value]) => {
+        Object.entries(redactSecrets(settings.data) as Record<string, unknown>).forEach(([key, value]) => {
           console.error(`  ${key}: ${JSON.stringify(value)}`);
         });
       } else {
@@ -95,8 +104,8 @@ export class SettingsManager {
       }
     } else {
       // For plain objects, show all enumerable properties
-      console.error('Settings (plain object):');
-      Object.entries(settings).forEach(([key, value]) => {
+      console.error('Settings (plain object, secrets redacted):');
+      Object.entries(redactSecrets(settings) as Record<string, unknown>).forEach(([key, value]) => {
         console.error(`  ${key}: ${JSON.stringify(value)}`);
       });
     }
@@ -109,9 +118,46 @@ export class SettingsManager {
    * @returns Settings instance
    */
   createFromArgs(args: Record<string, any>, sessionId?: string): any {
+    this.bootArgs = { ...args };
     const settings = this.settingsClass.fromArgs(args);
-    this.injectDebug(settings, args);
+    this.injectDebug(settings, args, true);
     this.setSettings(settings, sessionId);
+    return settings;
+  }
+
+  /**
+   * LAB PATCH (D044, header auth vs env auth): build the settings for one new
+   * HTTP session WITHOUT storing them, so the launcher can reject a bad
+   * configuration before any session state exists.
+   *
+   * The two credential sources are mutually exclusive per session:
+   * - useHeaders = false: the operator's start-up settings (CLI/env) only.
+   *   Request headers are ignored entirely.
+   * - useHeaders = true: the request headers only. Each Settings.fromHeaders()
+   *   builds its object without falling back to process.env, so a caller that
+   *   sends e.g. only `management-host` never gets the operator's API key.
+   *
+   * Debug mode always follows the operator's --debug / DEBUG setting.
+   */
+  buildSessionSettings(headers: Record<string, string | string[]>, useHeaders: boolean): any {
+    let settings: any;
+    if (useHeaders) {
+      const normalizedHeaders: Record<string, string | string[]> = {};
+      for (const [key, value] of Object.entries(headers)) {
+        normalizedHeaders[key.includes('_') ? key.replace(/_/g, '-') : key] = value;
+      }
+      if (SettingsManager.globalDebugState) {
+        console.error('=== Session settings from request headers (secrets redacted) ===');
+        console.error(JSON.stringify(redactSecrets(normalizedHeaders), null, 2));
+      }
+      settings = this.settingsClass.fromHeaders(normalizedHeaders);
+    } else {
+      settings = this.settingsClass.fromArgs({ ...this.bootArgs });
+    }
+    this.injectDebug(settings, { debug: SettingsManager.globalDebugState });
+    if (SettingsManager.globalDebugState) {
+      this.printSettingsDebug(settings);
+    }
     return settings;
   }
   
@@ -122,41 +168,9 @@ export class SettingsManager {
    * @returns Settings instance
    */
   createFromHeaders(headers: Record<string, string | string[]>, sessionId?: string): any {
-    // Print headers if debug is enabled globally
-    if (SettingsManager.globalDebugState) {
-      console.error('=== createFromHeaders Debug Info ===');
-      console.error('Incoming headers:');
-      console.error(JSON.stringify(headers, null, 2));
-    }
-    
-    // Convert headers with underscores to hyphens
-    const normalizedHeaders: Record<string, string | string[]> = {};
-
-    for (const [key, value] of Object.entries(headers)) {
-      const normalizedKey = key.includes('_') ? key.replace(/_/g, '-') : key;
-      normalizedHeaders[normalizedKey] = value;
-    }
-
-    if (SettingsManager.globalDebugState) {
-      console.error('Normalized headers:');
-      console.error(JSON.stringify(normalizedHeaders, null, 2));
-    }
-
-    const debugHeader = normalizedHeaders['debug'] || normalizedHeaders['Debug'] || normalizedHeaders['DEBUG'];
-    
-    // Use header debug if present, otherwise preserve global debug state
-    const debugSource = { debug: debugHeader !== undefined ? debugHeader : SettingsManager.globalDebugState };
-
-    const settings = this.settingsClass.fromHeaders(normalizedHeaders);
-    this.injectDebug(settings, debugSource);
-    
-    // Print final settings if debug is enabled
-    if (SettingsManager.globalDebugState) {
-      console.error('Final settings object:');
-      this.printSettingsDebug(settings);
-      console.error('=== End createFromHeaders Debug Info ===');
-    }
-    
+    // LAB PATCH (D044): header-supplied settings never mix with env credentials,
+    // and a `debug` header no longer changes the global debug state.
+    const settings = this.buildSessionSettings(headers, true);
     this.setSettings(settings, sessionId);
     return settings;
   }

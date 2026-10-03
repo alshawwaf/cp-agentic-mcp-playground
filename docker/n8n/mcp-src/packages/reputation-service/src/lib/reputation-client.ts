@@ -20,7 +20,8 @@ export class ReputationSettings {
   }
 
   static fromHeaders(headers: Record<string, string | string[]>): ReputationSettings {
-    const apiKey = getHeaderValue(headers, 'API-KEY');
+    // LAB PATCH (D044): headers ONLY - '' blocks the process.env.API_KEY default.
+    const apiKey = getHeaderValue(headers, 'API-KEY') ?? '';
     return new ReputationSettings({
       apiKey
     });
@@ -28,7 +29,9 @@ export class ReputationSettings {
 }
 
 
-let tokenCached = '';
+// LAB PATCH (D044, never mix credentials): one cached token PER API key. A single
+// module-wide token let a session use a token obtained with another session's key.
+const tokenCache = new Map<string, string>();
 
 export class ReputationClient {
     private settings: ReputationSettings;
@@ -54,6 +57,8 @@ export class ReputationClient {
                 return Date.now() >= expTime;
             };
 
+            const apiKey = this.settings.apiKey || '';
+            let tokenCached = tokenCache.get(apiKey) || '';
             if (!tokenCached || isTokenExpired(tokenCached)) {
                 // First get token
                 const tokenResponse = await axios.get(this.BASE_AUTH_URL, {
@@ -67,6 +72,7 @@ export class ReputationClient {
                 }
 
                 tokenCached = tokenResponse.data;
+                tokenCache.set(apiKey, tokenCached);
             }
 
             // Then query reputation

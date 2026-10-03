@@ -1,6 +1,6 @@
 # Identity Awareness
 
-> Demo content for the Visible RAG lab — a short, paraphrased primer, NOT official Check Point documentation.
+> Training content for the Visible RAG lab — a short, paraphrased primer, NOT official Check Point documentation.
 
 Identity Awareness maps network traffic to actual user and machine identities so that
 access rules can be written against people and groups instead of raw IP addresses.

@@ -1,43 +1,160 @@
-name: Security Scan
+name: Security scan
+
+# Weekly vulnerability report (Trivy) of what lab hosts actually pull:
+#   - the published lab images (ghcr.io/<owner>/cp-agentic-n8n and cp-agentic-ips-cve-mcp, :latest),
+#     both platforms. They are built from docker/n8n/Dockerfile (multi-stage) and the exercise Dockerfile.
+#   - every third-party image docker-compose.yml pins by digest (all profiles).
+# Report only: results go to the Security tab (code scanning) and the job log; nothing fails on a finding.
+# The merge gate for new code is the Trivy step of the "Lab images" job in ci.yml (fixable CRITICAL).
 
 on:
   schedule:
-    # Run every Monday at 9:00 AM UTC
     - cron: '0 9 * * 1'
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+env:
+  TRIVY_VERSION: v0.70.0
+
 jobs:
-  trivy-scan:
-    name: Trivy Security Scan
-    runs-on: ubuntu-latest
-    
+  list:
+    name: List the pinned third-party images
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      images: ${{ steps.list.outputs.images }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Build custom n8n image
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Images in docker-compose.yml (tag@digest)
+        id: list
         run: |
-          docker compose build n8n
-      
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+          images=$(sed -n 's/^ *image: *\([^ $]*@sha256:[0-9a-f]*\).*/\1/p' docker-compose.yml | sort -u | jq -R . | jq -cs .)
+          echo "$images" | jq -r '.[]'
+          echo "images=$images" >> "$GITHUB_OUTPUT"
+
+  lab-images:
+    name: Scan ${{ matrix.image }} (${{ matrix.platform }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [cp-agentic-n8n, cp-agentic-ips-cve-mcp]
+        platform: [linux/amd64, linux/arm64]
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          image-ref: 'custom-mcp-n8n:custom'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH'
-      
-      - name: Upload Trivy results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
+          persist-credentials: false
+
+      - name: Image reference
+        id: ref
+        env:
+          IMAGE: ${{ matrix.image }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          owner=$(printf '%s' "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')
+          ref="ghcr.io/$owner/$IMAGE:latest"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "category=$IMAGE-${PLATFORM#linux/}" >> "$GITHUB_OUTPUT"
+          if docker buildx imagetools inspect "$ref" | grep -q "Platform: *$PLATFORM"; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::$ref has no $PLATFORM image yet (publish-image.yml has not run on main); skipped"
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Trivy (SARIF, HIGH and CRITICAL)
+        if: steps.ref.outputs.published == 'true'
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_PLATFORM: ${{ matrix.platform }}
         with:
-          sarif_file: 'trivy-results.sarif'
-      
-      - name: Run Trivy vulnerability scanner (table output)
-        uses: aquasecurity/trivy-action@master
+          version: ${{ env.TRIVY_VERSION }}
+          image-ref: ${{ steps.ref.outputs.ref }}
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          limit-severities-for-sarif: true
+          format: sarif
+          output: trivy.sarif
+          exit-code: '0'
+
+      - name: Upload to code scanning
+        if: steps.ref.outputs.published == 'true'
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
         with:
-          image-ref: 'custom-mcp-n8n:custom'
-          format: 'table'
-          severity: 'CRITICAL,HIGH'
+          sarif_file: trivy.sarif
+          category: trivy-${{ steps.ref.outputs.category }}
+
+      - name: Trivy (table, fixable HIGH and CRITICAL)
+        if: steps.ref.outputs.published == 'true'
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_PLATFORM: ${{ matrix.platform }}
+        with:
+          version: ${{ env.TRIVY_VERSION }}
+          skip-setup-trivy: true
+          image-ref: ${{ steps.ref.outputs.ref }}
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          format: table
+          exit-code: '0'
+
+  third-party:
+    name: Scan ${{ matrix.image }}
+    needs: list
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        image: ${{ fromJSON(needs.list.outputs.images) }}
+    steps:
+      - name: Category
+        id: cat
+        env:
+          IMAGE: ${{ matrix.image }}
+        run: echo "category=$(printf '%s' "${IMAGE%%@*}" | tr -c 'A-Za-z0-9._-' '-')" >> "$GITHUB_OUTPUT"
+
+      - name: Trivy (SARIF, HIGH and CRITICAL)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: ${{ env.TRIVY_VERSION }}
+          image-ref: ${{ matrix.image }}
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          limit-severities-for-sarif: true
+          format: sarif
+          output: trivy.sarif
+          exit-code: '0'
+
+      - name: Upload to code scanning
+        uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        with:
+          sarif_file: trivy.sarif
+          category: trivy-third-party-${{ steps.cat.outputs.category }}
+
+      - name: Trivy (table, fixable CRITICAL)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          version: ${{ env.TRIVY_VERSION }}
+          skip-setup-trivy: true
+          image-ref: ${{ matrix.image }}
+          scanners: vuln
+          severity: CRITICAL
+          ignore-unfixed: true
+          format: table
+          exit-code: '0'

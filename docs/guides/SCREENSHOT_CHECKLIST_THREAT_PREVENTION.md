@@ -1,29 +1,24 @@
-# Screenshot Capture Checklist: Threat Prevention Guide
+# Screenshots for the Threat Prevention Guides (Author Note)
 
-Please capture the following screenshots from your n8n workflow and save them to `docs/assets/threat-prevention/nodes/`.
+This is a note for guide authors, not a trainee guide.
 
-## 1. AI Agent Node
-- **Config**: Open the "Threat Prevention Agent" node. Capture the "Parameters" tab showing the System Message and Model connection.
-  - Save as: `ai_agent_config.png`
-- **Input**: (Optional) Capture the input JSON (chat message).
-  - Save as: `ai_agent_input.png`
-- **Output**: (Optional) Capture the output JSON (final response).
-  - Save as: `ai_agent_output.png`
+The [Threat Prevention agents guide](Threat_Prevention_MCP_Agent_Guide.md) and the
+[Threat Prevention deep dive](CheckPoint_Threat_Prevention_Guide.md) describe every step in text and
+use no screenshots. The repository holds no Threat Prevention screenshots; older ones showed retired node
+names and an earlier workflow layout and were removed.
 
-## 2. MCP Client Node
-- **Config**: Open the "MCP Client" node. Capture the configuration showing the "Tool Name" or "Connected Tool".
-  - Save as: `mcp_client_config.png`
-- **Output**: Capture the output JSON showing the tool execution result (e.g., list of protections).
-  - Save as: `mcp_client_output.png`
+If you add screenshots later:
 
-## 3. Memory Node
-- **Config**: Open the "Window Buffer Memory" node. Capture the configuration showing the "Session ID" or "Window Size".
-  - Save as: `memory_config.png`
-
-## 4. Chat Trigger Node
-- **Config**: Open the "When chat message received" node. Capture the configuration.
-  - Save as: `chat_trigger_config.png`
-
-## 5. Full Workflow
-- **Canvas**: Capture the entire workflow canvas.
-  - Save as: `full_workflow_canvas.png` (overwrite existing if needed)
+- **Capture the current agents:** the n8n workflows **Threat Prevention Agent (Direct)** and **Threat
+  Prevention Agent (MCP Gateway)**, with their current node names: `When chat message received`,
+  `Normalize input`, `Threat Prevention Agent`, `OpenAI Chat Model`, `Conversation Memory`,
+  `Threat Prevention MCP` (or `MCP Gateway`), and `Friendly error`
+- **Prefer node settings panels** (for example the MCP Client Tool's endpoint and **Tools to Include**)
+  over the full canvas. They stay readable and change less between n8n releases
+- **Never show secrets:** no tokens, API keys, passwords, or `.env` content. The credentials
+  **MCP Gateway Bearer**, **Lab Model (LiteLLM)**, and **Lab Agents Chat** hold secrets; show only their
+  names
+- **Use lab data only.** No customer hosts, policies, logs, or IP addresses
+- **Store and reference them together.** Save the files under `docs/assets/threat-prevention/` and
+  reference each one from the guide in the same change. Flag an image that no guide uses for removal
+- **Describe the step in text as well,** so the guide still works when an image is out of date

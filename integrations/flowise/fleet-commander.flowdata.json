@@ -11,12 +11,13 @@
       "type": "customNode",
       "data": {
         "id": "chatOpenAI_0",
-        "label": "ChatOpenAI",
-        "version": 8.2,
+        "label": "OpenAI",
+        "version": 8.3,
         "name": "chatOpenAI",
         "type": "ChatOpenAI",
         "baseClasses": [
           "ChatOpenAI",
+          "BaseChatOpenAI",
           "BaseChatModel",
           "BaseLanguageModel",
           "Runnable"
@@ -62,6 +63,84 @@
             "additionalParams": true,
             "id": "chatOpenAI_0-input-streaming-boolean",
             "display": true
+          },
+          {
+            "label": "Allow Image Uploads",
+            "name": "allowImageUploads",
+            "type": "boolean",
+            "description": "Allow image input. Refer to the <a href=\"https://docs.flowiseai.com/using-flowise/uploads#image\" target=\"_blank\">docs</a> for more details.",
+            "default": false,
+            "optional": true,
+            "id": "chatOpenAI_0-input-allowImageUploads-boolean",
+            "display": true
+          },
+          {
+            "label": "Reasoning",
+            "description": "Whether the model supports reasoning. Only applicable for reasoning models (gpt-5 and o-series models only)",
+            "name": "reasoning",
+            "type": "boolean",
+            "default": false,
+            "optional": true,
+            "additionalParams": true,
+            "id": "chatOpenAI_0-input-reasoning-boolean",
+            "display": true
+          },
+          {
+            "label": "Reasoning Effort",
+            "description": "Constrains effort on reasoning. Only applicable for reasoning models (gpt-5 and o-series models only)",
+            "name": "reasoningEffort",
+            "type": "options",
+            "options": [
+              {
+                "label": "Low",
+                "name": "low"
+              },
+              {
+                "label": "Medium",
+                "name": "medium"
+              },
+              {
+                "label": "High",
+                "name": "high"
+              },
+              {
+                "label": "X-High",
+                "name": "xhigh",
+                "description": "X-High is supported for all models after gpt-5.1-codex-max"
+              }
+            ],
+            "additionalParams": true,
+            "show": {
+              "reasoning": true
+            },
+            "id": "chatOpenAI_0-input-reasoningEffort-options",
+            "display": false
+          },
+          {
+            "label": "Reasoning Summary",
+            "description": "A summary of the reasoning performed by the model. This can be useful for debugging and understanding the model's reasoning process",
+            "name": "reasoningSummary",
+            "type": "options",
+            "options": [
+              {
+                "label": "Auto",
+                "name": "auto"
+              },
+              {
+                "label": "Concise",
+                "name": "concise"
+              },
+              {
+                "label": "Detailed",
+                "name": "detailed"
+              }
+            ],
+            "additionalParams": true,
+            "show": {
+              "reasoning": true
+            },
+            "id": "chatOpenAI_0-input-reasoningSummary-options",
+            "display": false
           },
           {
             "label": "Max Tokens",
@@ -135,92 +214,23 @@
             "display": true
           },
           {
-            "label": "BasePath",
+            "label": "Base Path",
             "name": "basepath",
             "type": "string",
             "optional": true,
+            "description": "Override the default base URL for the API, e.g., \"https://api.example.com/v2/",
             "additionalParams": true,
             "id": "chatOpenAI_0-input-basepath-string",
             "display": true
           },
           {
-            "label": "Proxy Url",
-            "name": "proxyUrl",
-            "type": "string",
-            "optional": true,
-            "additionalParams": true,
-            "id": "chatOpenAI_0-input-proxyUrl-string",
-            "display": true
-          },
-          {
-            "label": "BaseOptions",
+            "label": "Base Options",
             "name": "baseOptions",
             "type": "json",
             "optional": true,
+            "description": "Default headers to include with every request to the API.",
             "additionalParams": true,
             "id": "chatOpenAI_0-input-baseOptions-json",
-            "display": true
-          },
-          {
-            "label": "Allow Image Uploads",
-            "name": "allowImageUploads",
-            "type": "boolean",
-            "description": "Allow image input. Refer to the <a href=\"https://docs.flowiseai.com/using-flowise/uploads#image\" target=\"_blank\">docs</a> for more details.",
-            "default": false,
-            "optional": true,
-            "id": "chatOpenAI_0-input-allowImageUploads-boolean",
-            "display": true
-          },
-          {
-            "label": "Image Resolution",
-            "description": "This parameter controls the resolution in which the model views the image.",
-            "name": "imageResolution",
-            "type": "options",
-            "options": [
-              {
-                "label": "Low",
-                "name": "low"
-              },
-              {
-                "label": "High",
-                "name": "high"
-              },
-              {
-                "label": "Auto",
-                "name": "auto"
-              }
-            ],
-            "default": "low",
-            "optional": false,
-            "show": {
-              "allowImageUploads": true
-            },
-            "id": "chatOpenAI_0-input-imageResolution-options",
-            "display": false
-          },
-          {
-            "label": "Reasoning Effort",
-            "description": "Constrains effort on reasoning for reasoning models. Only applicable for o1 and o3 models.",
-            "name": "reasoningEffort",
-            "type": "options",
-            "options": [
-              {
-                "label": "Low",
-                "name": "low"
-              },
-              {
-                "label": "Medium",
-                "name": "medium"
-              },
-              {
-                "label": "High",
-                "name": "high"
-              }
-            ],
-            "default": "medium",
-            "optional": false,
-            "additionalParams": true,
-            "id": "chatOpenAI_0-input-reasoningEffort-options",
             "display": true
           }
         ],
@@ -236,9 +246,13 @@
         ],
         "inputs": {
           "cache": "",
-          "modelName": "gpt-5.4",
+          "modelName": "lab-chat",
           "temperature": 0.2,
           "streaming": true,
+          "allowImageUploads": false,
+          "reasoning": "",
+          "reasoningEffort": "",
+          "reasoningSummary": "",
           "maxTokens": "",
           "topP": "",
           "frequencyPenalty": "",
@@ -246,26 +260,22 @@
           "timeout": "",
           "strictToolCalling": "",
           "stopSequence": "",
-          "basepath": "",
-          "proxyUrl": "",
+          "basepath": "http://litellm:4000/v1",
           "baseOptions": "",
-          "allowImageUploads": false,
-          "imageResolution": "low",
-          "reasoningEffort": "",
-          "credential": "96711d21-d048-48dc-b588-17bb4b101527"
+          "credential": ""
         },
         "outputAnchors": [
           {
-            "id": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
+            "id": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
             "name": "chatOpenAI",
             "label": "ChatOpenAI",
             "description": "Wrapper around OpenAI large language models that use the Chat endpoint",
-            "type": "ChatOpenAI | BaseChatModel | BaseLanguageModel | Runnable"
+            "type": "ChatOpenAI | BaseChatOpenAI | BaseChatModel | BaseLanguageModel | Runnable"
           }
         ],
         "outputs": {},
         "selected": false,
-        "credential": "96711d21-d048-48dc-b588-17bb4b101527"
+        "credential": ""
       },
       "selected": true,
       "positionAbsolute": {
@@ -305,7 +315,8 @@
             "default": "",
             "additionalParams": true,
             "optional": true,
-            "id": "bufferMemory_1-input-sessionId-string"
+            "id": "bufferMemory_1-input-sessionId-string",
+            "display": true
           },
           {
             "label": "Memory Key",
@@ -313,7 +324,8 @@
             "type": "string",
             "default": "chat_history",
             "additionalParams": true,
-            "id": "bufferMemory_1-input-memoryKey-string"
+            "id": "bufferMemory_1-input-memoryKey-string",
+            "display": true
           }
         ],
         "inputAnchors": [],
@@ -326,6 +338,7 @@
             "id": "bufferMemory_1-output-bufferMemory-BufferMemory|BaseChatMemory|BaseMemory",
             "name": "bufferMemory",
             "label": "BufferMemory",
+            "description": "Retrieve chat messages stored in database",
             "type": "BufferMemory | BaseChatMemory | BaseMemory"
           }
         ],
@@ -365,9 +378,9 @@
             "hideCodeExecute": true,
             "hint": {
               "label": "How to use",
-              "value": "Remote MCP over streamable HTTP. Bearer auth in headers."
+              "value": "\nYou can use variables in the MCP Server Config with double curly braces `{{ }}` and prefix `$vars.<variableName>`. \n\nFor example, you have a variable called \"var1\":\n```json\n{\n    \"command\": \"docker\",\n    \"args\": [\n        \"run\",\n        \"-i\",\n        \"--rm\",\n        \"-e\", \"API_TOKEN\"\n    ],\n    \"env\": {\n        \"API_TOKEN\": \"{{$vars.var1}}\"\n    }\n}\n```\n\nFor example, when using SSE, you can use the variable \"var1\" in the headers:\n```json\n{\n    \"url\": \"https://api.example.com/endpoint/sse\",\n    \"headers\": {\n        \"Authorization\": \"Bearer {{$vars.var1}}\"\n    }\n}\n```\n"
             },
-            "placeholder": "{\n    \"url\": \"http://host:port/mcp\"\n}",
+            "placeholder": "{\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/path/to/allowed/files\"]\n}",
             "id": "customMCP_0-input-mcpServerConfig-code",
             "display": true
           },
@@ -383,14 +396,14 @@
         ],
         "inputAnchors": [],
         "inputs": {
-          "mcpServerConfig": "{\n    \"url\": \"http://mcp-gateway:8080/mcp\",\n    \"headers\": {\n        \"Authorization\": \"Bearer __MCP_GATEWAY_TOKEN__\"\n    }\n}",
-          "mcpActions": "[\"find_zero_hits_rules\", \"management__init\", \"management__show_gateways_and_servers\", \"management__show_object\", \"management__show_objects\", \"show_access_layer\", \"show_access_layers\", \"show_access_point_names\", \"show_access_rule\", \"show_access_rulebase\", \"show_access_section\", \"show_address_ranges\", \"show_application_site_categories\", \"show_application_site_groups\", \"show_application_sites\", \"show_cluster_member\", \"show_cluster_members\", \"show_domains\", \"show_dynamic_objects\", \"show_groups\", \"show_hosts\", \"show_lsm_cluster\", \"show_lsm_clusters\", \"show_lsm_gateway\", \"show_lsm_gateways\", \"show_mdss\", \"show_multicast_address_ranges\", \"show_nat_rulebase\", \"show_nat_section\", \"show_networks\", \"show_security_zones\", \"show_service_groups\", \"manage_gaia_credentials\", \"show_arp\", \"show_bgp_groups\", \"show_bgp_paths\", \"show_bgp_peers\", \"show_bgp_routemaps\", \"show_bgp_routes_in\", \"show_bgp_routes_out\", \"show_bgp_summary\", \"show_bootp_interfaces\", \"show_configuration_bgp\", \"show_date_time\", \"show_dhcp\", \"show_dhcp6\", \"cphaprob_if\", \"cphaprob_stat\", \"cphaprob_syncstat\", \"cpinfo_all\", \"cplic_print\", \"disk_usage\", \"dmidecode\", \"dynamic_balancing\", \"fw_accel_conns\", \"fw_accel_stat\", \"fw_accel_stats\", \"fw_ctl_arp\", \"fw_ctl_chain\", \"fw_ctl_conn\", \"check_cve_protection\", \"show_exception_group\", \"show_exception_groups\", \"show_ips_protection_extended_attribute\", \"show_ips_protection_extended_attributes\", \"show_ips_status\", \"show_ips_update_schedule\", \"show_threat_advanced_settings\", \"show_threat_indicator\", \"show_threat_indicators\", \"show_threat_layer\", \"show_threat_layers\", \"show_threat_profile\", \"show_threat_profiles\", \"show_threat_protection\", \"show_threat_protections\", \"show_threat_rule\", \"show_threat_rule_exception_rulebase\", \"download_report\", \"get_quota\", \"query_file\", \"scan_file\", \"upload_file\", \"reputation_file\", \"reputation_ip\", \"reputation_url\", \"analyze_cpinfo_overview\", \"analyze_performance_metrics\", \"audit_security_settings\", \"browse_sections_by_category\", \"check_initialization_status\", \"comprehensive_health_analysis\", \"detect_system_crashes\", \"extract_license_information\", \"extract_network_config\", \"extract_system_details\", \"https-inspection__init\", \"https-inspection__show_gateways_and_servers\", \"https-inspection__show_object\", \"https-inspection__show_objects\", \"show_https_layer\", \"show_https_layers\", \"show_https_rule\", \"show_https_rulebase\", \"show_https_section\", \"build_logs_query_filter\", \"get_next_query_page\", \"management-logs__init\", \"management-logs__show_gateways_and_servers\", \"management-logs__show_object\", \"management-logs__show_objects\", \"run_logs_query\", \"ask-checkpoint-docs\"]"
+          "mcpServerConfig": "{\n    \"url\": \"http://mcp-gateway:8080/mcp\",\n    \"headers\": {\n        \"Authorization\": \"Bearer {{$vars.MCP_GATEWAY_TOKEN}}\"\n    }\n}",
+          "mcpActions": "[\"ask-checkpoint-docs\", \"management__init\", \"management__show_gateways_and_servers\", \"management__show_objects\", \"management__show_object\", \"show_hosts\", \"show_networks\", \"show_groups\", \"show_address_ranges\", \"show_services_tcp\", \"show_services_udp\", \"show_service_groups\", \"show_application_sites\", \"show_application_site_categories\", \"show_dynamic_objects\", \"show_security_zones\", \"show_time_groups\", \"show_tags\", \"show_access_layers\", \"show_access_layer\", \"show_access_rulebase\", \"show_access_rule\", \"show_access_section\", \"show_nat_rulebase\", \"show_nat_section\", \"find_zero_hits_rules\", \"show_simple_gateways\", \"show_simple_gateway\", \"show_simple_clusters\", \"show_simple_cluster\", \"show_cluster_members\", \"show_domains\", \"show_mdss\", \"show_vpn_communities_star\", \"show_vpn_communities_meshed\", \"show_vpn_communities_remote_access\", \"management-logs__init\", \"build_logs_query_filter\", \"run_logs_query\", \"get_next_query_page\", \"threat-prevention__init\", \"show_threat_profiles\", \"show_threat_profile\", \"show_threat_protections\", \"show_threat_protection\", \"show_threat_layers\", \"show_threat_layer\", \"show_threat_rulebase\", \"show_threat_rule\", \"show_threat_rule_exception_rulebase\", \"show_exception_groups\", \"show_threat_indicators\", \"show_threat_ioc_feeds\", \"show_ips_status\", \"show_ips_update_schedule\", \"show_threat_advanced_settings\", \"check_cve_protection\", \"https-inspection__init\", \"show_https_layers\", \"show_https_layer\", \"show_https_rulebase\", \"show_https_rule\", \"show_https_section\", \"policy-insights__init\", \"ShowPolicyInsightsStatus\", \"ShowState\", \"ShowSuggestionsSummary\", \"ShowRulesUidsWithSuggestions\", \"ShowSuggestions\", \"manage_gaia_credentials\", \"show_interfaces_by_type\", \"show_routes\", \"show_static_routes\", \"show_routes_bgp\", \"show_routes_ospf\", \"show_router_id\", \"show_dns\", \"show_proxy\", \"show_arp\", \"show_date_time\", \"show_dhcp\", \"show_bgp_summary\", \"show_bgp_peers\", \"show_ospf_summary\", \"show_ipv6\", \"cphaprob_stat\", \"cphaprob_if\", \"cphaprob_syncstat\", \"cplic_print\", \"show_interfaces\", \"show_route\", \"fw_accel_stats\", \"fw_accel_stat\", \"fw_ctl_pstat\", \"fw_ctl_iflist\", \"disk_usage\", \"show_asset_all\", \"hcp_protect_info\", \"cpinfo_all\", \"check_initialization_status\", \"analyze_cpinfo_overview\", \"comprehensive_health_analysis\", \"extract_system_details\", \"extract_license_information\", \"detect_system_crashes\", \"extract_network_config\", \"smart_content_search\", \"audit_security_settings\", \"analyze_performance_metrics\", \"reputation_url\", \"reputation_ip\", \"reputation_file\", \"query_file\", \"upload_file\", \"scan_file\", \"download_report\", \"get_quota\"]"
         },
         "outputAnchors": [
           {
             "id": "customMCP_0-output-customMCP-Tool",
             "name": "customMCP",
-            "label": "Tool",
+            "label": "Custom MCP Tool",
             "description": "Custom MCP Config",
             "type": "Tool"
           }
@@ -512,7 +525,7 @@
           "memory": "{{bufferMemory_1.data.instance}}",
           "model": "{{chatOpenAI_0.data.instance}}",
           "chatPromptTemplate": "",
-          "systemMessage": "You are the **Check Point Fleet Commander** — a single AI agent that operates the entire Check Point estate through one MCP gateway. Every Check Point MCP tool is available to you: management (objects, access rules, NAT, packages), Gaia OS (interfaces, routes, DNS/NTP, BGP), gateway CLI diagnostics (cluster, VPN, acceleration), threat prevention (profiles, IPS), threat emulation (sandbox verdicts), reputation (URL/IP/hash), HTTPS inspection, management & audit logs, cpinfo analysis, and documentation search.\n\n== HOW TO WORK ==\n- Read the request, pick the RIGHT domain and the right tool. Discover with show/list/get before you conclude.\n- Chain across domains when it helps: e.g. a log finding -> a reputation lookup -> a proposed policy change.\n- Use ONLY real MCP tools; never invent tool names/params. If nothing fits, say so.\n- You have conversation memory — use earlier turns for context.\n\n== CHANGE SAFETY ==\n- State exactly what you will change and ask for confirmation before any add/set/delete.\n- NEVER publish or install policy unless the user explicitly says so in this conversation.\n\n== OUTPUT STYLE ==\n- Concise Markdown: short paragraphs, bullets, small tables for object/rule/log lists.\n- Summarize tool results faithfully; never dump raw JSON unless asked.\n- Name the domain/tool you used, and end multi-step work with a one-line summary.",
+          "systemMessage": "You are the **Check Point Fleet Commander**, a single AI agent that operates the Check Point estate through one MCP gateway. You have a curated core of 117 of the gateway's 190 tools (the model API accepts at most 128 tools per agent), and every Check Point MCP server is represented: Management (objects, access and NAT rules, gateways, clusters, domains, VPN communities), Management Logs, Threat Prevention (profiles, protections, IPS, indicators, exceptions, CVE coverage), HTTPS Inspection, Policy Insights, Gaia (interfaces, routes, BGP and OSPF, DNS, ARP), Gateway CLI diagnostics (cluster state, acceleration, licenses, hardware, disk), CPInfo Analysis, Threat Emulation (sandbox verdicts), Reputation Service (URL, IP, file), and Documentation search. Management-backed servers need their init tool once per conversation before other calls: management__init, management-logs__init, threat-prevention__init, https-inspection__init, and policy-insights__init; CPInfo Analysis starts with check_initialization_status. Detail tools that are not in the core (for example single-object lookups, LSM devices, and low-level fw ctl counters) are on the per-product agents; say so when a request needs them.\n\n== HOW TO WORK ==\n- Read the request, pick the RIGHT domain and the right tool. Discover with show/list/get before you conclude.\n- Chain across domains when it helps: e.g. a log finding -> a reputation lookup -> a proposed policy change.\n- Use ONLY real MCP tools; never invent tool names/params. If nothing fits, say so.\n- You have conversation memory — use earlier turns for context.\n\n== READ-FIRST SAFETY ==\n- The management-side tools are read-only. Never claim that you created, changed, published, or installed anything; draft changes for an administrator to apply in SmartConsole instead.\n- Ask before you submit a file to the Threat Emulation sandbox (upload_file, scan_file).\n\n== OUTPUT STYLE ==\n- Concise Markdown: short paragraphs, bullets, small tables for object/rule/log lists.\n- Summarize tool results faithfully; never dump raw JSON unless asked.\n- Name the domain/tool you used, and end multi-step work with a one-line summary.",
           "inputModeration": "",
           "maxIterations": "",
           "enableDetailedStreaming": ""
@@ -544,7 +557,7 @@
         "x": 1081.2351190476193,
         "y": 124.37202380952385
       },
-      "type": "customNode",
+      "type": "stickyNote",
       "data": {
         "id": "stickyNote_0",
         "label": "Sticky Note",
@@ -570,7 +583,7 @@
         ],
         "inputAnchors": [],
         "inputs": {
-          "note": "CP Fleet Commander — Estate Agent\n\nMCP endpoint: http://mcp-gateway:8080/mcp\nTools: 113 action(s)."
+          "note": "Fleet Commander estate agent: a curated core of 117 of the gateway's 190 tools across the Check Point estate (the model API accepts at most 128).\n\nMCP: Custom MCP node -> http://mcp-gateway:8080/mcp with Authorization \"Bearer {{$vars.MCP_GATEWAY_TOKEN}}\". builders-import keeps the Flowise variable MCP_GATEWAY_TOKEN (Variables page) in sync with .env.\n\nAvailable Actions: 117 tools selected. Refresh lists all 190 gateway tools; keep the selection at 128 or fewer.\n\nModel: lab-chat through LiteLLM (credential \"Lab Model (LiteLLM)\", Base Path http://litellm:4000/v1 under Additional Parameters). The Model Name list only knows OpenAI model names, so it can look empty: leave it, the agent still uses lab-chat."
         },
         "outputAnchors": [
           {
@@ -605,11 +618,11 @@
     },
     {
       "source": "chatOpenAI_0",
-      "sourceHandle": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
+      "sourceHandle": "chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable",
       "target": "toolAgent_0",
       "targetHandle": "toolAgent_0-input-model-BaseChatModel",
       "type": "buttonedge",
-      "id": "chatOpenAI_0-chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable-toolAgent_0-toolAgent_0-input-model-BaseChatModel"
+      "id": "chatOpenAI_0-chatOpenAI_0-output-chatOpenAI-ChatOpenAI|BaseChatOpenAI|BaseChatModel|BaseLanguageModel|Runnable-toolAgent_0-toolAgent_0-input-model-BaseChatModel"
     },
     {
       "source": "bufferMemory_1",

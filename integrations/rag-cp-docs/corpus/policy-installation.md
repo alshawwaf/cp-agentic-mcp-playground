@@ -1,6 +1,6 @@
 # Policy Installation
 
-> Demo content for the Visible RAG lab — a short, paraphrased primer, NOT official Check Point documentation.
+> Training content for the Visible RAG lab — a short, paraphrased primer, NOT official Check Point documentation.
 
 Install Policy is the step that compiles the security rulebase on the Management Server and
 distributes the enforced policy to the selected Security Gateways. Publishing saves your

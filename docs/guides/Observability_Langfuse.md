@@ -1,147 +1,97 @@
-# Seeing Inside the Agents — Tracing with Langfuse
+# Tracing the Agents with Langfuse
 
-*Agents feel like magic until they misbehave. Then you want a flight recorder.
-That's tracing, and in this playground it's [Langfuse](https://langfuse.com) —
-self-hosted, so nothing leaves the box.*
+Agents look simple until one misbehaves. Then you need a record of what it did. A trace is that record: the prompt the model received, the tool calls it asked for, the tokens it spent, how long each step took, and any error. The lab sends traces to Langfuse, which runs on the lab itself, so the traces (with their prompts and tool results) stay on your computer or lab host.
 
----
+## How traces reach Langfuse
 
-## 1. What tracing is
+Every seeded agent calls one model, `lab-chat`, through LiteLLM (`http://litellm:4000/v1`). LiteLLM sends each call to Langfuse when `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` are set. So one path traces every builder and every provider:
 
-When an agent answers a question it does a lot you never see: it builds a prompt,
-sends it to a model, gets back a decision, maybe **calls a tool** (here, a Check
-Point MCP tool through the gateway), feeds the result back to the model, and loops
-until it has an answer. A **trace** is the recording of that whole run — nested,
-timed, and labeled:
-
-- the **prompts** actually sent (system + user + tool results),
-- every **tool call** with its arguments and what came back,
-- **tokens** in and out (and, when the model reports pricing, **cost**),
-- **latency** per step and for the run as a whole,
-- and any **error** that stopped it.
-
-A trace is a tree. The top node is the run; children are the model generations and
-tool calls, in order, each with its own timing. Langfuse is the UI that collects
-those trees and lets you click into them.
-
----
-
-## 2. Why it matters for teaching
-
-The gateway guide (`MCP_Gateway_Explained.md`) makes the point that the gateway
-exposes **~180 tools at once**, and that a big flat catalog can confuse the model
-into picking the wrong tool. Tracing is how you *prove* that in a lab instead of
-hand-waving it. With a trace open, a learner can see, concretely:
-
-- **Did the agent call the tool I expected?** Wrong tool, right answer-by-luck is a
-  teachable moment you can only spot in the trace.
-- **How many tokens did that cost?** The gateway's flat tool list shows up as a fat
-  input-token count — visible, not theoretical.
-- **Where did the time go?** A slow run is usually one slow tool or a model retry;
-  the waterfall tells you which.
-- **Why did it fail?** A 401 from the gateway (missing Bearer), an empty tool list
-  (skipped MCP handshake), a malformed argument — the trace shows the exact call.
-
-It turns "the agent did something" into "here is exactly what it did, step by step."
-That is the difference between a demo and understanding.
-
----
-
-## 3. Opening the trace UI
-
-Langfuse runs as a service in the stack and is published at:
-
-```
-https://trace.<your-domain>
-```
-
-Sign in with the stack admin account (the same `N8N_ADMIN_EMAIL` /
-`N8N_ADMIN_PASSWORD` used across the lab, if headless init was enabled) or the
-account you created on first boot. Pick the project (default **Agents**), then open
-**Traces** in the left nav.
-
-> Setup / wiring lives in `integrations/observability/INTEGRATION.md` — the compose
-> service, the `.env` keys, and how each builder is pointed at Langfuse. This guide
-> is about *using* it.
-
-Which builders show up automatically — all three, via two different paths:
-
-| Builder | Traced out of the box? | How | What you see |
-|---|---|---|---|
-| **Flowise** | **Yes — every chatflow** | `builders-import` creates a `CP Langfuse (auto)` credential and switches **Analyse Chatflow → Langfuse ON** for every flow it seeds (and re-asserts it on existing ones). | The **full agent tree**: prompts, MCP tool calls with arguments/results, tokens, latency. The richest traces in the stack — use Flowise runs for the section-4 walkthrough. |
-| **n8n** | **Yes — every agent** | The imported **OpenAI** and **Azure OpenAI** credentials point at the internal **LiteLLM proxy** (`http://litellm:4000`), which forwards to the real provider and logs each call to Langfuse. | One `litellm-acompletion` trace **per model call** (prompt, completion, tokens, cost, latency). Tool calls appear as tool-use messages inside the prompts, not as separate spans. |
-| **Langflow** | **Yes — model calls** | Every committed flow's OpenAI model routes through the same **LiteLLM proxy**. Native Langfuse is off: Langflow 1.10 bundles langfuse **SDK v3**, which cannot talk to the lean Langfuse **v2** server this stack runs (v3 needs ClickHouse/Redis/MinIO). | Same `litellm-acompletion` shape as n8n. |
-
-Two wiring gotchas worth knowing (both already handled by the committed flows):
-- Flowise's Langfuse credential fields are capital-F — `langFusePublicKey` / `langFuseSecretKey` / `langFuseEndpoint`.
-- Langflow **ignores template fields with `show: false` at build time** — the OpenAI
-  model's `openai_api_base` only takes effect because the committed flows ship it
-  with `show: true`. If you clone a flow by hand and the base URL seems ignored,
-  check that flag first.
-
-(Details for all three are in INTEGRATION.md sections 4a–4c.)
-
----
-
-## 4. Reading a trace — what to look at
-
-Run the **CP MCP Gateway Agent** in Langflow (ask it something that needs a tool,
-e.g. *"show the last 10 management logs"*), then refresh Langfuse and open the newest
-trace. Walk it top-down:
-
-1. **The tree / waterfall.** The root is the run. Read the children in order — you
-   should see a model generation, then an MCP **tool call**, then another generation
-   that uses the tool's result. This *is* the agent loop, made visible.
-2. **The first generation's input.** Expand it and read the **system prompt** and the
-   **tool list** the model was handed. On a gateway agent that list is large — this
-   is where the "~180 tools" cost becomes real and where trimming pays off.
-3. **The tool call.** Check the **name** (was it the tool you intended?), the
-   **arguments** the model filled in, and the **output** that came back. Most "wrong
-   answer" bugs are visible right here.
-4. **Tokens and cost.** Each generation shows input/output tokens; the run totals
-   them. Compare a **direct** agent vs a **via-gateway** agent on the same question —
-   the gateway one usually has a bigger input count purely from the tool catalog.
-5. **Latency.** The waterfall widths show where time went. A long bar on a tool call
-   means a slow backend; a long bar on a generation means the model, not you.
-6. **Errors.** A failed step is flagged red with its message — a 401 (bad/absent
-   Bearer token), an empty tool list (the MCP handshake was skipped), or a bad
-   argument. The trace points straight at the cause.
-
-A good first exercise: run the **same prompt** through the direct agent and the
-gateway agent, put the two traces side by side, and explain the token/latency
-difference from what you see in the tool lists. That single comparison teaches more
-about the gateway trade-off than any paragraph.
-
----
-
-## 5. Self-hosted, and why v2
-
-Langfuse here is **self-hosted** — traces (which include your prompts and tool I/O)
-stay on the lab host and never go to a SaaS. Anonymous product telemetry is turned
-**off** in this integration.
-
-The stack runs Langfuse **v2**, which is a single container backed by the Postgres
-you already have — light and easy. v3 exists and is newer, but it needs ClickHouse,
-Redis, and S3/MinIO alongside Postgres; only worth it for high-volume or v3-only
-features. For learning, v2 is the right call. (Rationale and the v3 checklist are in
-INTEGRATION.md section 7.)
-
----
-
-## 6. Quick troubleshooting
-
-| Symptom | Likely cause | Fix |
+| Source | Traced through LiteLLM | Extra native tracing |
 |---|---|---|
-| No traces after an n8n / Langflow run | LiteLLM proxy down or keys unset | `docker logs litellm`; confirm `LANGFUSE_PUBLIC_KEY`/`SECRET_KEY` are in `.env` and `LANGFUSE_HOST=http://langfuse:3000` (the **internal** name, not `trace.<domain>`). |
-| n8n agent errors `401` on every model call | credential/master-key mismatch | The OpenAI + Azure n8n credentials must carry `LITELLM_MASTER_KEY` (compose default `sk-cp-litellm-training-key`) — re-run `n8n-import` after changing it. |
-| Langflow model ignores the LiteLLM base URL | `openai_api_base` hidden | Langflow 1.10 drops `show: false` template fields at build; set `show: true` on the field (the committed flows already do). |
-| Langflow log: `Cannot connect to Langfuse … ParsingModel[Projects]` | langfuse SDK v3 vs server v2 | Expected — native Langflow tracing needs a Langfuse v3 server. Harmless; the LiteLLM path covers Langflow. |
-| Flowise flow not traced | Analytics off for that chatflow | Re-run `builders-import` (it switches Langfuse ON for every chatflow), or toggle **Analyse Chatflow → Langfuse** by hand. |
-| Can't reach `trace.<domain>` | routing / bind | Langfuse must have `HOSTNAME=0.0.0.0`; check Traefik picked up the `trace.` router. |
-| Want to prove ingestion works | — | Run `integrations/observability/langfuse_smoke_trace.py` (stdlib, sends one test trace). |
+| n8n agents | Yes, every model call | None |
+| Flowise agents | Yes, every model call | Seeded flows also send their own agent trace tree (credential "Lab Tracing (Langfuse)") |
+| Langflow agents (Complete lab) | Yes, every model call | None. Langflow 1.10 bundles the Langfuse v3 SDK, which does not work with the lab's Langfuse v2 |
+| Code-first agent (`integrations/code-agent`) | Yes | None |
+| Open WebUI (Complete lab) | No: it calls Ollama directly | None |
 
----
+What you see:
 
-*Related: `docs/guides/MCP_Gateway_Explained.md` (what the gateway and its ~180-tool
-catalog actually do) and `integrations/observability/INTEGRATION.md` (the exact
-compose/env wiring this guide assumes is in place).*
+- **LiteLLM traces.** One `litellm-acompletion` record per model call: the messages sent (system prompt, user message, earlier tool results), the reply (text or the tool call the model asked for), input and output tokens, latency, and cost when LiteLLM knows the model's price. A failed provider call shows as one error-level generation. A request with a wrong LiteLLM key is refused (HTTP 401) and never reaches Langfuse
+- **Flowise native traces.** A tree per run: the agent, each model generation and each tool call with its arguments and result. `builders-import` turns this on for the flows it seeds, when the Langfuse keys are set and the flow has no analytics setting of its own. Flows you create yourself need it turned on (see Troubleshooting)
+
+## Prerequisites
+
+- The Standard lab. `./scripts/doctor.sh --post-start` shows `ready` on the `Langfuse tracing` line (`LiteLLM sends every lab-chat call`)
+- `NEXTAUTH_SECRET`, `SALT`, `LANGFUSE_ENCRYPTION_KEY`, `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` in `.env`. `./setup.sh` generates all of them. If you made `.env` by hand, `python3 integrations/observability/gen_secrets.py` fills the blank ones and prints names only
+- A model for `lab-chat`, so there is something to trace
+
+## Step 1: Prove that Langfuse accepts traces
+
+Send one test trace from inside the lab network. The `litellm` container already has Python and the Langfuse keys:
+
+```sh
+docker compose exec -T litellm python - < integrations/observability/langfuse_smoke_trace.py
+```
+
+**Expected result:** `OK: trace 'lab-smoke-test' is visible in Langfuse.` With 1Password nothing changes: the running container already holds the resolved keys.
+
+Then confirm that LiteLLM has tracing on:
+
+```sh
+docker compose logs litellm | grep lab-litellm
+```
+
+**Expected result:** a line that ends with `Langfuse tracing on (http://langfuse:3000).`
+
+## Step 2: Open Langfuse
+
+| Where | Address |
+|---|---|
+| Lab host | `https://trace.<DOMAIN>` |
+| Your own computer | `http://localhost:3100`, with the local port override from the README. `./setup.sh` sets `LANGFUSE_URL=http://localhost:3100` when `DOMAIN` is blank |
+
+Sign in with the lab admin (`N8N_ADMIN_EMAIL`, `N8N_ADMIN_PASSWORD`). Sign-up is off. Open the organization **Check Point Agentic Lab** (a lab set up before this name keeps its earlier organization), the project **Agents**, then **Traces**. Filter by the tag `smoke-test` to find the test trace.
+
+## Step 3: Read a trace
+
+1. In n8n, open **Management Agent (MCP Gateway)** and ask a question that needs a tool, for example *Which gateways do I have?* (needs Management access). Without Check Point keys, use **Documentation RAG Agent** and ask *How do I enable Identity Awareness?*
+2. Refresh **Traces** in Langfuse. One question produces several `litellm-acompletion` records: the model first asks for a tool, the agent runs it, and the model is called again with the tool result
+3. Open the first record. Read the system prompt and the user message. Check the output: which tool did the model choose, and with which arguments?
+4. Open the next record. The tool result is now part of the input. The output is the answer
+5. Compare tokens and latency across the records. A long latency on a generation is the model; a long gap between records is the tool
+
+Flowise gives the richest view. Ask the same question in Flowise and open its trace: the tree shows the tool calls as their own steps, with arguments and results.
+
+### Exercise: what a tool list costs
+
+Every tool an agent can use is described to the model on every call, and those descriptions are paid for as input tokens.
+
+1. Ask **Reputation Service Agent (Direct)** (3 tools): *What is the reputation of 8.8.8.8?*
+2. Ask **Fleet Commander Estate Agent** (117 tools) the same question
+3. Compare the input tokens of the first generation of each run
+
+The Fleet Commander run starts with far more input tokens before it does any work. That is the cost of a big tool list, and why the per-server agents are scoped to their own tools. The MCP Gateway twins use the same tool sets as the Direct agents, so a Direct agent and its MCP Gateway twin cost about the same per call. (Reputation Service needs `REPUTATION_API_KEY` to answer; the token counts show either way.)
+
+## Self-hosted by design
+
+- Langfuse 2.95.11 runs as one container on the lab's Postgres. Langfuse v3 needs ClickHouse, Redis and object storage, which is too heavy for the Standard lab
+- Traces hold your prompts and tool results, for example policy data or CPInfo content. They stay on the lab, but anyone with the lab admin sign-in can read them. Treat Langfuse like the data that flows through it
+- Langfuse product telemetry is off (`LANGFUSE_TELEMETRY_ENABLED=false`)
+- On a shared lab host, everyone's traces land in the same project. Filter by time and by your prompt text
+
+The acceptance check `LANGFUSE` proves that the traces of the run's own model calls arrive. It needs model calls in the same run, so run it with the `LITELLM` check: `tests/acceptance/run.sh --only LITELLM,LANGFUSE` (with model calls on). On its own, `LANGFUSE` finds no model calls and reports `SKIP`.
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| The `lab-litellm` log line says `Langfuse tracing off (set LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY to turn it on)` | Keys missing | Run `./setup.sh` (or `gen_secrets.py`), then `docker compose up -d langfuse litellm` |
+| The log line warns about unresolved 1Password references | The lab was started without `op run` | `op run --env-file=.env -- docker compose up -d` |
+| The smoke trace says the keys were refused | The keys changed after Langfuse's first start. Langfuse creates its project keys only once | Put back the keys Langfuse first started with. Never change `SALT`, `LANGFUSE_ENCRYPTION_KEY` or the project keys after the first start |
+| The smoke trace cannot reach Langfuse | Langfuse is down | `docker compose ps langfuse`, then `docker compose logs langfuse` |
+| Sign-in loops back to the form on your own computer | `LANGFUSE_URL` is not the address you open | Set `LANGFUSE_URL=http://localhost:3100`, then `docker compose up -d langfuse` |
+| A Flowise flow you created is not traced as a tree | Analytics are off for that flow | In the flow's settings, turn on Langfuse analytics with the credential "Lab Tracing (Langfuse)". Its model calls are traced through LiteLLM either way |
+| An n8n agent fails with a LiteLLM key error | The "Lab Model (LiteLLM)" credential is out of sync with `.env` | `docker compose run --rm n8n-import` |
+| No traces from Open WebUI | Expected: it calls Ollama directly, not LiteLLM | None |
+
+Related: [MCP Gateway, explained](MCP_Gateway_Explained.md) for what the agents call, and the [Evals Harness](Evals_Harness.md) for checking answers at scale.

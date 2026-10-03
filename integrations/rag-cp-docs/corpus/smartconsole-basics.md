@@ -1,6 +1,6 @@
 # SmartConsole Basics
 
-> Demo content for the Visible RAG lab — a short, paraphrased primer, NOT official Check Point documentation.
+> Training content for the Visible RAG lab — a short, paraphrased primer, NOT official Check Point documentation.
 
 SmartConsole is the unified Windows client for managing Check Point Quantum Security
 Management. From it you edit the security policy, manage objects, and read logs and events.

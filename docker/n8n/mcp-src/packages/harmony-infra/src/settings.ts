@@ -82,10 +82,14 @@ export class Settings {
    * Maps headers to environment variable format based on server config
    */
   static fromHeaders(headers: Record<string, string | string[]>): Settings {
+    // LAB PATCH (D044): headers ONLY ('' blocks the process.env defaults). Also
+    // reads MANAGEMENT-HOST: header keys arrive hyphenated, so the upstream
+    // 'MANAGEMENT_HOST' lookup never matched and always fell back to env.
+    const header = (key: string): string => getHeaderValue(headers, key) ?? '';
     return new Settings({
-      managementHost: getHeaderValue(headers, 'MANAGEMENT_HOST'),
-      origin: getHeaderValue(headers, 'ORIGIN'),
-      apiKey: getHeaderValue(headers, 'API-KEY')
+      managementHost: header('MANAGEMENT-HOST'),
+      origin: header('ORIGIN'),
+      apiKey: header('API-KEY')
     });
   }
 }

@@ -1,5 +1,7 @@
 // Gaia API client that extends OnPremAPIClient with custom URL path
 import { OnPremAPIClient } from '@chkp/quantum-infra';
+import type { TlsTrustSettings } from '@chkp/quantum-infra';
+import { configuredGatewayHost, normalizeGatewayHost } from './gaia-auth.js';
 import type { GaiaConnection } from './gaia-auth.js';
 
 /**
@@ -29,6 +31,24 @@ export class GaiaApiClient extends OnPremAPIClient {
    */
   getHost(): string {
     return `https://${this.connection.gatewayIp}:${this.connection.port}/gaia_api`;
+  }
+
+  /**
+   * LAB PATCH (D053/D096): TLS trust for Gaia gateways (certificate always
+   * verified). GAIA_CA_CERT adds a CA file to Node's trust store;
+   * GAIA_TLS_SERVERNAME applies only to the configured GAIA_GATEWAY_IP.
+   */
+  protected tlsTrust(): TlsTrustSettings {
+    let isConfiguredGateway = false;
+    try {
+      isConfiguredGateway = configuredGatewayHost() === normalizeGatewayHost(this.connection.gatewayIp);
+    } catch {
+      isConfiguredGateway = false;
+    }
+    return {
+      caFile: process.env.GAIA_CA_CERT,
+      servername: isConfiguredGateway ? process.env.GAIA_TLS_SERVERNAME : undefined,
+    };
   }
 
   /**

@@ -70,6 +70,12 @@ We prioritize **hash integrity** over convenience for security analysis:
 
 **Bottom Line:** We chose hash accuracy over convenience for trustworthy security scanning.
 
+> **Lab patch (allowed directories):** the server only reads and uploads regular files under
+> `TE_ALLOWED_DIRS` (`:` or `,` separated, default `/data/shared`; in the lab that is the
+> `n8n/shared` folder). A relative `file_path` is resolved against the first allowed directory.
+> Symlinks are resolved first, and paths elsewhere (for example `/proc/self/environ`) are refused
+> with the same answer whether or not they exist. See `docker/n8n/mcp-src/PATCHES.md`.
+
 ---
 
 ## Configuration Options

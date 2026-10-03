@@ -23,7 +23,8 @@ export class ThreatEmulationSettings {
   }
 
   static fromHeaders(headers: Record<string, string | string[]>): ThreatEmulationSettings {
-    const apiKey = getHeaderValue(headers, 'API-KEY');
+    // LAB PATCH (D044): headers ONLY - '' blocks the process.env.API_KEY default.
+    const apiKey = getHeaderValue(headers, 'API-KEY') ?? '';
     return new ThreatEmulationSettings({
       apiKey
     });

@@ -1,6 +1,6 @@
 {
-  "name": "CP Docs — Visible RAG Agent",
-  "description": "Native RAG agent: embeds the query with Ollama nomic-embed-text and retrieves from the Qdrant cp_docs collection, then answers with citations.",
+  "name": "Documentation RAG Agent",
+  "description": "Documentation RAG agent: embeds your question with Ollama nomic-embed-text, retrieves from the Qdrant cp_docs collection (filled by rag-ingest), and answers with citations. Model: lab-chat through LiteLLM.",
   "data": {
     "nodes": [
       {
@@ -11,12 +11,11 @@
               "Message"
             ],
             "beta": false,
-            "category": "inputs",
             "conditional_paths": [],
             "custom_fields": {},
             "description": "Get chat inputs from the Playground.",
             "display_name": "Chat Input",
-            "documentation": "",
+            "documentation": "https://docs.langflow.org/chat-input-and-output",
             "edited": false,
             "field_order": [
               "input_value",
@@ -29,7 +28,6 @@
             ],
             "frozen": false,
             "icon": "MessagesSquare",
-            "key": "ChatInput",
             "legacy": false,
             "metadata": {
               "code_hash": "7a26c54d89ed",
@@ -63,7 +61,6 @@
               }
             ],
             "pinned": false,
-            "score": 0.0020353564437605998,
             "template": {
               "_type": "Component",
               "code": {
@@ -97,6 +94,7 @@
                 "list_add_label": "Add More",
                 "load_from_db": false,
                 "name": "context_id",
+                "override_skip": false,
                 "placeholder": "",
                 "required": false,
                 "show": true,
@@ -104,6 +102,7 @@
                 "tool_mode": false,
                 "trace_as_input": true,
                 "trace_as_metadata": true,
+                "track_in_telemetry": false,
                 "type": "str",
                 "value": ""
               },
@@ -142,18 +141,22 @@
                 "list": true,
                 "list_add_label": "Add More",
                 "name": "files",
+                "override_skip": false,
                 "placeholder": "",
                 "required": false,
                 "show": true,
                 "temp_file": true,
                 "title_case": false,
+                "tool_mode": false,
                 "trace_as_metadata": true,
+                "track_in_telemetry": false,
                 "type": "file",
                 "value": ""
               },
               "input_value": {
                 "_input_type": "MultilineInput",
                 "advanced": false,
+                "ai_enabled": false,
                 "copy_field": false,
                 "display_name": "Input Text",
                 "dynamic": false,
@@ -164,6 +167,8 @@
                 "load_from_db": false,
                 "multiline": true,
                 "name": "input_value",
+                "override_skip": false,
+                "password": false,
                 "placeholder": "",
                 "required": false,
                 "show": true,
@@ -171,6 +176,7 @@
                 "tool_mode": false,
                 "trace_as_input": true,
                 "trace_as_metadata": true,
+                "track_in_telemetry": false,
                 "type": "str",
                 "value": "Hello, how are you?"
               },
@@ -181,6 +187,7 @@
                 "dialog_inputs": {},
                 "display_name": "Sender Type",
                 "dynamic": false,
+                "external_options": {},
                 "info": "Type of sender.",
                 "name": "sender",
                 "options": [
@@ -188,12 +195,15 @@
                   "User"
                 ],
                 "options_metadata": [],
+                "override_skip": false,
                 "placeholder": "",
                 "required": false,
                 "show": true,
                 "title_case": false,
+                "toggle": false,
                 "tool_mode": false,
                 "trace_as_metadata": true,
+                "track_in_telemetry": true,
                 "type": "str",
                 "value": "User"
               },
@@ -210,6 +220,7 @@
                 "list_add_label": "Add More",
                 "load_from_db": false,
                 "name": "sender_name",
+                "override_skip": false,
                 "placeholder": "",
                 "required": false,
                 "show": true,
@@ -217,6 +228,7 @@
                 "tool_mode": false,
                 "trace_as_input": true,
                 "trace_as_metadata": true,
+                "track_in_telemetry": false,
                 "type": "str",
                 "value": "User"
               },
@@ -233,6 +245,7 @@
                 "list_add_label": "Add More",
                 "load_from_db": false,
                 "name": "session_id",
+                "override_skip": false,
                 "placeholder": "",
                 "required": false,
                 "show": true,
@@ -240,6 +253,7 @@
                 "tool_mode": false,
                 "trace_as_input": true,
                 "trace_as_metadata": true,
+                "track_in_telemetry": false,
                 "type": "str",
                 "value": ""
               },
@@ -252,12 +266,14 @@
                 "list": false,
                 "list_add_label": "Add More",
                 "name": "should_store_message",
+                "override_skip": false,
                 "placeholder": "",
                 "required": false,
                 "show": true,
                 "title_case": false,
                 "tool_mode": false,
                 "trace_as_metadata": true,
+                "track_in_telemetry": true,
                 "type": "bool",
                 "value": true
               }
@@ -316,7 +332,33 @@
             "frozen": false,
             "icon": "OpenAI",
             "legacy": false,
-            "metadata": {},
+            "metadata": {
+              "code_hash": "0c1ad7bb053a",
+              "dependencies": {
+                "dependencies": [
+                  {
+                    "name": "langchain_openai",
+                    "version": "1.3.2"
+                  },
+                  {
+                    "name": "lfx",
+                    "version": null
+                  },
+                  {
+                    "name": "openai",
+                    "version": "2.43.0"
+                  }
+                ],
+                "total_dependencies": 3
+              },
+              "keywords": [
+                "model",
+                "llm",
+                "language model",
+                "large language model"
+              ],
+              "module": "lfx.components.openai.openai_chat_model.OpenAIModelComponent"
+            },
             "minimized": false,
             "output_types": [],
             "outputs": [
@@ -328,6 +370,7 @@
                 "method": "text_response",
                 "name": "text_output",
                 "selected": "Message",
+                "tool_mode": true,
                 "types": [
                   "Message"
                 ],
@@ -341,6 +384,7 @@
                 "method": "build_model",
                 "name": "model_output",
                 "selected": "LanguageModel",
+                "tool_mode": true,
                 "types": [
                   "LanguageModel"
                 ],
@@ -350,6 +394,25 @@
             "pinned": false,
             "template": {
               "_type": "Component",
+              "api_key": {
+                "_input_type": "SecretStrInput",
+                "advanced": false,
+                "display_name": "OpenAI API Key",
+                "dynamic": false,
+                "info": "Global variable LITELLM_MASTER_KEY (created by builders-import). The lab's agents reach every model through LiteLLM; provider keys stay in LiteLLM.",
+                "input_types": [],
+                "load_from_db": true,
+                "name": "api_key",
+                "override_skip": false,
+                "password": true,
+                "placeholder": "",
+                "required": true,
+                "show": true,
+                "title_case": false,
+                "track_in_telemetry": false,
+                "type": "str",
+                "value": "LITELLM_MASTER_KEY"
+              },
               "code": {
                 "advanced": true,
                 "dynamic": true,
@@ -373,7 +436,7 @@
                 "advanced": false,
                 "display_name": "Input",
                 "dynamic": false,
-                "info": "The input provided by the user for the agent to process.",
+                "info": "",
                 "input_types": [
                   "Message"
                 ],
@@ -386,64 +449,42 @@
                 "required": false,
                 "show": true,
                 "title_case": false,
-                "tool_mode": true,
+                "tool_mode": false,
                 "trace_as_input": true,
                 "trace_as_metadata": true,
                 "track_in_telemetry": false,
                 "type": "str",
                 "value": ""
               },
-              "system_message": {
-                "_input_type": "MultilineInput",
-                "advanced": true,
-                "copy_field": false,
-                "display_name": "System Message",
-                "dynamic": false,
-                "info": "Message to be passed as input.",
-                "input_types": [],
-                "list": false,
-                "list_add_label": "Add More",
-                "load_from_db": false,
-                "multiline": true,
-                "name": "system_message",
-                "placeholder": "",
-                "required": false,
-                "show": true,
-                "title_case": false,
-                "tool_mode": false,
-                "trace_as_input": true,
-                "trace_as_metadata": true,
-                "type": "str",
-                "value": ""
-              },
-              "stream": {
+              "json_mode": {
                 "_input_type": "BoolInput",
                 "advanced": true,
-                "display_name": "Stream",
+                "display_name": "JSON Mode",
                 "dynamic": false,
-                "info": "Store the message in the history.",
+                "info": "If True, it will output JSON regardless of passing a schema.",
                 "list": false,
                 "list_add_label": "Add More",
-                "name": "stream",
+                "name": "json_mode",
+                "override_skip": false,
                 "placeholder": "",
                 "required": false,
                 "show": true,
                 "title_case": false,
                 "tool_mode": false,
                 "trace_as_metadata": true,
+                "track_in_telemetry": true,
                 "type": "bool",
                 "value": false
               },
-              "max_tokens": {
+              "max_retries": {
                 "_input_type": "IntInput",
                 "advanced": true,
-                "display_name": "Max Tokens",
+                "display_name": "Max Retries",
                 "dynamic": false,
-                "info": "Maximum number of model calls the agent can make before stopping (maps to `ModelCallLimitMiddleware.run_limit` on the create_agent path). Must be at least 1 — it is a safety cap, never 'unlimited'.",
-                "input_types": [],
+                "info": "The maximum number of retries to make when generating.",
                 "list": false,
                 "list_add_label": "Add More",
-                "name": "max_tokens",
+                "name": "max_retries",
                 "override_skip": false,
                 "placeholder": "",
                 "required": false,
@@ -453,80 +494,87 @@
                 "trace_as_metadata": true,
                 "track_in_telemetry": true,
                 "type": "int",
-                "value": ""
+                "value": 5
+              },
+              "max_tokens": {
+                "_input_type": "IntInput",
+                "advanced": true,
+                "display_name": "Max Tokens",
+                "dynamic": false,
+                "info": "The maximum number of tokens to generate. Set to 0 for unlimited tokens.",
+                "list": false,
+                "list_add_label": "Add More",
+                "name": "max_tokens",
+                "override_skip": false,
+                "placeholder": "",
+                "range_spec": {
+                  "max": 128000.0,
+                  "min": 0.0,
+                  "step": 0.1,
+                  "step_type": "float"
+                },
+                "required": false,
+                "show": true,
+                "title_case": false,
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "track_in_telemetry": true,
+                "type": "int",
+                "value": 0
               },
               "model_kwargs": {
                 "_input_type": "DictInput",
                 "advanced": true,
                 "display_name": "Model Kwargs",
                 "dynamic": false,
-                "info": "",
-                "list": true,
+                "info": "Additional keyword arguments to pass to the model.",
+                "list": false,
                 "list_add_label": "Add More",
                 "name": "model_kwargs",
+                "override_skip": false,
                 "placeholder": "",
                 "required": false,
                 "show": true,
                 "title_case": false,
                 "tool_mode": false,
                 "trace_as_input": true,
+                "track_in_telemetry": false,
                 "type": "dict",
                 "value": {}
               },
-              "json_mode": {
-                "_input_type": "BoolInput",
-                "advanced": true,
-                "display_name": "JSON Mode",
-                "dynamic": false,
-                "info": "Store the message in the history.",
-                "list": false,
-                "list_add_label": "Add More",
-                "name": "json_mode",
-                "placeholder": "",
-                "required": false,
-                "show": true,
-                "title_case": false,
-                "tool_mode": false,
-                "trace_as_metadata": true,
-                "type": "bool",
-                "value": false
-              },
               "model_name": {
                 "_input_type": "DropdownInput",
-                "advanced": true,
+                "advanced": false,
                 "combobox": true,
                 "dialog_inputs": {},
                 "display_name": "Model Name",
                 "dynamic": false,
-                "info": "Type of sender.",
+                "external_options": {},
+                "info": "",
                 "name": "model_name",
                 "options": [
-                  "gpt-4o-mini",
-                  "gpt-4o",
-                  "gpt-4.1",
-                  "gpt-4.1-mini",
-                  "o3-mini",
-                  "o1",
-                  "gpt-3.5-turbo"
+                  "lab-chat"
                 ],
                 "options_metadata": [],
+                "override_skip": false,
                 "placeholder": "",
+                "real_time_refresh": true,
                 "required": false,
                 "show": true,
                 "title_case": false,
+                "toggle": false,
                 "tool_mode": false,
                 "trace_as_metadata": true,
+                "track_in_telemetry": true,
                 "type": "str",
-                "value": "gpt-5.4",
-                "real_time_refresh": true
+                "value": "lab-chat"
               },
               "openai_api_base": {
                 "_input_type": "StrInput",
-                "advanced": true,
+                "advanced": false,
                 "display_name": "OpenAI API Base",
                 "dynamic": false,
-                "info": "Base URL of the OpenAI-compatible API. Defaults to https://api.openai.com/v1.",
-                "input_types": [],
+                "info": "The base URL of the OpenAI API. Defaults to https://api.openai.com/v1. You can change this to use other APIs like JinaChat, LocalAI and Prem.",
                 "list": false,
                 "list_add_label": "Add More",
                 "load_from_db": false,
@@ -542,60 +590,12 @@
                 "type": "str",
                 "value": "http://litellm:4000/v1"
               },
-              "api_key": {
-                "_input_type": "SecretStrInput",
-                "advanced": true,
-                "display_name": "OpenAI API Key",
-                "dynamic": false,
-                "info": "Overrides global provider settings. Leave blank to use your pre-configured API Key.",
-                "input_types": [],
-                "load_from_db": false,
-                "name": "api_key",
-                "override_skip": false,
-                "password": true,
-                "placeholder": "",
-                "real_time_refresh": true,
-                "required": true,
-                "show": true,
-                "title_case": false,
-                "track_in_telemetry": false,
-                "type": "str",
-                "value": "__LITELLM_MASTER_KEY__"
-              },
-              "temperature": {
-                "_input_type": "SliderInput",
-                "advanced": false,
-                "display_name": "Temperature",
-                "dynamic": false,
-                "info": "Controls how many 'clicks' away from the initial page the crawler will go:\n- depth 1: only the initial page\n- depth 2: initial page + all pages linked directly from it\n- depth 3: initial page + direct links + links found on those direct link pages\nNote: This is about link traversal, not URL path depth.",
-                "max_label": " ",
-                "max_label_icon": "None",
-                "min_label": " ",
-                "min_label_icon": "None",
-                "name": "temperature",
-                "placeholder": "",
-                "range_spec": {
-                  "min": 0,
-                  "max": 1,
-                  "step": 0.01
-                },
-                "required": false,
-                "show": true,
-                "slider_buttons": false,
-                "slider_buttons_options": [],
-                "slider_input": false,
-                "title_case": false,
-                "tool_mode": false,
-                "type": "slider",
-                "value": 0.1
-              },
               "seed": {
                 "_input_type": "IntInput",
                 "advanced": true,
                 "display_name": "Seed",
                 "dynamic": false,
-                "info": "Maximum number of model calls the agent can make before stopping (maps to `ModelCallLimitMiddleware.run_limit` on the create_agent path). Must be at least 1 — it is a safety cap, never 'unlimited'.",
-                "input_types": [],
+                "info": "The seed controls the reproducibility of the job.",
                 "list": false,
                 "list_add_label": "Add More",
                 "name": "seed",
@@ -610,16 +610,15 @@
                 "type": "int",
                 "value": 1
               },
-              "max_retries": {
-                "_input_type": "IntInput",
+              "stream": {
+                "_input_type": "BoolInput",
                 "advanced": true,
-                "display_name": "Max Retries",
+                "display_name": "Stream",
                 "dynamic": false,
-                "info": "Maximum number of model calls the agent can make before stopping (maps to `ModelCallLimitMiddleware.run_limit` on the create_agent path). Must be at least 1 — it is a safety cap, never 'unlimited'.",
-                "input_types": [],
+                "info": "Stream the response from the model. Streaming works only in Chat.",
                 "list": false,
                 "list_add_label": "Add More",
-                "name": "max_retries",
+                "name": "stream",
                 "override_skip": false,
                 "placeholder": "",
                 "required": false,
@@ -628,16 +627,74 @@
                 "tool_mode": false,
                 "trace_as_metadata": true,
                 "track_in_telemetry": true,
-                "type": "int",
-                "value": 5
+                "type": "bool",
+                "value": false
+              },
+              "system_message": {
+                "_input_type": "MultilineInput",
+                "advanced": false,
+                "ai_enabled": false,
+                "copy_field": false,
+                "display_name": "System Message",
+                "dynamic": false,
+                "info": "System message to pass to the model.",
+                "input_types": [
+                  "Message"
+                ],
+                "list": false,
+                "list_add_label": "Add More",
+                "load_from_db": false,
+                "multiline": true,
+                "name": "system_message",
+                "override_skip": false,
+                "password": false,
+                "placeholder": "",
+                "required": false,
+                "show": true,
+                "title_case": false,
+                "tool_mode": false,
+                "trace_as_input": true,
+                "trace_as_metadata": true,
+                "track_in_telemetry": false,
+                "type": "str",
+                "value": ""
+              },
+              "temperature": {
+                "_input_type": "SliderInput",
+                "advanced": false,
+                "display_name": "Temperature",
+                "dynamic": false,
+                "info": "",
+                "max_label": "",
+                "max_label_icon": "",
+                "min_label": "",
+                "min_label_icon": "",
+                "name": "temperature",
+                "override_skip": false,
+                "placeholder": "",
+                "range_spec": {
+                  "max": 1.0,
+                  "min": 0.0,
+                  "step": 0.01,
+                  "step_type": "float"
+                },
+                "required": false,
+                "show": true,
+                "slider_buttons": false,
+                "slider_buttons_options": [],
+                "slider_input": false,
+                "title_case": false,
+                "tool_mode": false,
+                "track_in_telemetry": false,
+                "type": "slider",
+                "value": 0.1
               },
               "timeout": {
                 "_input_type": "IntInput",
                 "advanced": true,
                 "display_name": "Timeout",
                 "dynamic": false,
-                "info": "Maximum number of model calls the agent can make before stopping (maps to `ModelCallLimitMiddleware.run_limit` on the create_agent path). Must be at least 1 — it is a safety cap, never 'unlimited'.",
-                "input_types": [],
+                "info": "The timeout for requests to OpenAI completion API.",
                 "list": false,
                 "list_add_label": "Add More",
                 "name": "timeout",
@@ -665,6 +722,8 @@
           "id": "Agent-cpagt",
           "node": {
             "base_classes": [
+              "Data",
+              "JSON",
               "Message"
             ],
             "beta": false,
@@ -695,7 +754,6 @@
             ],
             "frozen": false,
             "icon": "bot",
-            "last_updated": "2026-02-12T20:48:13.965Z",
             "legacy": false,
             "metadata": {
               "code_hash": "d08c17dbf863",
@@ -742,7 +800,7 @@
                 "group_outputs": false,
                 "method": "json_response",
                 "name": "structured_response",
-                "selected": "JSON",
+                "selected": "Data",
                 "tool_mode": true,
                 "types": [
                   "Data",
@@ -780,7 +838,6 @@
                 "display_name": "Current Date",
                 "dynamic": false,
                 "info": "If true, will add a tool to the agent that returns the current date.",
-                "input_types": [],
                 "list": false,
                 "list_add_label": "Add More",
                 "name": "add_current_date_tool",
@@ -802,7 +859,7 @@
                 "dynamic": false,
                 "info": "Overrides global provider settings. Leave blank to use your pre-configured API Key.",
                 "input_types": [],
-                "load_from_db": false,
+                "load_from_db": true,
                 "name": "api_key",
                 "override_skip": false,
                 "password": true,
@@ -824,7 +881,6 @@
                 "dynamic": false,
                 "external_options": {},
                 "info": "The base URL of the API (IBM watsonx.ai only)",
-                "input_types": [],
                 "name": "base_url_ibm_watsonx",
                 "options": [
                   "https://us-south.ml.cloud.ibm.com",
@@ -908,6 +964,7 @@
                 "multiline": true,
                 "name": "format_instructions",
                 "override_skip": false,
+                "password": false,
                 "placeholder": "",
                 "required": false,
                 "show": true,
@@ -925,7 +982,6 @@
                 "display_name": "Handle Parse Errors",
                 "dynamic": false,
                 "info": "Adds tool-execution retry as a safety net. `create_agent` already feeds tool-call validation errors back to the LLM automatically; this flag layers `ToolRetryMiddleware` on top so transient tool runtime failures are retried (max 2 retries).",
-                "input_types": [],
                 "list": false,
                 "list_add_label": "Add More",
                 "name": "handle_parsing_errors",
@@ -971,12 +1027,17 @@
                 "display_name": "Max Iterations",
                 "dynamic": false,
                 "info": "Maximum number of model calls the agent can make before stopping (maps to `ModelCallLimitMiddleware.run_limit` on the create_agent path). Must be at least 1 — it is a safety cap, never 'unlimited'.",
-                "input_types": [],
                 "list": false,
                 "list_add_label": "Add More",
                 "name": "max_iterations",
                 "override_skip": false,
                 "placeholder": "",
+                "range_spec": {
+                  "max": 128000.0,
+                  "min": 1.0,
+                  "step": 1.0,
+                  "step_type": "int"
+                },
                 "required": false,
                 "show": true,
                 "title_case": false,
@@ -992,16 +1053,15 @@
                 "display_name": "Max Tokens",
                 "dynamic": false,
                 "info": "Maximum number of tokens to generate. Field name varies by provider.",
-                "input_types": [],
                 "list": false,
                 "list_add_label": "Add More",
                 "name": "max_tokens",
                 "override_skip": false,
                 "placeholder": "",
                 "range_spec": {
-                  "max": 128000,
-                  "min": 1,
-                  "step": 1,
+                  "max": 128000.0,
+                  "min": 1.0,
+                  "step": 1.0,
                   "step_type": "int"
                 },
                 "required": false,
@@ -1029,6 +1089,9 @@
                     }
                   }
                 },
+                "filters": {
+                  "tool_calling": true
+                },
                 "info": "Select your model provider",
                 "input_types": [
                   "LanguageModel"
@@ -1037,7 +1100,6 @@
                 "list_add_label": "Add More",
                 "model_type": "language",
                 "name": "model",
-                "options": [],
                 "override_skip": false,
                 "placeholder": "Setup Provider",
                 "real_time_refresh": true,
@@ -1057,7 +1119,6 @@
                 "display_name": "Number of Chat History Messages",
                 "dynamic": false,
                 "info": "Number of chat history messages to retrieve.",
-                "input_types": [],
                 "list": false,
                 "list_add_label": "Add More",
                 "name": "n_messages",
@@ -1146,7 +1207,6 @@
                 "display_name": "watsonx Project ID",
                 "dynamic": false,
                 "info": "The project ID associated with the foundation model (IBM watsonx.ai only)",
-                "input_types": [],
                 "list": false,
                 "list_add_label": "Add More",
                 "load_from_db": false,
@@ -1199,6 +1259,7 @@
                 "multiline": true,
                 "name": "system_prompt",
                 "override_skip": false,
+                "password": false,
                 "placeholder": "",
                 "required": false,
                 "show": true,
@@ -1208,7 +1269,7 @@
                 "trace_as_metadata": true,
                 "track_in_telemetry": false,
                 "type": "str",
-                "value": "You are the **Check Point Documentation RAG assistant**. You answer questions about Check Point using ONLY a small vector-indexed corpus of Check Point concept snippets (Identity Awareness, Threat Prevention profiles, the Gaia API, HTTPS Inspection, access layers, SmartConsole, and more).\n\n== HOW TO WORK ==\n- For EVERY substantive question, FIRST call the **CP Docs Retriever** tool with a focused query to retrieve relevant snippets.\n- Answer strictly from what the tool returns. If the snippets do not contain the answer, say so plainly - do NOT fall back to your own prior knowledge or invent details.\n- Each snippet is returned with its `source` filename. ALWAYS cite the `source` filename(s) you used, e.g. *(source: identity-awareness.md)*.\n- You may call the tool more than once to refine the query.\n\n== OUTPUT STYLE ==\n- Concise Markdown: short paragraphs and bullets.\n- End with a **Sources:** line listing the filenames you cited.\n- The corpus is clearly-marked DEMO content, not official documentation - if asked, say so."
+                "value": "You are the **Check Point Documentation RAG assistant**. You answer questions about Check Point using ONLY a small vector-indexed corpus of Check Point concept snippets (Identity Awareness, Threat Prevention profiles, the Gaia API, HTTPS Inspection, access layers, SmartConsole, and more).\n\n== HOW TO WORK ==\n- For EVERY substantive question, FIRST call the **Check Point Docs Retriever** tool (`retrieve`) with a focused query to retrieve relevant snippets.\n- Answer strictly from what the tool returns. If the snippets do not contain the answer, say so plainly - do NOT fall back to your own prior knowledge or invent details.\n- Each snippet is returned with its `source` filename. ALWAYS cite the `source` filename(s) you used, e.g. *(source: identity-awareness.md)*.\n- You may call the tool more than once to refine the query.\n\n== OUTPUT STYLE ==\n- Concise Markdown: short paragraphs and bullets.\n- End with a **Sources:** line listing the filenames you cited.\n- The corpus is a small set of sample snippets written for this lab, not official Check Point documentation; if asked, say so."
               },
               "tools": {
                 "_input_type": "HandleInput",
@@ -1255,12 +1316,11 @@
               "Message"
             ],
             "beta": false,
-            "category": "outputs",
             "conditional_paths": [],
             "custom_fields": {},
             "description": "Display a chat message in the Playground.",
             "display_name": "Chat Output",
-            "documentation": "",
+            "documentation": "https://docs.langflow.org/chat-input-and-output",
             "edited": false,
             "field_order": [
               "input_value",
@@ -1274,7 +1334,6 @@
             ],
             "frozen": false,
             "icon": "MessagesSquare",
-            "key": "ChatOutput",
             "legacy": false,
             "metadata": {
               "code_hash": "84009527d08c",
@@ -1316,7 +1375,6 @@
               }
             ],
             "pinned": false,
-            "score": 0.003169567463043492,
             "template": {
               "_type": "Component",
               "clean_data": {
@@ -1328,12 +1386,14 @@
                 "list": false,
                 "list_add_label": "Add More",
                 "name": "clean_data",
+                "override_skip": false,
                 "placeholder": "",
                 "required": false,
                 "show": true,
                 "title_case": false,
                 "tool_mode": false,
                 "trace_as_metadata": true,
+                "track_in_telemetry": true,
                 "type": "bool",
                 "value": true
               },
@@ -1368,6 +1428,7 @@
                 "list_add_label": "Add More",
                 "load_from_db": false,
                 "name": "context_id",
+                "override_skip": false,
                 "placeholder": "",
                 "required": false,
                 "show": true,
@@ -1375,6 +1436,7 @@
                 "tool_mode": false,
                 "trace_as_input": true,
                 "trace_as_metadata": true,
+                "track_in_telemetry": false,
                 "type": "str",
                 "value": ""
               },
@@ -1391,6 +1453,7 @@
                 "list_add_label": "Add More",
                 "load_from_db": false,
                 "name": "data_template",
+                "override_skip": false,
                 "placeholder": "",
                 "required": false,
                 "show": true,
@@ -1398,6 +1461,7 @@
                 "tool_mode": false,
                 "trace_as_input": true,
                 "trace_as_metadata": true,
+                "track_in_telemetry": false,
                 "type": "str",
                 "value": "{text}"
               },
@@ -1417,11 +1481,13 @@
                 "list": false,
                 "list_add_label": "Add More",
                 "name": "input_value",
+                "override_skip": false,
                 "placeholder": "",
                 "required": true,
                 "show": true,
                 "title_case": false,
                 "trace_as_metadata": true,
+                "track_in_telemetry": false,
                 "type": "other",
                 "value": ""
               },
@@ -1432,6 +1498,7 @@
                 "dialog_inputs": {},
                 "display_name": "Sender Type",
                 "dynamic": false,
+                "external_options": {},
                 "info": "Type of sender.",
                 "name": "sender",
                 "options": [
@@ -1439,12 +1506,15 @@
                   "User"
                 ],
                 "options_metadata": [],
+                "override_skip": false,
                 "placeholder": "",
                 "required": false,
                 "show": true,
                 "title_case": false,
+                "toggle": false,
                 "tool_mode": false,
                 "trace_as_metadata": true,
+                "track_in_telemetry": true,
                 "type": "str",
                 "value": "Machine"
               },
@@ -1461,6 +1531,7 @@
                 "list_add_label": "Add More",
                 "load_from_db": false,
                 "name": "sender_name",
+                "override_skip": false,
                 "placeholder": "",
                 "required": false,
                 "show": true,
@@ -1468,6 +1539,7 @@
                 "tool_mode": false,
                 "trace_as_input": true,
                 "trace_as_metadata": true,
+                "track_in_telemetry": false,
                 "type": "str",
                 "value": "AI"
               },
@@ -1484,6 +1556,7 @@
                 "list_add_label": "Add More",
                 "load_from_db": false,
                 "name": "session_id",
+                "override_skip": false,
                 "placeholder": "",
                 "required": false,
                 "show": true,
@@ -1491,6 +1564,7 @@
                 "tool_mode": false,
                 "trace_as_input": true,
                 "trace_as_metadata": true,
+                "track_in_telemetry": false,
                 "type": "str",
                 "value": ""
               },
@@ -1503,12 +1577,14 @@
                 "list": false,
                 "list_add_label": "Add More",
                 "name": "should_store_message",
+                "override_skip": false,
                 "placeholder": "",
                 "required": false,
                 "show": true,
                 "title_case": false,
                 "tool_mode": false,
                 "trace_as_metadata": true,
+                "track_in_telemetry": true,
                 "type": "bool",
                 "value": true
               }
@@ -1547,7 +1623,7 @@
                 "list": false,
                 "show": true,
                 "multiline": true,
-                "value": "import json\nimport urllib.request\n\nfrom lfx.custom.custom_component.component import Component\nfrom lfx.io import MessageTextInput, Output\nfrom lfx.schema.message import Message\n\n\nclass CPDocsRetriever(Component):\n    display_name = \"CP Docs Retriever\"\n    description = (\n        \"Search Check Point docs. Embeds the query with Ollama nomic-embed-text and searches the \"\n        \"Qdrant 'cp_docs' collection. Returns the top snippets, each with its source filename to cite.\"\n    )\n    icon = \"search\"\n    name = \"CPDocsRetriever\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"query\",\n            display_name=\"Query\",\n            info=\"The Check Point question to search the cp_docs corpus for.\",\n            tool_mode=True,\n            required=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Snippets\", name=\"snippets\", method=\"retrieve\"),\n    ]\n\n    OLLAMA_URL = \"http://ollama-cpu:11434/api/embeddings\"\n    QDRANT_URL = \"http://qdrant:6333/collections/cp_docs/points/search\"\n\n    def retrieve(self) -> Message:\n        query = (self.query or \"\").strip()\n        if not query:\n            return Message(text=\"No query provided.\")\n        emb_body = json.dumps({\"model\": \"nomic-embed-text\", \"prompt\": query}).encode()\n        emb_req = urllib.request.Request(\n            self.OLLAMA_URL, data=emb_body, headers={\"Content-Type\": \"application/json\"}\n        )\n        vector = json.loads(urllib.request.urlopen(emb_req, timeout=60).read())[\"embedding\"]\n        search_body = json.dumps({\"vector\": vector, \"limit\": 4, \"with_payload\": True}).encode()\n        search_req = urllib.request.Request(\n            self.QDRANT_URL, data=search_body, headers={\"Content-Type\": \"application/json\"}\n        )\n        hits = json.loads(urllib.request.urlopen(search_req, timeout=60).read()).get(\"result\", [])\n        if not hits:\n            msg = \"No matching snippets were found in the 'cp_docs' Qdrant collection.\"\n            self.status = msg\n            return Message(text=msg)\n        blocks = []\n        for i, hit in enumerate(hits, 1):\n            payload = hit.get(\"payload\", {}) or {}\n            score = hit.get(\"score\", 0.0)\n            title = payload.get(\"title\") or payload.get(\"source\") or \"snippet\"\n            source = payload.get(\"source\", \"unknown\")\n            text = payload.get(\"text\", \"\")\n            blocks.append(f\"### Result {i} - {title}\\n(source: {source} - score: {score:.3f})\\n\\n{text}\")\n        header = (\n            f\"Retrieved {len(hits)} snippet(s) from the 'cp_docs' collection. \"\n            \"Answer ONLY from these snippets and cite each `source` filename you use.\\n\\n\"\n        )\n        result = header + \"\\n\\n\".join(blocks)\n        self.status = result\n        return Message(text=result)\n",
+                "value": "\"\"\"Retriever tool for the Documentation RAG agent (Ollama embeddings + Qdrant).\"\"\"\nimport json\nimport urllib.error\nimport urllib.request\n\nfrom lfx.custom.custom_component.component import Component\nfrom lfx.io import FloatInput, MessageTextInput, Output, SecretStrInput\nfrom lfx.schema.message import Message\n\n\nclass CPDocsRetriever(Component):\n    display_name = \"Check Point Docs Retriever\"\n    description = (\n        \"Search Check Point docs. Embeds the query with Ollama nomic-embed-text and searches the \"\n        \"Qdrant 'cp_docs' collection. Returns the top snippets, each with its source filename to cite.\"\n    )\n    icon = \"search\"\n    name = \"CPDocsRetriever\"\n\n    inputs = [\n        MessageTextInput(\n            name=\"query\",\n            display_name=\"Query\",\n            info=\"The Check Point question to search the cp_docs corpus for.\",\n            tool_mode=True,\n            required=True,\n        ),\n        SecretStrInput(\n            name=\"qdrant_api_key\",\n            display_name=\"Qdrant API Key\",\n            value=\"\",\n            info=\"Only when Qdrant API-key auth is on: select the QDRANT_API_KEY global variable.\",\n            required=False,\n            advanced=True,\n        ),\n        FloatInput(\n            name=\"min_score\",\n            display_name=\"Minimum Score\",\n            value=0.5,\n            info=(\n                \"Relevance threshold (0 to 1; 0 turns it off): snippets that score below it are ignored. Keep \"\n                \"it equal to RAG_MIN_SCORE and calibrate it with ingest.py --search (integrations/rag-cp-docs).\"\n            ),\n            required=False,\n            advanced=True,\n        ),\n    ]\n\n    outputs = [\n        Output(display_name=\"Snippets\", name=\"snippets\", method=\"retrieve\"),\n    ]\n\n    OLLAMA_URL = \"http://ollama-cpu:11434/api/embeddings\"\n    QDRANT_URL = \"http://qdrant:6333/collections/cp_docs/points/search\"\n    DEFAULT_MIN_SCORE = 0.5\n\n    def _fail(self, msg: str) -> Message:\n        self.status = msg\n        return Message(text=msg)\n\n    @staticmethod\n    def _post(url: str, body: dict, headers: dict) -> dict:\n        req = urllib.request.Request(url, data=json.dumps(body).encode(), headers=headers)\n        with urllib.request.urlopen(req, timeout=60) as resp:\n            return json.loads(resp.read())\n\n    def _min_score(self) -> float | None:\n        raw = getattr(self, \"min_score\", None)\n        if raw is None or raw == \"\":\n            return self.DEFAULT_MIN_SCORE\n        try:\n            value = float(raw)\n        except (TypeError, ValueError):\n            return None\n        return value if 0.0 <= value <= 1.0 else None\n\n    def retrieve(self) -> Message:\n        query = (self.query or \"\").strip()\n        if not query:\n            return Message(text=\"No query provided.\")\n        min_score = self._min_score()\n        if min_score is None:\n            return self._fail(f\"Minimum Score must be a number between 0 and 1 (got {self.min_score!r}).\")\n        try:\n            vector = self._post(\n                self.OLLAMA_URL,\n                {\"model\": \"nomic-embed-text\", \"prompt\": query},\n                {\"Content-Type\": \"application/json\"},\n            )[\"embedding\"]\n        except (urllib.error.URLError, OSError, ValueError, KeyError) as exc:\n            return self._fail(\n                f\"Could not embed the query with Ollama ({self.OLLAMA_URL}, model nomic-embed-text): {exc}. \"\n                \"Check that the Ollama service is running and nomic-embed-text is pulled, then retry.\"\n            )\n        headers = {\"Content-Type\": \"application/json\"}\n        key = self.qdrant_api_key\n        if hasattr(key, \"get_secret_value\"):\n            key = key.get_secret_value()\n        if key:\n            headers[\"api-key\"] = key\n        try:\n            hits = self._post(\n                self.QDRANT_URL,\n                {\"vector\": vector, \"limit\": 4, \"with_payload\": True, \"score_threshold\": min_score},\n                headers,\n            ).get(\"result\", [])\n        except urllib.error.HTTPError as exc:\n            if exc.code == 404:\n                return self._fail(\n                    \"The Qdrant collection 'cp_docs' does not exist yet. Run the rag-ingest job \"\n                    \"(docker compose up rag-ingest), then retry.\"\n                )\n            if exc.code in (401, 403):\n                return self._fail(\n                    f\"Qdrant rejected the search (HTTP {exc.code}): API-key auth is on. Set the Qdrant API Key \"\n                    \"field of this component to the QDRANT_API_KEY global variable.\"\n                )\n            return self._fail(f\"Qdrant search failed (HTTP {exc.code}).\")\n        except (urllib.error.URLError, OSError, ValueError) as exc:\n            return self._fail(f\"Could not reach Qdrant ({self.QDRANT_URL}): {exc}.\")\n        if not hits:\n            return self._fail(\n                f\"No snippet in the 'cp_docs' collection scored at least {min_score:g} (the relevance threshold) \"\n                \"for this query, so the indexed documentation does not cover it. Say so plainly; do not answer \"\n                \"from memory. If a match was expected: run the rag-ingest job (docker compose up rag-ingest) when \"\n                \"the collection is empty, or lower Minimum Score after calibrating it with ingest.py --search.\"\n            )\n        blocks = []\n        for i, hit in enumerate(hits, 1):\n            payload = hit.get(\"payload\", {}) or {}\n            score = hit.get(\"score\", 0.0)\n            title = payload.get(\"title\") or payload.get(\"source\") or \"snippet\"\n            source = payload.get(\"source\", \"unknown\")\n            text = payload.get(\"text\", \"\")\n            blocks.append(f\"### Result {i} - {title}\\n(source: {source} - score: {score:.3f})\\n\\n{text}\")\n        header = (\n            f\"Retrieved {len(hits)} snippet(s) scoring at least {min_score:g} from the 'cp_docs' collection. \"\n            \"Answer ONLY from these snippets and cite each `source` filename you use.\\n\\n\"\n        )\n        result = header + \"\\n\\n\".join(blocks)\n        self.status = result\n        return Message(text=result)\n",
                 "fileTypes": [],
                 "file_path": "",
                 "password": false,
@@ -1557,6 +1633,25 @@
                 "info": "",
                 "load_from_db": false,
                 "title_case": false
+              },
+              "qdrant_api_key": {
+                "load_from_db": false,
+                "override_skip": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "qdrant_api_key",
+                "value": "",
+                "display_name": "Qdrant API Key",
+                "advanced": true,
+                "input_types": [],
+                "dynamic": false,
+                "info": "Only when Qdrant API-key auth is on: select the QDRANT_API_KEY global variable.",
+                "title_case": false,
+                "track_in_telemetry": false,
+                "password": true,
+                "type": "str",
+                "_input_type": "SecretStrInput"
               },
               "query": {
                 "tool_mode": true,
@@ -1622,6 +1717,26 @@
                 "track_in_telemetry": false,
                 "type": "tools",
                 "_input_type": "ToolsInput"
+              },
+              "min_score": {
+                "tool_mode": false,
+                "trace_as_metadata": true,
+                "list": false,
+                "list_add_label": "Add More",
+                "override_skip": false,
+                "required": false,
+                "placeholder": "",
+                "show": true,
+                "name": "min_score",
+                "value": 0.5,
+                "display_name": "Minimum Score",
+                "advanced": true,
+                "dynamic": false,
+                "info": "Relevance threshold (0 to 1; 0 turns it off): snippets that score below it are ignored. Keep it equal to RAG_MIN_SCORE and calibrate it with ingest.py --search (integrations/rag-cp-docs).",
+                "title_case": false,
+                "track_in_telemetry": true,
+                "type": "float",
+                "_input_type": "FloatInput"
               }
             },
             "description": "Search Check Point docs. Embeds the query with Ollama nomic-embed-text and searches the Qdrant 'cp_docs' collection. Returns the top snippets, each with its source filename to cite.",
@@ -1629,7 +1744,7 @@
             "base_classes": [
               "Message"
             ],
-            "display_name": "CP Docs Retriever",
+            "display_name": "Check Point Docs Retriever",
             "documentation": "",
             "minimized": false,
             "custom_fields": {},
@@ -1658,14 +1773,16 @@
               }
             ],
             "field_order": [
-              "query"
+              "query",
+              "qdrant_api_key",
+              "min_score"
             ],
             "beta": false,
             "legacy": false,
             "edited": false,
             "metadata": {
-              "module": "custom_components.cp_docs_retriever",
-              "code_hash": "8414b375973f",
+              "module": "custom_components.check_point_docs_retriever",
+              "code_hash": "8d7ddd5a99f3",
               "dependencies": {
                 "total_dependencies": 1,
                 "dependencies": [
@@ -1730,15 +1847,15 @@
             "inputTypes": [
               "LanguageModel"
             ],
-            "type": "other"
+            "type": "model"
           }
         },
-        "id": "reactflow__edge-OpenAIModel-cpoai{œdataTypeœ:œOpenAIModelœ,œidœ:œOpenAIModel-cpoaiœ,œnameœ:œmodel_outputœ,œoutput_typesœ:[œLanguageModelœ]}-Agent-cpagt{œfieldNameœ:œmodelœ,œidœ:œAgent-cpagtœ,œinputTypesœ:[œLanguageModelœ],œtypeœ:œotherœ}",
+        "id": "reactflow__edge-OpenAIModel-cpoai{œdataTypeœ:œOpenAIModelœ,œidœ:œOpenAIModel-cpoaiœ,œnameœ:œmodel_outputœ,œoutput_typesœ:[œLanguageModelœ]}-Agent-cpagt{œfieldNameœ:œmodelœ,œidœ:œAgent-cpagtœ,œinputTypesœ:[œLanguageModelœ],œtypeœ:œmodelœ}",
         "selected": false,
         "source": "OpenAIModel-cpoai",
         "sourceHandle": "{œdataTypeœ: œOpenAIModelœ, œidœ: œOpenAIModel-cpoaiœ, œnameœ: œmodel_outputœ, œoutput_typesœ: [œLanguageModelœ]}",
         "target": "Agent-cpagt",
-        "targetHandle": "{œfieldNameœ: œmodelœ, œidœ: œAgent-cpagtœ, œinputTypesœ: [œLanguageModelœ], œtypeœ: œotherœ}"
+        "targetHandle": "{œfieldNameœ: œmodelœ, œidœ: œAgent-cpagtœ, œinputTypesœ: [œLanguageModelœ], œtypeœ: œmodelœ}"
       },
       {
         "animated": false,

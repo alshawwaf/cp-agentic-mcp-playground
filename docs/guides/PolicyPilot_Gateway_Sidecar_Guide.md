@@ -1,85 +1,117 @@
-# PolicyPilot behind the MCP Gateway (opt-in)
+# PolicyPilot Agents and the PolicyPilot MCP Sidecar
 
-The Check Point MCP servers in this lab are **read-mostly**. [PolicyPilot](https://github.com/alshawwaf/PolicyPilot)
-adds the missing lesson: an agent that makes a **guarded write** to firewall
-policy — plain-language access request → correct, first-match-safe change with
-**preview → approve → rollback**. It ships its own MCP server (~30 tools), so it
-plugs into the Docker MCP Gateway as another sidecar.
+The Check Point MCP servers in this lab mostly read. [PolicyPilot](https://github.com/alshawwaf/PolicyPilot) adds a guarded write: an agent turns one plain-language access request into the right first-match-safe rule change, previews it, applies and publishes it only when authorized, and can roll it back.
 
-This is **opt-in** (compose profile `policypilot`) and has real prerequisites —
-it does not start with the default stack or CI.
+The lab ships two parts:
 
-## Why prerequisites (read first)
+| Part | What it is | Needs |
+|---|---|---|
+| **PolicyPilot agents** (n8n, Flowise, Langflow) | **PolicyPilot Access Automation Agent (Pro)** and **PolicyPilot Dynamic Layers Agent**. They call the MCP endpoint of a PolicyPilot portal at `https://policypilot.<DOMAIN>/mcp/` | `DOMAIN`, `PILOT_MCP_TOKEN` and a running PolicyPilot portal |
+| **PolicyPilot MCP sidecar** (profile `policypilot`) | PolicyPilot's own MCP server as a lab service, `policypilot-mcp`, on the lab network (port 3020) | A PolicyPilot image, its database and encryption key |
 
-PolicyPilot's MCP server is a Streamable-HTTP FastMCP server built `stateless_http`
-with the DNS-rebinding host check disabled — exactly the right shape behind a
-proxy. But unlike the zero-dependency exercise server, it needs:
+The PolicyPilot portal itself is a separate application, outside this repository. The lab's acceptance tests check that the agents are seeded and published only when their prerequisites are set. They do not call PolicyPilot.
 
-1. **The `mcp` Python SDK in its image.** PolicyPilot pins `mcp==1.28.0`; in this
-   org that installs via **Artifactory** (plain PyPI is blocked). So the image
-   must be built with pip pointed at Artifactory.
-2. **A database + encryption key.** PolicyPilot's tools open the DB per call and
-   **decrypt saved SMS/gateway credentials** with `PILOT_ENCRYPTION_KEY`. To do
-   anything against a real SMS the sidecar needs a DB the **portal** populated
-   (share its `/data` volume) *and the same encryption key*. An empty DB yields
-   tools that list nothing.
-3. **`PILOT_MCP_TOKEN`.** The standalone server exits without it; it's the single
-   full-access bearer in sidecar mode (the DB-backed API-key store /
-   `mcp_allow_publish` gating is bypassed out-of-portal — so gate writes at the
-   gateway/network layer).
+## The PolicyPilot agents
 
-## Enable it
+### Prerequisites
 
-1. **Build the PolicyPilot image** (from the PolicyPilot repo, pip → Artifactory):
-   ```bash
-   docker build -t policypilot:custom /path/to/PolicyPilot
-   ```
-   (or set `POLICYPILOT_IMAGE` to a registry image you've built).
-2. **Set env** in `.env`:
-   ```env
-   POLICYPILOT_IMAGE=policypilot:custom
-   PILOT_MCP_TOKEN=<a strong bearer>
-   PILOT_ENCRYPTION_KEY=<the SAME key the PolicyPilot portal uses>
-   PILOT_DATABASE_URL=sqlite:////data/policypilot.db   # or point at the portal's DB
-   ```
-   For live SMS work, mount the portal's populated DB into `policypilot_data`
-   (or change `PILOT_DATABASE_URL` to a shared Postgres).
-3. **Start the sidecar:**
-   ```bash
-   docker compose --profile policypilot up -d policypilot-mcp
-   ```
-4. **Register it in the gateway:**
-   - `mcp-gateway/catalog.yaml`:
-     ```yaml
-       policypilot:
-         description: "PolicyPilot — guarded policy changes (preview/approve/rollback)"
-         title: "PolicyPilot"
-         type: "remote"
-         remote:
-           url: "http://policypilot-mcp:3020/"
-           transport_type: "streamable"
-     ```
-   - In `docker-compose.yml`, add `policypilot` to the gateway's `--servers=` list
-     and a `depends_on: { policypilot-mcp: { condition: service_healthy } }`.
-   - **Auth:** the sidecar enforces `Authorization: Bearer <PILOT_MCP_TOKEN>`. The
-     Docker MCP Gateway must forward Authorization to the remote (or terminate at
-     the gateway and rely on the private `demo` network). POST the trailing-slash
-     root (`/`).
-5. **Verify:**
-   ```bash
-   ./scripts/health-check.sh --profile cpu     # gateway tool count jumps by PolicyPilot's tools
-   ```
+- The lab is running and `./scripts/doctor.sh --post-start` ends with `Result: no blockers`
+- A model for `lab-chat`
+- `DOMAIN`: the lab host's domain, where the portal answers at `policypilot.<DOMAIN>`. If `DOMAIN` is blank, the importers use `N8N_HOST` without its `n8n.` prefix
+- `PILOT_MCP_TOKEN`: an MCP-scope API key from the portal's `/mcp-guide` page
+- The portal connected to a Management Server (Access Automation) or to Gaia gateways (Dynamic Layers)
 
-## The lesson
+### Set them up
 
-An n8n agent (see the [MCP Gateway guide](MCP_Gateway_Agent_Guide.md)) can now
-*preview* and *apply* a change: *"Allow the DMZ web server to reach 8.8.8.8 on
-53 — show me the change first."* PolicyPilot returns the proposed rule; on
-approval it publishes; and it can **roll back**. That's the guarded-write
-counterpart to the read-only Quantum Management tools, and the network-access
-twin of the [SCIM identity](Identity_Provisioning_SCIM_Agent_Guide.md) lesson.
+Run `./setup.sh` (step 4 asks for the PolicyPilot MCP key), or set `PILOT_MCP_TOKEN` and `DOMAIN` in `.env`. Then sync the builders:
 
-> **Status:** the compose wiring ships ready but **inactive** and is validated by
-> `docker compose config`; a full runtime check needs the two prerequisites above
-> (Artifactory build + a populated PolicyPilot DB/key), which live outside this
-> repo.
+```sh
+docker compose run --rm n8n-import
+docker compose run --rm builders-import
+```
+
+With 1Password, start each command with `op run --env-file=.env --`.
+
+**Expected result:** `./scripts/doctor.sh --post-start` shows `ready` on the `PolicyPilot agents` line, and `n8n-import` publishes both agents. Until both settings are set, `n8n-import` imports them but does not publish them, and the log names what is missing. The token is in the n8n credential "PolicyPilot Bearer Auth" and the Flowise variable `PILOT_MCP_TOKEN`.
+
+### PolicyPilot Access Automation Agent (Pro)
+
+Open it in n8n (**Open chat**), Flowise or Langflow and try:
+
+- *Summarize the Network layer on SMS*
+- *Allow 10.1.1.50 to the DNS servers and publish the changes*
+- *Block 10.1.1.222 from Facebook and publish the changes*
+- *Undo my last change and publish the changes*
+
+How it keeps writes safe:
+
+- **Decide first.** `decide_access` is read-only: it returns no change, widen an existing rule, or create a new one, with the first-match placement and the reason
+- **Publish only when authorized.** The agent publishes when the portal's Autopilot setting is on, or when your sentence says publish. Otherwise it summarizes the proposed change and waits for your "yes". A change sent without publish is a dry run: the portal validates it, then discards it
+- **Roll back.** `list_changes` shows the change journal and `revert_change` undoes a change, disables the rule instead, re-enables it, or deletes a disabled rule
+- **Resolve, never guess.** Server, layer, service, application, access role and zone names are resolved with tools before use. Access roles and zones must already exist
+
+For a governed flow in n8n, duplicate the agent and add a human approval step (for example a Wait node) before publishing.
+
+### PolicyPilot Dynamic Layers Agent
+
+This agent edits a dynamic layer: an access rulebase pushed straight to a gateway through the Gaia API. Try:
+
+- *List the dynamic layers*
+- *Block 10.1.9.9 from anywhere in the DMZ layer (dry run)*
+- *Show the rules in the DMZ layer*
+
+Adding or removing a rule edits the layer in the portal only. Nothing reaches a gateway until the layer is pushed. A dry run validates without applying. A real push needs the portal setting that lets the MCP agent push dynamic layers to gateways, which is separate from Management Server publishing.
+
+## The PolicyPilot MCP sidecar (profile `policypilot`)
+
+The sidecar runs PolicyPilot's MCP server inside the lab, on the lab network only, with no host port. It is opt-in and has prerequisites that live outside this repository.
+
+### Prerequisites
+
+| Setting in `.env` | Meaning |
+|---|---|
+| `POLICYPILOT_IMAGE` | The PolicyPilot image to run. Default `policypilot:custom`: build it from the PolicyPilot repository and give it that tag |
+| `PILOT_MCP_TOKEN` | Required. The sidecar exits without it, and every client must send `Authorization: Bearer <PILOT_MCP_TOKEN>` |
+| `PILOT_ENCRYPTION_KEY` | The key the PolicyPilot portal encrypted its saved Management and gateway credentials with. It must match the portal |
+| `PILOT_SESSION_SECRET` | Generated by `./setup.sh`. The sidecar derives its key from it only while `PILOT_ENCRYPTION_KEY` is blank. If your portal has no `PILOT_ENCRYPTION_KEY`, put the portal's `PILOT_SESSION_SECRET` here |
+| `PILOT_DATABASE_URL` | Default `sqlite:////data/policypilot.db`, in the volume `policypilot_data` |
+
+The tools read the database on every call and decrypt the saved credentials with the key. An empty database gives tools that list nothing. For real work, the volume needs a database that the portal filled.
+
+### Start it
+
+```sh
+docker compose --profile policypilot up -d policypilot-mcp
+```
+
+Or add `policypilot` to `COMPOSE_PROFILES` and run `docker compose up -d`. At start, the service creates the database tables, then runs the MCP server on port 3020.
+
+**Expected result:** `docker compose ps policypilot-mcp` shows the service as healthy. If it is not, `docker compose logs policypilot-mcp` names the cause.
+
+### What the lab does not include
+
+- **No gateway registration.** The MCP Gateway catalog (`mcp-gateway/catalog.yaml`) has no PolicyPilot entry, and the sidecar refuses requests without its Bearer token. Fronting it with the gateway is not part of the lab
+- **No agent for the sidecar.** The shipped PolicyPilot agents call the portal at `https://policypilot.<DOMAIN>/mcp/`, not the sidecar
+
+CI checks the compose service with `docker compose config`. Running it needs the image, the database and the key above.
+
+## Security notes
+
+- These agents change live policy. Use a lab Management Server and lab gateways
+- Leave Autopilot off for trainees, so every publish needs a clear request or a "yes"
+- `PILOT_MCP_TOKEN` opens the portal's MCP endpoint, including the tools that change and publish policy. Keep it in `.env` or 1Password, and change it in `.env`, never in the builder UI: the importers overwrite it from `.env`
+- `PILOT_ENCRYPTION_KEY` unlocks the credentials the portal stored. Treat it like those credentials
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| The agents are not published in n8n | `DOMAIN` or `PILOT_MCP_TOKEN` is not set | Set both, then `docker compose run --rm n8n-import` |
+| The agent reports HTTP 401 from PolicyPilot | Wrong or expired MCP key | Create a new MCP-scope key on the portal's `/mcp-guide` page, set `PILOT_MCP_TOKEN`, run both importers |
+| The agent cannot reach `policypilot.<DOMAIN>` | The portal is down or not on that host | Check the portal, or the `DOMAIN` value |
+| The agent only shows a dry run | Your request did not say publish, and Autopilot is off | Answer "yes", or say "publish" in the request |
+| A publish is refused | Publishing is admin-gated on the portal | Ask the portal admin to allow it |
+| `policypilot-mcp` does not start, or exits at start | The image `POLICYPILOT_IMAGE` does not exist locally, or `PILOT_MCP_TOKEN` is blank | Build and tag the image, and set the token |
+| The sidecar's tools list nothing | Empty database, or a key that does not match the portal | Use the portal's database and its `PILOT_ENCRYPTION_KEY` |
+
+Related: [Identity Provisioning Agent (SCIM)](Identity_Provisioning_SCIM_Agent_Guide.md) for the identity half, and the [Capstone](Capstone_Zero_Trust_Onboarding.md) for both together.
