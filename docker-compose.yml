@@ -1226,10 +1226,41 @@ services:
       - THINKING_MODEL=${AIG_LLM_MODEL:-lab-chat}
       - CODING_MODEL=${AIG_LLM_MODEL:-lab-chat}
       - FAST_MODEL=${AIG_LLM_MODEL:-lab-chat}
+      # Reports in English. AI-Infra-Guard falls back to Chinese when a task has no language, and
+      # its task API drops the language of MCP scans. The agent starts every scanner through uv,
+      # found through AIG_UV_BIN: aig/scanner-uv.sh sets the scanner language to AIG_SCAN_LANGUAGE.
+      # Set AIG_SCAN_LANGUAGE=zh in .env for Chinese reports.
+      - AIG_UV_BIN=/opt/lab/scanner-uv
+      - AIG_SCAN_LANGUAGE=${AIG_SCAN_LANGUAGE:-en}
+    volumes:
+      - ./aig/scanner-uv.sh:/opt/lab/scanner-uv:ro
     # Upstream adds SYS_ADMIN and seccomp=unconfined only for Chromium's sandbox, which takes
     # screenshots of scanned web services. The MCP scan used in the lab does not need them, so
     # the lab runs the scanner without extra privileges.
+    # Capabilities: the entrypoint (/app/start_agent_container.sh) runs as root only to start the
+    # API checker and the agent as the user agent (uid 1000) with gosu (SETUID, SETGID) and to
+    # watch, restart and stop them (KILL). The scanner processes run as uid 1000 with no
+    # capabilities; nmap uses TCP connect scans (no NET_RAW). No CHOWN: /api-checker-data already
+    # belongs to uid 1000 in the image, so the entrypoint's "chown -R" is not needed: it logs
+    # "Operation not permitted" at start and the entrypoint carries on (it does not use set -e).
+    cap_drop: [ "ALL" ]
+    cap_add: [ "KILL", "SETGID", "SETUID" ]
     security_opt: [ "no-new-privileges:true" ]
+    # Read-only file system. The scanners write only to these tmpfs mounts (memory, counted in
+    # mem_limit, emptied when the container restarts; Docker mounts them noexec, nosuid, nodev):
+    # temporary files, HOME (uv cache), the API checker data, uploaded scan targets and the log
+    # folder of each scanner. The agent works in /app, so "uploads" and "temp_uploads" are there.
+    read_only: true
+    tmpfs:
+      - /tmp:mode=1777,size=256m
+      - /home/agent:uid=1000,gid=1000,mode=0700,size=64m
+      - /api-checker-data:uid=1000,gid=1000,mode=0755,size=64m
+      - /app/uploads:uid=1000,gid=1000,mode=0755,size=256m
+      - /app/temp_uploads:uid=1000,gid=1000,mode=0755,size=64m
+      - /app/mcp-scan/logs:uid=1000,gid=1000,mode=0755,size=32m
+      - /app/skill-scan/logs:uid=1000,gid=1000,mode=0755,size=32m
+      - /app/agent-scan/agent_scan/logs:uid=1000,gid=1000,mode=0755,size=32m
+      - /app/AIG-PromptSecurity/logs:uid=1000,gid=1000,mode=0755,size=32m
     shm_size: "2gb"
     depends_on:
       aig-webserver:
@@ -1238,6 +1269,7 @@ services:
         condition: service_healthy
     cpus: 1.5
     mem_limit: 2g
+    pids_limit: 512
     logging: *default-logging
 
   # Opt-in way into the AI-Infra-Guard web UI (no sign-in): a reverse proxy with ONE fixed upstream,

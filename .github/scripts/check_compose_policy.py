@@ -15,6 +15,9 @@ Enforces the lab's containment and laptop-safety promises (lab-test DESIGN secti
   - the security-lab and ai-red-team services are opt-in (not in the default stack), sit only on
     internal networks, and keep their hardening (vuln-mcp: read-only, uid 65534, no capabilities,
     read-only mounts; AI-Infra-Guard: no SYS_ADMIN, no seccomp=unconfined, no-new-privileges)
+  - aig-agent drops all capabilities and adds back only what its root entrypoint needs (KILL, SETGID,
+    SETUID: it starts the scanners as uid 1000 with gosu and restarts them), has a read-only root
+    file system and a positive pids_limit, and mounts nothing writable from the host
   - aig-ui, the opt-in proxy to the AI-Infra-Guard UI, is opt-in, joins exactly aig-ui-access and ai-red-team,
     and is read-only with no capabilities, no-new-privileges, read-only mounts and IP forwarding off
   - no service passes .env through with env_file (unresolved op:// references would reach containers)
@@ -29,12 +32,18 @@ LOCAL_IMAGES = {"policypilot-mcp"}            # built locally from the PolicyPil
 PINNED = re.compile(r"^[^@\s]+:[^@\s]+@sha256:[0-9a-f]{64}$")
 OPT_IN = {"vuln-mcp": "security-lab", "aig-webserver": "ai-red-team", "aig-agent": "ai-red-team"}
 UI_PROXY, UI_PROXY_NETWORKS = "aig-ui", {"aig-ui-access", "ai-red-team"}
+SCANNER, SCANNER_CAPS = "aig-agent", {"KILL", "SETGID", "SETUID"}
 SOCKET = "/var/run/docker.sock"
 
 
 def load(path):
     with open(path, encoding="utf-8") as fh:
         return json.load(fh)
+
+
+def cap_names(svc, key):
+    """Capability names of cap_add / cap_drop, upper case, without the CAP_ prefix."""
+    return {str(c).upper().removeprefix("CAP_") for c in svc.get(key) or []}
 
 
 def main(argv):
@@ -92,7 +101,7 @@ def main(argv):
                 bad(name, "lacks security_opt no-new-privileges")
             if any("unconfined" in x for x in secopt):
                 bad(name, "disables seccomp or AppArmor (unconfined)")
-            if "SYS_ADMIN" in (svc.get("cap_add") or []) or "ALL" in (svc.get("cap_add") or []):
+            if cap_names(svc, "cap_add") & {"SYS_ADMIN", "ALL"}:
                 bad(name, "adds SYS_ADMIN / ALL capabilities")
 
     vuln = services.get("vuln-mcp") or {}
@@ -106,6 +115,22 @@ def main(argv):
         for vol in vuln.get("volumes") or []:
             if vol.get("type") == "bind" and not vol.get("read_only"):
                 bad("vuln-mcp", "has a writable bind mount")
+
+    scanner = services.get(SCANNER) or {}
+    if scanner:
+        if "ALL" not in cap_names(scanner, "cap_drop"):
+            bad(SCANNER, "does not drop all capabilities")
+        if cap_names(scanner, "cap_add") - SCANNER_CAPS:
+            bad(SCANNER, "adds capabilities beyond KILL, SETGID and SETUID")
+        if not scanner.get("read_only"):
+            bad(SCANNER, "root file system is not read-only")
+        limits = (scanner.get("deploy") or {}).get("resources", {}).get("limits", {})
+        pids = scanner.get("pids_limit") or limits.get("pids") or 0
+        if not (isinstance(pids, int) and pids > 0):  # 0 or -1 means unlimited
+            bad(SCANNER, "has no pids_limit")
+        for vol in scanner.get("volumes") or []:
+            if vol.get("type") == "bind" and not vol.get("read_only"):
+                bad(SCANNER, "has a writable bind mount")
 
     ui = services.get(UI_PROXY) or {}
     if ui:
